@@ -1,0 +1,11 @@
+{
+  "name": "vidyarthi-mitra",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend run start",
+    "seed:backend": "npm --prefix backend run seed"
+  }
+}

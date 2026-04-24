@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-light-bg text-light-text font-sans antialiased;
+  }
+  .dark body, body.dark {
+    @apply bg-dark-bg text-dark-text;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-light-card border border-light-border rounded-2xl shadow-sm hover:shadow-md transition-shadow;
+  }
+  .dark .card {
+    @apply bg-dark-card border-dark-border;
+  }
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors;
+  }
+  .btn-outline {
+    @apply border-2 border-primary text-primary px-6 py-3 rounded-xl font-semibold hover:bg-primary hover:text-white transition-colors;
+  }
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+  }
+  .badge-orange {
+    @apply bg-primary-50 text-primary-700;
+  }
+  .dark .badge-orange {
+    @apply bg-primary-900 text-primary-300;
+  }
+  .badge-green {
+    @apply bg-green-50 text-green-700;
+  }
+  .badge-blue {
+    @apply bg-blue-50 text-blue-700;
+  }
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-light-border bg-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition;
+  }
+  .dark .input-field {
+    @apply bg-dark-card border-dark-border text-dark-text;
+  }
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb { background: #444; }
