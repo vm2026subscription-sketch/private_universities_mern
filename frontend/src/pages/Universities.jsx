@@ -6,7 +6,15 @@ import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 
-const states = ['Maharashtra','Karnataka','Gujarat','Delhi NCR','Uttar Pradesh','Rajasthan','Madhya Pradesh','Tamil Nadu','Telangana','Kerala','West Bengal'];
+const states = [
+  'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
+  'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli', 'Daman and Diu', 'Delhi NCR', 
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 
+  'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 
+  'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 
+  'Uttarakhand', 'West Bengal'
+];
 const naacGrades = ['A++','A+','A','B++','B','Not Rated'];
 
 export default function Universities() {
@@ -56,15 +64,22 @@ export default function Universities() {
     params.set('page', page);
     params.set('limit', 12);
     api.get(`/universities?${params}`).then(({ data }) => {
-      setUniversities(data.data || []);
+      if (page === 1) {
+        setUniversities(data.data || []);
+      } else {
+        setUniversities(prev => [...prev, ...(data.data || [])]);
+      }
       setTotal(data.total || 0);
     }).catch(() => setUniversities([])).finally(() => setLoading(false));
   }, [filters, sort, page]);
 
   const toggleFilter = (key, value) => {
-    setFilters(f => ({
-      ...f, [key]: f[key].includes(value) ? f[key].filter(v => v !== value) : [...f[key], value]
-    }));
+    setFilters(f => {
+      // All filters are now single select
+      const currentValues = f[key];
+      const isSelected = currentValues.includes(value);
+      return { ...f, [key]: isSelected ? [] : [value] };
+    });
     setPage(1);
   };
 
@@ -94,12 +109,14 @@ export default function Universities() {
           <div className="space-y-6">
             <div>
               <h4 className="font-semibold text-sm mb-3">State</h4>
-              {states.map(s => (
-                <label key={s} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
-                  <input type="checkbox" checked={filters.state.includes(s)} onChange={() => toggleFilter('state', s)} className="rounded text-primary" />
-                  {s}
-                </label>
-              ))}
+              <div className="max-h-60 overflow-y-auto pr-2">
+                {states.map(s => (
+                  <label key={s} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
+                    <input type="radio" checked={filters.state.includes(s)} onChange={() => toggleFilter('state', s)} />
+                    {s}
+                  </label>
+                ))}
+              </div>
             </div>
             <div>
               <h4 className="font-semibold text-sm mb-3">Type</h4>
@@ -114,7 +131,7 @@ export default function Universities() {
               <h4 className="font-semibold text-sm mb-3">NAAC Grade</h4>
               {naacGrades.map(g => (
                 <label key={g} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
-                  <input type="checkbox" checked={filters.naacGrade.includes(g)} onChange={() => toggleFilter('naacGrade', g)} className="rounded text-primary" />
+                  <input type="radio" checked={filters.naacGrade.includes(g)} onChange={() => toggleFilter('naacGrade', g)} />
                   {g}
                 </label>
               ))}
@@ -155,6 +172,18 @@ export default function Universities() {
               )})}
             </div>
           )}
+
+          {universities.length < total && !loading && (
+            <div className="mt-10 text-center">
+              <button 
+                onClick={() => setPage(prev => prev + 1)}
+                className="btn-outline !py-2.5 !px-8"
+              >
+                Load More Universities
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
     </div>

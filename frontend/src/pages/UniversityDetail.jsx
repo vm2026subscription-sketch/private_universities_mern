@@ -61,10 +61,11 @@ export default function UniversityDetail() {
             <h1 className="text-2xl font-bold">{uni.name}</h1>
             <p className="text-light-muted flex items-center gap-1 mt-1"><MapPin className="w-4 h-4" />{uni.city}, {uni.state}</p>
             <div className="flex flex-wrap gap-2 mt-2">
-              <span className="badge badge-orange">{uni.type}</span>
-              {uni.naacGrade && <span className="badge badge-green">NAAC {uni.naacGrade}</span>}
-              {uni.nirfRank && <span className="badge badge-blue">NIRF #{uni.nirfRank}</span>}
-            </div>
+               <span className="badge badge-orange">{uni.type}</span>
+               {uni.naacGrade && <span className="badge badge-green">NAAC {uni.naacGrade}</span>}
+               {uni.nirfRank && <span className="badge badge-blue">NIRF #{uni.nirfRank}</span>}
+               {uni.approvals?.ugc && <span className="badge bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300">UGC Approved</span>}
+             </div>
           </div>
           <div className="flex gap-2">
             <button className={`btn-outline !py-2 !px-3 border ${isSaved ? 'bg-primary text-white border-primary' : 'dark:border-dark-border'}`} onClick={handleBookmark}>
@@ -86,15 +87,19 @@ export default function UniversityDetail() {
           {[
             { icon: Building, label: 'Est.', value: uni.establishedYear || 'N/A' },
             { icon: Users, label: 'Students', value: uni.stats?.totalStudents?.toLocaleString() || 'N/A' },
-            { icon: Award, label: 'Avg Pkg', value: uni.stats?.avgPackageLPA ? `Rs ${uni.stats.avgPackageLPA} LPA` : 'N/A' },
-            { icon: BookOpen, label: 'Courses', value: uni.courses?.length || 0 },
+            { icon: Award, label: 'Avg Pkg', value: uni.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : 'N/A' },
+            { icon: BookOpen, label: 'Courses', value: uni.stats?.totalCoursesCount || uni.courses?.length || 0 },
+            { icon: Building, label: 'Campus', value: uni.stats?.campusSizeAcres ? `${uni.stats.campusSizeAcres} Acres` : 'N/A' },
+            { icon: Award, label: 'Placement', value: uni.stats?.placementPercentage ? `${uni.stats.placementPercentage}%` : 'N/A' },
+            { icon: Award, label: 'Max Pkg', value: uni.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : 'N/A' },
           ].map((s, i) => (
             <div key={i} className="text-center p-3 rounded-xl bg-light-card dark:bg-dark-border">
               <s.icon className="w-5 h-5 text-primary mx-auto mb-1" />
-              <p className="text-lg font-bold">{s.value}</p>
-              <p className="text-xs text-light-muted">{s.label}</p>
+              <p className="text-sm font-bold">{s.value}</p>
+              <p className="text-[10px] text-light-muted uppercase tracking-wider">{s.label}</p>
             </div>
           ))}
+
         </div>
       </div>
 
@@ -108,67 +113,117 @@ export default function UniversityDetail() {
 
       <div className="card p-6">
         {activeTab === 0 && (
-          <div>
-            <h2 className="text-xl font-bold mb-4">About {uni.name}</h2>
-            <p className="text-light-muted dark:text-dark-muted leading-relaxed">{uni.description}</p>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold mb-3">About</h2>
+              <p className="text-light-muted dark:text-dark-muted leading-relaxed">
+                {uni.description || `${uni.name} is a ${uni.type} university located in ${uni.city}, ${uni.state}. Established in ${uni.establishedYear || 'N/A'}, it offers various undergraduate and postgraduate programs.`}
+              </p>
+            </div>
 
-            {uni.highlights?.length > 0 && (
-              <div className="mt-6">
-                <h3 className="font-semibold mb-3">Highlights</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {uni.highlights.map((item, i) => <div key={i} className="rounded-xl bg-light-card dark:bg-dark-border p-3 text-sm">{item}</div>)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold mb-3">General Information</h3>
+                <div className="space-y-3 text-sm">
+                   {uni.address && (
+                     <div className="flex gap-3">
+                       <MapPin className="w-4 h-4 text-primary shrink-0" />
+                       <span className="text-light-muted dark:text-dark-muted">{uni.address}</span>
+                     </div>
+                   )}
+                   {uni.website && (
+                     <div className="flex gap-3">
+                       <Globe className="w-4 h-4 text-primary shrink-0" />
+                       <a href={uni.website.startsWith('http') ? uni.website : `https://${uni.website}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{uni.website}</a>
+                     </div>
+                   )}
+                   {uni.email && (
+                     <div className="flex gap-3">
+                       <Mail className="w-4 h-4 text-primary shrink-0" />
+                       <span className="text-light-muted dark:text-dark-muted">{uni.email}</span>
+                     </div>
+                   )}
+                   {uni.phone && (
+                     <div className="flex gap-3">
+                       <Phone className="w-4 h-4 text-primary shrink-0" />
+                       <span className="text-light-muted dark:text-dark-muted">{uni.phone}</span>
+                     </div>
+                   )}
                 </div>
               </div>
-            )}
 
-            {uni.facilities?.length > 0 && (
-              <div className="mt-6">
-                <h3 className="font-semibold mb-3">Facilities</h3>
-                <div className="flex flex-wrap gap-2">
-                  {uni.facilities.map((f, i) => <span key={i} className="badge badge-orange">{f}</span>)}
+              {uni.facilities?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-3">Facilities</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {uni.facilities.map((f, i) => <span key={i} className="badge badge-orange">{f}</span>)}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            <div className="mt-6 space-y-2 text-sm">
-              {uni.address && <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" />{uni.address}</p>}
-              {uni.phone && <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-primary" />{uni.phone}</p>}
-              {uni.email && <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-primary" />{uni.email}</p>}
-              {uni.website && <p className="flex items-center gap-2"><Globe className="w-4 h-4 text-primary" /><a href={uni.website} className="text-primary hover:underline">{uni.website}</a></p>}
+              )}
             </div>
           </div>
         )}
 
         {activeTab === 1 && (
           <div>
-            <h2 className="text-xl font-bold mb-4">Courses & Branches</h2>
-            {uni.courses?.map((c, i) => (
-              <div key={i} className="mb-6 p-4 rounded-xl bg-light-card dark:bg-dark-border">
-                <h3 className="font-semibold">{c.name} <span className="text-sm text-light-muted">({c.category} • {c.duration} years)</span></h3>
-                {c.specializations?.length > 0 && (
-                  <table className="w-full mt-3 text-sm">
-                    <thead>
-                      <tr className="border-b border-light-border dark:border-dark-border">
-                        <th className="text-left py-2">Specialization</th>
-                        <th className="text-left py-2">Seats</th>
-                        <th className="text-left py-2">Fees/Year</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {c.specializations.map((s, j) => (
-                        <tr key={j} className="border-b border-light-border dark:border-dark-border">
-                          <td className="py-2">{s.name}</td>
-                          <td className="py-2">{s.seats}</td>
-                          <td className="py-2">{s.feesPerYear ? `Rs ${s.feesPerYear.toLocaleString()}` : 'N/A'}</td>
-                        </tr>
+            <h2 className="text-xl font-bold mb-4">Courses & Programs</h2>
+            {uni.courses?.length === 0 && (
+              <p className="text-light-muted text-center py-8">No course data available yet.</p>
+            )}
+            <div className="space-y-4">
+              {uni.courses?.map((c, i) => (
+                <div key={i} className="p-4 rounded-xl bg-light-card dark:bg-dark-border border border-light-border dark:border-dark-border">
+                  <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                    <div>
+                      <h3 className="font-semibold text-base">{c.name}</h3>
+                      <p className="text-sm text-light-muted mt-0.5">
+                        {c.category && <span className="mr-2">Level: <strong>{c.category}</strong></span>}
+                        {c.duration && <span>Duration: <strong>{c.duration} yr{c.duration > 1 ? 's' : ''}</strong></span>}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {c.feesPerYear && (
+                        <span className="badge badge-green">₹{c.feesPerYear.toLocaleString()}/yr</span>
+                      )}
+                      {c.totalSeats && (
+                        <span className="badge badge-blue">{c.totalSeats} seats</span>
+                      )}
+                    </div>
+                  </div>
+                  {c.entranceExams?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      <span className="text-xs text-light-muted mr-1">Entrance Exams:</span>
+                      {c.entranceExams.map((exam, j) => (
+                        <span key={j} className="badge badge-orange text-xs">{exam}</span>
                       ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            ))}
+                    </div>
+                  )}
+                  {c.specializations?.length > 0 && (
+                    <table className="w-full mt-3 text-sm">
+                      <thead>
+                        <tr className="border-b border-light-border dark:border-dark-border">
+                          <th className="text-left py-2">Specialization</th>
+                          <th className="text-left py-2">Seats</th>
+                          <th className="text-left py-2">Fees/Year</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {c.specializations.map((s, j) => (
+                          <tr key={j} className="border-b border-light-border dark:border-dark-border">
+                            <td className="py-2">{s.name}</td>
+                            <td className="py-2">{s.seats || '-'}</td>
+                            <td className="py-2">{s.feesPerYear ? `₹${s.feesPerYear.toLocaleString()}` : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
+
 
         {activeTab === 2 && (
           <div className="space-y-6">
@@ -187,17 +242,17 @@ export default function UniversityDetail() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="rounded-xl bg-light-card dark:bg-dark-border p-4">
-                <p className="text-light-muted mb-1">Application Window</p>
-                <p className="font-medium">
-                  {uni.admissions?.applicationStartDate ? new Date(uni.admissions.applicationStartDate).toLocaleDateString() : 'TBA'} to {uni.admissions?.applicationEndDate ? new Date(uni.admissions.applicationEndDate).toLocaleDateString() : 'TBA'}
-                </p>
-              </div>
-              <div className="rounded-xl bg-light-card dark:bg-dark-border p-4">
-                <p className="text-light-muted mb-1">Application Fee</p>
-                <p className="font-medium">{uni.admissions?.applicationFee ? `Rs ${uni.admissions.applicationFee.toLocaleString()}` : 'Not specified'}</p>
-              </div>
-            </div>
+               <div className="rounded-xl bg-light-card dark:bg-dark-border p-4">
+                 <p className="text-light-muted mb-1">Application Window / Deadline</p>
+                 <p className="font-medium">
+                   {uni.admissions?.counsellingInfo || 'Check university website'}
+                 </p>
+               </div>
+               <div className="rounded-xl bg-light-card dark:bg-dark-border p-4">
+                 <p className="text-light-muted mb-1">Application Fee</p>
+                 <p className="font-medium">{uni.admissions?.applicationFee ? `₹${uni.admissions.applicationFee.toLocaleString()}` : 'Not specified'}</p>
+               </div>
+             </div>
 
             {uni.admissions?.acceptedExams?.length > 0 && (
               <div>
@@ -228,8 +283,8 @@ export default function UniversityDetail() {
           <div>
             <h2 className="text-xl font-bold mb-4">Placement Statistics</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="p-4 rounded-xl bg-light-card dark:bg-dark-border text-center"><p className="text-2xl font-bold text-primary">{uni.stats?.avgPackageLPA ? `Rs ${uni.stats.avgPackageLPA} LPA` : 'N/A'}</p><p className="text-xs text-light-muted">Avg Package</p></div>
-              <div className="p-4 rounded-xl bg-light-card dark:bg-dark-border text-center"><p className="text-2xl font-bold text-success">{uni.stats?.highestPackageLPA ? `Rs ${uni.stats.highestPackageLPA} LPA` : 'N/A'}</p><p className="text-xs text-light-muted">Highest Package</p></div>
+              <div className="p-4 rounded-xl bg-light-card dark:bg-dark-border text-center"><p className="text-2xl font-bold text-primary">{uni.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : 'N/A'}</p><p className="text-xs text-light-muted">Avg Package</p></div>
+              <div className="p-4 rounded-xl bg-light-card dark:bg-dark-border text-center"><p className="text-2xl font-bold text-success">{uni.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : 'N/A'}</p><p className="text-xs text-light-muted">Highest Package</p></div>
               <div className="p-4 rounded-xl bg-light-card dark:bg-dark-border text-center"><p className="text-2xl font-bold">{uni.stats?.placementPercentage || 'N/A'}{uni.stats?.placementPercentage ? '%' : ''}</p><p className="text-xs text-light-muted">Placement Rate</p></div>
               <div className="p-4 rounded-xl bg-light-card dark:bg-dark-border text-center"><p className="text-2xl font-bold">{uni.topRecruiters?.length || 0}+</p><p className="text-xs text-light-muted">Recruiters</p></div>
             </div>

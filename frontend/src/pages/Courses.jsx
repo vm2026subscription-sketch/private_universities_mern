@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, GraduationCap, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X } from 'lucide-react';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 
@@ -11,10 +11,10 @@ export default function Courses() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     let active = true;
-
     const loadCourses = async () => {
       setLoading(true);
       try {
@@ -27,16 +27,24 @@ export default function Courses() {
         if (active) setLoading(false);
       }
     };
-
     loadCourses();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [selectedCategory]);
 
   const categories = useMemo(() => (
     ['All', ...new Set(courses.map((course) => course.category).filter(Boolean))]
   ), [courses]);
+
+  // Normalize course names for better grouping
+  const normalizeCourseName = (name) => {
+    if (!name) return '';
+    return name
+      .replace(/\s*\([^)]*\)/g, '') // Remove parentheses content
+      .replace(/\./g, '') // Remove dots (B.A. -> BA)
+      .replace(/&/g, 'and')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
 
   const courseGroups = useMemo(() => {
     const scopedCourses = selectedCategory === 'All'
@@ -46,10 +54,11 @@ export default function Courses() {
     const grouped = scopedCourses.reduce((acc, course) => {
       if (!course.name) return acc;
 
-      const key = course.name.trim();
-      if (!acc[key]) {
-        acc[key] = {
-          name: key,
+      const normName = normalizeCourseName(course.name);
+      if (!acc[normName]) {
+        acc[normName] = {
+          name: course.name.trim(), // Keep one representative name
+          normName: normName,
           category: course.category,
           duration: course.duration || null,
           entranceExams: new Set(),
@@ -57,9 +66,9 @@ export default function Courses() {
         };
       }
 
-      if (!acc[key].duration && course.duration) acc[key].duration = course.duration;
-      (course.entranceExams || []).forEach((exam) => acc[key].entranceExams.add(exam));
-      acc[key].colleges.push(course);
+      if (!acc[normName].duration && course.duration) acc[normName].duration = course.duration;
+      (course.entranceExams || []).forEach((exam) => acc[normName].entranceExams.add(exam));
+      acc[normName].colleges.push(course);
       return acc;
     }, {});
 
@@ -69,7 +78,7 @@ export default function Courses() {
         entranceExams: [...group.entranceExams],
         collegeCount: group.colleges.length,
       }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => b.collegeCount - a.collegeCount); // Show most available first
   }, [courses, selectedCategory]);
 
   const filteredCourseGroups = useMemo(() => {
@@ -82,203 +91,149 @@ export default function Courses() {
   }, [courseGroups, search]);
 
   const selectedCourseGroup = useMemo(
-    () => courseGroups.find((group) => group.name.toLowerCase() === selectedCourse.toLowerCase()) || null,
+    () => courseGroups.find((group) => group.name.toLowerCase() === selectedCourse.toLowerCase() || group.normName.toLowerCase() === normalizeCourseName(selectedCourse).toLowerCase()) || null,
     [courseGroups, selectedCourse]
   );
 
   const filteredColleges = useMemo(() => {
     if (!selectedCourseGroup) return [];
-
     const query = search.trim().toLowerCase();
     if (!query) return selectedCourseGroup.colleges;
 
     return selectedCourseGroup.colleges.filter((course) => {
-      const specializationNames = (course.specializations || []).map((item) => item.name).join(' ');
       return [
         course.universityId?.name,
         course.universityId?.city,
         course.universityId?.state,
-        specializationNames,
       ].join(' ').toLowerCase().includes(query);
     });
   }, [selectedCourseGroup, search]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12 pb-20 md:pb-12">
-      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-10">
+    <div className="max-w-7xl mx-auto px-4 py-8 pb-20 md:pb-12">
+      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-8">
         <div>
-          <span className="badge badge-blue mb-4 inline-flex">Career Paths</span>
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Courses Across Top Universities</h1>
-          <p className="text-light-muted dark:text-dark-muted max-w-2xl">
-            Start with a general course name, then view the list of colleges that offer that course.
+          <h1 className="text-3xl font-bold mb-2">Explore Courses</h1>
+          <p className="text-light-muted dark:text-dark-muted">
+            Find the right course across {courses.length} listings in top universities.
           </p>
         </div>
 
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-light-muted dark:text-dark-muted" />
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={selectedCourse ? 'Search college or location...' : 'Search course name...'}
-            className="w-full rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative w-full md:w-80">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-light-muted" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search course, exam or college..."
+              className="input-field pl-11"
+            />
+          </div>
+          <button onClick={() => setShowFilters(!showFilters)} className="md:hidden p-2.5 rounded-xl border border-light-border dark:border-dark-border">
+            <Filter className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-8">
-        {categories.map((category) => (
-          <button
-            key={category}
-            type="button"
-            onClick={() => {
-              setSearch('');
-              setSearchParams(category === 'All' ? {} : { category });
-            }}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === category
-                ? 'bg-primary text-white'
-                : 'bg-light-card dark:bg-dark-card hover:bg-primary-50 dark:hover:bg-dark-border'
-            }`}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
-
-      {selectedCourse && !loading && (
-        <div className="card p-5 mb-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex gap-8">
+        {/* Course Filter Sidebar */}
+        <aside className={`${showFilters ? 'fixed inset-0 z-50 bg-white dark:bg-dark-bg p-6 overflow-y-auto' : 'hidden'} md:block md:w-64 shrink-0`}>
+          <div className="flex items-center justify-between mb-6 md:hidden">
+            <h3 className="font-bold">Filters</h3>
+            <button onClick={() => setShowFilters(false)}><X className="w-5 h-5" /></button>
+          </div>
+          
+          <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold mb-2">{selectedCourse}</h2>
-              <p className="text-light-muted dark:text-dark-muted">
-                This course is available in <span className="font-semibold text-light-text dark:text-dark-text">{filteredColleges.length}</span> college{filteredColleges.length === 1 ? '' : 's'}.
-              </p>
+              <h4 className="font-semibold text-sm mb-3">Course Level</h4>
+              <div className="space-y-2">
+                {['All', 'UG', 'PG', 'Diploma', 'PhD', 'Others'].map((cat) => (
+                  <label key={cat} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
+                    <input 
+                      type="radio" 
+                      name="category" 
+                      checked={selectedCategory === cat} 
+                      onChange={() => setSearchParams(cat === 'All' ? {} : { category: cat })} 
+                      className="text-primary focus:ring-primary"
+                    />
+                    {cat}
+                  </label>
+                ))}
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setSearch('');
-                setSearchParams(selectedCategory === 'All' ? {} : { category: selectedCategory });
-              }}
-              className="btn-outline inline-flex items-center gap-2 !py-2"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back To Courses
-            </button>
+
+            <div>
+              <h4 className="font-semibold text-sm mb-3">Popular Exclusions</h4>
+              <label className="flex items-center gap-2 py-1 cursor-pointer text-sm text-light-muted italic">
+                Grouping similar courses... (Auto)
+              </label>
+            </div>
           </div>
-        </div>
-      )}
+        </aside>
 
-      {loading ? (
-        <CardSkeleton count={6} />
-      ) : selectedCourse ? (
-        filteredColleges.length === 0 ? (
-          <div className="card p-8 text-center">
-            <h2 className="text-xl font-semibold mb-2">No colleges found</h2>
-            <p className="text-light-muted dark:text-dark-muted mb-5">
-              No colleges matched the current search for this course.
-            </p>
-            <button type="button" onClick={() => setSearch('')} className="btn-primary">
-              Clear Search
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredColleges.map((course) => (
-              <div key={course._id} className="card p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className="badge badge-orange">{course.category}</span>
-                      {course.duration ? <span className="badge badge-blue">{course.duration} Years</span> : null}
-                    </div>
-                    <h2 className="text-xl font-semibold">{course.universityId?.name || 'University not linked'}</h2>
-                  </div>
-                </div>
+        <div className="flex-1">
+          {selectedCourse && !loading && (
+            <div className="card p-5 mb-8 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">{selectedCourse}</h2>
+                <p className="text-sm text-light-muted">Available in {filteredColleges.length} colleges</p>
+              </div>
+              <button onClick={() => setSearchParams({})} className="btn-outline !py-2 inline-flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" /> Back
+              </button>
+            </div>
+          )}
 
-                <div className="space-y-3 text-sm mb-5">
-                  <p className="flex items-center gap-2 text-light-muted dark:text-dark-muted">
-                    <GraduationCap className="w-4 h-4 text-primary" />
-                    <span className="text-light-text dark:text-dark-text font-medium">{selectedCourse}</span>
-                  </p>
-                  <p className="flex items-center gap-2 text-light-muted dark:text-dark-muted">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    {course.universityId?.city && course.universityId?.state
-                      ? `${course.universityId.city}, ${course.universityId.state}`
-                      : 'Location unavailable'}
-                  </p>
-                  <p className="text-light-muted dark:text-dark-muted">
-                    Eligibility: <span className="text-light-text dark:text-dark-text">{course.eligibility || 'Check with university'}</span>
-                  </p>
-                </div>
-
-                {!!course.specializations?.length && (
-                  <div className="mb-5">
-                    <p className="text-sm font-medium mb-3">Available Specializations</p>
-                    <div className="flex flex-wrap gap-2">
-                      {course.specializations.slice(0, 6).map((specialization) => (
-                        <span key={specialization.name} className="px-3 py-1 rounded-full text-xs bg-primary-50 text-primary">
-                          {specialization.name}
-                        </span>
-                      ))}
+          {loading ? (
+            <CardSkeleton count={6} />
+          ) : selectedCourse ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredColleges.map((course) => (
+                <div key={course._id} className="card p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <span className="badge badge-orange mb-2">{course.category}</span>
+                      <h2 className="text-xl font-semibold">{course.universityId?.name}</h2>
+                      <p className="text-sm text-light-muted flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{course.universityId?.city}, {course.universityId?.state}</p>
                     </div>
                   </div>
-                )}
-
-                <div className="flex flex-wrap gap-3">
-                  {course.universityId?.slug ? (
-                    <Link to={`/universities/${course.universityId.slug}`} className="btn-primary inline-flex items-center gap-2">
-                      <BookOpen className="w-4 h-4" /> View University
-                    </Link>
-                  ) : null}
+                  <div className="flex gap-4 text-sm mb-4">
+                     {course.duration && <p>Duration: <strong>{course.duration} Years</strong></p>}
+                     {course.feesPerYear && <p>Fees: <strong>₹{course.feesPerYear.toLocaleString()} /yr</strong></p>}
+                  </div>
+                  <Link to={`/universities/${course.universityId?.slug}`} className="btn-primary w-full text-center block !py-2 text-sm">View University</Link>
                 </div>
-              </div>
-            ))}
-          </div>
-        )
-      ) : filteredCourseGroups.length === 0 ? (
-        <div className="card p-8 text-center">
-          <h2 className="text-xl font-semibold mb-2">No courses found</h2>
-          <p className="text-light-muted dark:text-dark-muted mb-5">
-            Backend is connected, but this filter/search combination returned no results.
-          </p>
-          <button type="button" onClick={() => { setSearch(''); setSearchParams({}); }} className="btn-primary">
-            Reset Filters
-          </button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCourseGroups.map((group) => (
+                <button
+                  key={group.normName}
+                  onClick={() => setSearchParams({ ...(selectedCategory !== 'All' ? { category: selectedCategory } : {}), course: group.name })}
+                  className="card p-6 text-left hover:border-primary transition-all group"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="badge badge-blue">{group.category}</span>
+                    {group.duration && <span className="text-xs text-light-muted">{group.duration} Yrs</span>}
+                  </div>
+                  <h2 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">{group.name}</h2>
+                  <p className="text-sm text-primary font-medium mb-4">
+                    Available in {group.collegeCount} college{group.collegeCount === 1 ? '' : 's'}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {group.entranceExams.slice(0, 2).map((exam) => (
+                      <span key={exam} className="text-[10px] px-2 py-0.5 rounded bg-light-card dark:bg-dark-border">{exam}</span>
+                    ))}
+                    {group.entranceExams.length > 2 && <span className="text-[10px] text-light-muted">+{group.entranceExams.length - 2} more</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredCourseGroups.map((group) => (
-            <button
-              key={group.name}
-              type="button"
-              onClick={() => setSearchParams({
-                ...(selectedCategory !== 'All' ? { category: selectedCategory } : {}),
-                course: group.name,
-              })}
-              className="card p-6 text-left hover:border-primary transition-colors"
-            >
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="badge badge-orange">{group.category}</span>
-                {group.duration ? <span className="badge badge-blue">{group.duration} Years</span> : null}
-              </div>
-              <h2 className="text-xl font-semibold mb-3">{group.name}</h2>
-              <p className="text-sm text-light-muted dark:text-dark-muted mb-4">
-                Available in {group.collegeCount} college{group.collegeCount === 1 ? '' : 's'}
-              </p>
-              {!!group.entranceExams.length && (
-                <div className="flex flex-wrap gap-2">
-                  {group.entranceExams.slice(0, 3).map((exam) => (
-                    <span key={exam} className="px-3 py-1 rounded-full text-xs bg-light-card dark:bg-dark-card">
-                      {exam}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

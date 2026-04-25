@@ -28,7 +28,8 @@ const universitySchema = new mongoose.Schema({
     campusSizeAcres: Number,
     avgPackageLPA: Number,
     highestPackageLPA: Number,
-    placementPercentage: Number
+    placementPercentage: Number,
+    totalCoursesCount: Number
   },
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   highlights: [String],

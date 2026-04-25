@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const University = require('../models/University');
 const Course = require('../models/Course');
 const slugify = require('slugify');
@@ -148,7 +149,13 @@ exports.getUniversities = async (req, res) => {
 
 exports.getUniversity = async (req, res) => {
   try {
-    const university = await University.findOne({ slug: req.params.id }).populate('courses') || await University.findById(req.params.id).populate('courses');
+    const { id } = req.params;
+    let university = await University.findOne({ slug: id }).populate('courses');
+    
+    if (!university && mongoose.Types.ObjectId.isValid(id)) {
+      university = await University.findById(id).populate('courses');
+    }
+    
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
     res.json({ success: true, data: university });
   } catch (error) {
