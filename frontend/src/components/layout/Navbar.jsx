@@ -37,8 +37,15 @@ export default function Navbar() {
     const timer = setTimeout(async () => {
       if (searchQuery.length >= 2) {
         try {
-          const { data } = await api.get(`/universities/search?q=${searchQuery}`);
-          setSearchResults(data.data || []);
+          const [uniRes, courseRes] = await Promise.all([
+            api.get(`/universities/search?q=${searchQuery}`),
+            api.get(`/courses?name=${searchQuery}`)
+          ]);
+          
+          const unis = (uniRes.data.data || []).map(u => ({ ...u, _type: 'university' }));
+          const courses = (courseRes.data.data || []).map(c => ({ ...c, _type: 'course' }));
+          
+          setSearchResults([...unis, ...courses].slice(0, 8)); // limit to top 8 combined
           setShowSearch(true);
         } catch { setSearchResults([]); }
       } else {
@@ -95,13 +102,27 @@ export default function Navbar() {
                 className="pl-10 pr-4 py-2 w-64 text-sm rounded-xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card focus:ring-2 focus:ring-primary outline-none"
               />
               {showSearch && searchResults.length > 0 && (
-                <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl shadow-lg overflow-hidden">
+                <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl shadow-lg overflow-hidden z-50">
                   {searchResults.map(r => (
-                    <button key={r._id} onClick={() => { navigate(`/universities/${r.slug}`); setShowSearch(false); setSearchQuery(''); }}
+                    <button key={r._id} onClick={() => { 
+                        if (r._type === 'university') navigate(`/universities/${r.slug}`);
+                        else if (r.universityId?.slug) navigate(`/universities/${r.universityId.slug}`);
+                        setShowSearch(false); 
+                        setSearchQuery(''); 
+                      }}
                       className="w-full px-4 py-3 text-left hover:bg-light-card dark:hover:bg-dark-border flex items-center gap-3">
                       <div>
-                        <p className="text-sm font-medium">{r.name}</p>
-                        <p className="text-xs text-light-muted">{r.city}, {r.state}</p>
+                        <div className="flex items-center gap-2">
+                           <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${r._type === 'university' ? 'bg-primary/10 text-primary' : 'bg-indigo-500/10 text-indigo-500'}`}>
+                             {r._type}
+                           </span>
+                           <p className="text-sm font-medium line-clamp-1">{r.name}</p>
+                        </div>
+                        {r._type === 'university' ? (
+                          <p className="text-xs text-light-muted">{r.city}, {r.state}</p>
+                        ) : (
+                          <p className="text-xs text-light-muted">{r.universityId?.name}</p>
+                        )}
                       </div>
                     </button>
                   ))}
@@ -127,10 +148,10 @@ export default function Navbar() {
                       <p className="text-sm font-semibold">{user.name}</p>
                       <p className="text-xs text-light-muted">{user.email}</p>
                     </div>
-                    <Link to="/profile" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-light-card dark:hover:bg-dark-border" onClick={() => setShowDropdown(false)}>
+                    <Link to="/profile?tab=overview" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-light-card dark:hover:bg-dark-border" onClick={() => setShowDropdown(false)}>
                       <User className="w-4 h-4" /> Profile
                     </Link>
-                    <Link to="/profile?tab=saved" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-light-card dark:hover:bg-dark-border" onClick={() => setShowDropdown(false)}>
+                    <Link to="/profile?tab=saved-colleges" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-light-card dark:hover:bg-dark-border" onClick={() => setShowDropdown(false)}>
                       <Bookmark className="w-4 h-4" /> Saved
                     </Link>
                     <Link to="/profile?tab=settings" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-light-card dark:hover:bg-dark-border" onClick={() => setShowDropdown(false)}>

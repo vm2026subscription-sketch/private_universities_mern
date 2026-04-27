@@ -4,9 +4,9 @@ exports.getCourses = async (req, res) => {
   try {
     const { category, universityId, name } = req.query;
     const filter = {};
-    if (category) filter.category = category;
+    if (category) filter.category = { $regex: new RegExp(`^${category}$`, 'i') };
     if (universityId) filter.universityId = universityId;
-    if (name) filter.name = { $regex: new RegExp(`^${name}$`, 'i') };
+    if (name) filter.name = { $regex: new RegExp(name, 'i') };
     const courses = await Course.find(filter).populate('universityId', 'name slug city state');
     res.json({ success: true, data: courses });
   } catch (error) {

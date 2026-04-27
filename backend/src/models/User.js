@@ -20,9 +20,28 @@ const userSchema = new mongoose.Schema({
     preferredStates: [String],
     budgetMin: Number,
     budgetMax: Number,
-    targetYear: Number
+    targetYear: Number,
+    collegeType: { type: String, enum: ['private', 'deemed', 'both'], default: 'both' }
   },
   savedUniversities: [{ type: mongoose.Schema.Types.ObjectId, ref: 'University' }],
+  savedCourses:      [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
+  applications: [{
+    universityId: { type: mongoose.Schema.Types.ObjectId, ref: 'University' },
+    status: { type: String, enum: ['applied', 'pending', 'accepted', 'rejected'], default: 'pending' },
+    appliedDate: { type: Date, default: Date.now },
+    notes: String
+  }],
+  notifications: [{
+    title: String,
+    message: String,
+    type: { type: String, enum: ['deadline', 'update', 'system'], default: 'system' },
+    read: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+  }],
+  // keyed by universityId string → rating 1-5
+  ratings: { type: Map, of: Number, default: {} },
+  // keyed by universityId string → note text
+  notes:   { type: Map, of: String, default: {} },
   isEmailVerified: { type: Boolean, default: false },
   emailVerificationCode: String,
   emailVerificationExpiry: Date,

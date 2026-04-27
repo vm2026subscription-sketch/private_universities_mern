@@ -157,6 +157,11 @@ exports.getUniversity = async (req, res) => {
     }
     
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    
+    // Increment views for trend analysis
+    university.views = (university.views || 0) + 1;
+    await university.save();
+
     res.json({ success: true, data: university });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -254,6 +259,20 @@ exports.compareUniversities = async (req, res) => {
         },
       },
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getTrends = async (req, res) => {
+  try {
+    const popularUniversities = await University.find().sort({ views: -1 }).limit(6).select('name slug views logoUrl city state');
+    const trendingCourses = await Course.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 8 }
+    ]);
+    res.json({ success: true, popularUniversities, trendingCourses });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

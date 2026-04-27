@@ -14,7 +14,7 @@ const QUICK_PROMPTS = [
 const DEFAULT_POSITION = { x: 24, y: 24 };
 
 export default function AiChatWidget() {
-  const { isOpen, closeChat } = useAiChat();
+  const { isOpen, openChat, closeChat } = useAiChat();
   const { user } = useAuth();
   const [input, setInput] = useState('');
   const [minimized, setMinimized] = useState(false);
@@ -28,7 +28,23 @@ export default function AiChatWidget() {
   const [loading, setLoading] = useState(false);
   const dragRef = useRef({ active: false, offsetX: 0, offsetY: 0 });
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return (
+      <div className="fixed bottom-6 right-6 z-[70] group">
+        <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-dark-card border border-light-border dark:border-dark-border px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap text-xs font-semibold">
+          Ask Vidyarthi Mitra AI ✨
+        </div>
+        <button
+          type="button"
+          onClick={openChat}
+          className="rounded-full bg-primary p-4 text-white shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-white/20 animate-ping rounded-full" />
+          <Bot className="w-6 h-6 relative z-10" />
+        </button>
+      </div>
+    );
+  }
 
   const updatePosition = (clientX, clientY) => {
     const nextX = Math.max(12, Math.min(window.innerWidth - 380, clientX - dragRef.current.offsetX));

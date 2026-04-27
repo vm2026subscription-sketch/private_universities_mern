@@ -5,6 +5,7 @@ import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
+import { calculateFitScore } from '../utils/fitScore';
 
 const states = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -25,15 +26,17 @@ export default function Universities() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [userPrefs, setUserPrefs] = useState(null);
   
   const { user } = useAuth();
   const [savedIds, setSavedIds] = useState([]);
 
   useEffect(() => {
     if (user) {
-      api.get('/users/saved-universities').then(({ data }) => setSavedIds(data.data.map(u => u._id))).catch(() => {});
-    } else {
-      setSavedIds([]);
+      api.get('/users/profile').then(({ data }) => {
+        setSavedIds(data.data.savedUniversities?.map(u => u._id) || []);
+        setUserPrefs(data.data.profile || null);
+      }).catch(console.error);
     }
   }, [user]);
 
@@ -146,10 +149,16 @@ export default function Universities() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {universities.map(u => {
                  const isSaved = savedIds.includes(u._id);
+                 const fitScore = calculateFitScore(u, userPrefs);
                  
                  return (
-                <div key={u._id} className="card p-5">
-                  <div className="flex items-start justify-between mb-3">
+                <div key={u._id} className="card p-5 relative overflow-hidden group">
+                  {user && fitScore > 50 && (
+                    <div className="absolute top-0 right-0 bg-primary/10 text-primary text-[10px] font-black px-3 py-1 rounded-bl-xl border-b border-l border-primary/20">
+                      {fitScore}% MATCH
+                    </div>
+                  )}
+                  <div className="flex items-start justify-between mb-3 mt-2">
                     <div className="flex-1">
                       <Link to={`/universities/${u.slug}`} className="font-semibold hover:text-primary line-clamp-1">{u.name}</Link>
                       <p className="text-sm text-light-muted flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{u.city}, {u.state}</p>

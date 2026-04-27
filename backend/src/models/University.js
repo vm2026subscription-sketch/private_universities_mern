@@ -14,6 +14,9 @@ const universitySchema = new mongoose.Schema({
   description: String,
   logoUrl: String,
   website: String,
+  latitude: Number,
+  longitude: Number,
+  views: { type: Number, default: 0 },
   bannerImageUrl: String,
   approvals: {
     ugc: { type: Boolean, default: false },

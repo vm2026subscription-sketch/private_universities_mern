@@ -4,8 +4,9 @@ import { MapPin, Globe, Phone, Mail, BookOpen, Users, Award, Building, Bookmark,
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
+import QASection from '../components/QASection';
 
-const tabs = ['Overview', 'Courses', 'Admissions', 'Placements', 'Campus', 'Scholarships', 'Reviews', 'News'];
+const tabs = ['Overview', 'Courses', 'Admissions', 'Placements', 'Campus', 'Scholarships', 'Q&A', 'News'];
 
 export default function UniversityDetail() {
   const { slug } = useParams();
@@ -17,7 +18,20 @@ export default function UniversityDetail() {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    api.get(`/universities/${slug}`).then(({ data }) => setUni(data.data)).catch(() => {}).finally(() => setLoading(false));
+    api.get(`/universities/${slug}`)
+      .then(({ data }) => {
+        const u = data.data;
+        setUni(u);
+        if (u) {
+          // Track recently viewed in localStorage (max 10)
+          const prev = JSON.parse(localStorage.getItem('vm_recent') || '[]');
+          const filtered = prev.filter(r => r._id !== u._id);
+          const entry = { _id: u._id, name: u.name, slug: u.slug, state: u.state, city: u.city, type: u.type, naacGrade: u.naacGrade, nirfRank: u.nirfRank };
+          localStorage.setItem('vm_recent', JSON.stringify([entry, ...filtered].slice(0, 10)));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [slug]);
 
   useEffect(() => {
@@ -344,7 +358,7 @@ export default function UniversityDetail() {
         )}
 
         {activeTab === 6 && (
-          <p className="text-light-muted text-center py-8">Reviews can be added in a later phase once the review system is enabled.</p>
+          <QASection universityId={uni._id} user={user} />
         )}
 
         {activeTab === 7 && (

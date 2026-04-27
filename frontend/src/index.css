@@ -1,10 +1,11 @@
+@import "leaflet/dist/leaflet.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-light-bg text-light-text font-sans antialiased;
+    @apply bg-light-bg text-light-text font-sans antialiased transition-colors duration-300;
   }
   .dark body, body.dark {
     @apply bg-dark-bg text-dark-text;
@@ -13,16 +14,26 @@
 
 @layer components {
   .card {
-    @apply bg-light-card border border-light-border rounded-2xl shadow-sm hover:shadow-md transition-shadow;
+    @apply bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300;
   }
-  .dark .card {
-    @apply bg-dark-card border-dark-border;
+  .glass {
+    @apply bg-white/70 dark:bg-dark-card/70 backdrop-blur-md border border-white/20 dark:border-dark-border/20;
+  }
+  .glow {
+    @apply shadow-[0_0_20px_rgba(255,107,0,0.15)] hover:shadow-[0_0_30px_rgba(255,107,0,0.3)];
   }
   .btn-primary {
-    @apply bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-dark transition-colors;
+    @apply bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-dark transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/25;
   }
   .btn-outline {
-    @apply border-2 border-primary text-primary px-6 py-3 rounded-xl font-semibold hover:bg-primary hover:text-white transition-colors;
+    @apply border-2 border-primary/20 text-primary px-6 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all hover:scale-[1.02];
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
   }
   .badge {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
