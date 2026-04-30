@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
+const otpService = require('../services/otpService');
 
 const ADMIN_EMAIL = 'vidyarthimitrauniversity@gmail.com';
 const getAdminEmail = () => (process.env.ADMIN_EMAIL || ADMIN_EMAIL).toLowerCase();
@@ -18,9 +19,15 @@ const getSafeUser = (user) => ({
   id: user._id,
   name: user.name,
   email: user.email,
+  phone: user.phone,
+  countryCode: user.countryCode,
   role: user.role,
   avatar: user.avatar,
   isEmailVerified: user.isEmailVerified,
+  isPhoneVerified: user.isPhoneVerified,
+  authProvider: user.authProvider,
+  status: user.status,
+  profileCompleteness: user.profileCompleteness,
 });
 
 const setVerificationCode = (user) => {
@@ -45,14 +52,32 @@ const sendVerificationEmail = async (user, code) => {
   });
 };
 
+const updateLoginTracking = async (user) => {
+  user.lastLogin = new Date();
+  user.loginCount = (user.loginCount || 0) + 1;
+  await user.save();
+};
+
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone, countryCode } = req.body;
     const normalizedEmail = email.toLowerCase();
     const exists = await User.findOne({ email: normalizedEmail });
     if (exists) return res.status(400).json({ success: false, message: 'Email already registered' });
+
+    if (phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
+    }
+
     const role = normalizedEmail === getAdminEmail() ? 'admin' : 'user';
-    const user = await User.create({ name, email: normalizedEmail, password, role });
+    const userData = { name, email: normalizedEmail, password, role, authProvider: 'local' };
+    if (phone) {
+      userData.phone = phone;
+      userData.countryCode = countryCode || '+91';
+    }
+
+    const user = await User.create(userData);
     const code = setVerificationCode(user);
     await user.save();
 
@@ -78,9 +103,13 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user || !user.password) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    if (user.status === 'banned') return res.status(403).json({ success: false, message: 'Account has been banned' });
+    if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account is suspended' });
+
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
     await ensureAdminRole(user);
+    await updateLoginTracking(user);
     const token = generateToken(user._id);
     res.json({ success: true, token, user: getSafeUser(user) });
   } catch (error) {
@@ -92,6 +121,70 @@ exports.getMe = async (req, res) => {
   await ensureAdminRole(req.user);
   res.json({ success: true, user: getSafeUser(req.user) });
 };
+
+// ── Phone OTP Auth ──────────────────────────────────────────────
+
+exports.sendOtp = async (req, res) => {
+  try {
+    const { identifier, type = 'sms', purpose = 'login' } = req.body;
+    if (!identifier) return res.status(400).json({ success: false, message: 'Phone number or email is required' });
+
+    const result = await otpService.sendOtp({
+      identifier,
+      type,
+      purpose,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({ success: true, message: result.message, expiresAt: result.expiresAt });
+  } catch (error) {
+    res.status(429).json({ success: false, message: error.message });
+  }
+};
+
+exports.verifyPhoneOtp = async (req, res) => {
+  try {
+    const { phone, code, name, countryCode } = req.body;
+    if (!phone || !code) return res.status(400).json({ success: false, message: 'Phone and OTP code are required' });
+
+    const verification = await otpService.verifyOtp(phone, code);
+    if (!verification.success) {
+      return res.status(400).json({ success: false, message: verification.message });
+    }
+
+    let user = await User.findOne({ phone });
+
+    if (!user) {
+      // Auto-register on first phone OTP login
+      const email = `${phone.replace(/[^0-9]/g, '')}@phone.vidyarthimitra.local`;
+      user = await User.create({
+        name: name || `User ${phone.slice(-4)}`,
+        email,
+        phone,
+        countryCode: countryCode || '+91',
+        isPhoneVerified: true,
+        authProvider: 'phone',
+        status: 'active'
+      });
+    } else {
+      if (user.status === 'banned') return res.status(403).json({ success: false, message: 'Account has been banned' });
+      if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account is suspended' });
+      user.isPhoneVerified = true;
+      await user.save();
+    }
+
+    await ensureAdminRole(user);
+    await updateLoginTracking(user);
+    const token = generateToken(user._id);
+
+    res.json({ success: true, token, user: getSafeUser(user), isNewUser: !user.isEmailVerified });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ── Email Verification ──────────────────────────────────────────
 
 exports.verifyEmail = async (req, res) => {
   try {
@@ -134,6 +227,8 @@ exports.resendVerificationEmail = async (req, res) => {
   }
 };
 
+// ── Password Reset ──────────────────────────────────────────────
+
 exports.forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -170,11 +265,18 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+// ── Google OAuth ────────────────────────────────────────────────
+
 exports.googleCallback = async (req, res) => {
   if (!req.user.isEmailVerified) {
     req.user.isEmailVerified = true;
     await req.user.save();
   }
+  if (req.user.authProvider === 'local' && req.user.googleId) {
+    req.user.authProvider = 'google';
+    await req.user.save();
+  }
+  await updateLoginTracking(req.user);
   const token = generateToken(req.user._id);
   res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
 };

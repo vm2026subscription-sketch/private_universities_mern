@@ -1,7 +1,16 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import api from '../utils/api';
 
 const AuthContext = createContext();
+
+const getGoogleAuthUrl = () => {
+  const baseUrl = import.meta.env.VITE_API_URL || '/api/v1';
+  const normalizedBaseUrl = /^https?:\/\//i.test(baseUrl)
+    ? baseUrl
+    : `${baseUrl.startsWith('/') ? '' : '/'}${baseUrl}`;
+
+  return `${normalizedBaseUrl.replace(/\/$/, '')}/auth/google`;
+};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -10,16 +19,28 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(false);
 
+  const setAuthSession = (token, userData) => {
+    localStorage.setItem('vm_token', token);
+    localStorage.setItem('vm_user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const clearAuthSession = () => {
+    localStorage.removeItem('vm_token');
+    localStorage.removeItem('vm_user');
+    setUser(null);
+  };
+
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
-    localStorage.setItem('vm_token', data.token);
-    localStorage.setItem('vm_user', JSON.stringify(data.user));
-    setUser(data.user);
+    setAuthSession(data.token, data.user);
     return data;
   };
 
-  const register = async (name, email, password) => {
-    const { data } = await api.post('/auth/register', { name, email, password });
+  const register = async (name, email, password, phone, countryCode) => {
+    const payload = { name, email, password };
+    if (phone) { payload.phone = phone; payload.countryCode = countryCode || '+91'; }
+    const { data } = await api.post('/auth/register', payload);
     return data;
   };
 
@@ -33,10 +54,41 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  // Phone OTP methods
+  const sendOtp = async (identifier, type = 'sms', purpose = 'login') => {
+    const { data } = await api.post('/auth/send-otp', { identifier, type, purpose });
+    return data;
+  };
+
+  const verifyPhoneOtp = async (phone, code, name, countryCode) => {
+    const payload = { phone, code };
+    if (name) payload.name = name;
+    if (countryCode) payload.countryCode = countryCode;
+    const { data } = await api.post('/auth/verify-otp', payload);
+    setAuthSession(data.token, data.user);
+    return data;
+  };
+
+  const continueWithGoogle = () => {
+    window.location.assign(getGoogleAuthUrl());
+  };
+
+  const completeGoogleAuth = async (token) => {
+    localStorage.setItem('vm_token', token);
+
+    try {
+      const { data } = await api.get('/auth/me');
+      localStorage.setItem('vm_user', JSON.stringify(data.user));
+      setUser(data.user);
+      return data.user;
+    } catch (error) {
+      clearAuthSession();
+      throw error;
+    }
+  };
+
   const logout = () => {
-    localStorage.removeItem('vm_token');
-    localStorage.removeItem('vm_user');
-    setUser(null);
+    clearAuthSession();
   };
 
   const updateUser = (userData) => {
@@ -45,7 +97,11 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, verifyEmail, resendVerificationEmail, logout, updateUser, loading }}>
+    <AuthContext.Provider value={{
+      user, login, register, verifyEmail, resendVerificationEmail,
+      sendOtp, verifyPhoneOtp,
+      continueWithGoogle, completeGoogleAuth, logout, updateUser, loading
+    }}>
       {children}
     </AuthContext.Provider>
   );

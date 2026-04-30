@@ -22,32 +22,16 @@ const courseCategories = [
   { name: 'Nursing', icon: Heart }, { name: 'Arts', icon: BookMarked },
 ];
 
-const loanData = [
-  { bank: 'SBI', maxLoan: '₹1.5 Cr', rate: '8.15%', fee: '0.5%', tenure: '15 years', collateral: 'Above ₹7.5L' },
-  { bank: 'HDFC', maxLoan: '₹1 Cr', rate: '9.00%', fee: '1%', tenure: '12 years', collateral: 'Above ₹4L' },
-  { bank: 'Axis Bank', maxLoan: '₹75L', rate: '9.50%', fee: '1%', tenure: '10 years', collateral: 'Above ₹4L' },
-  { bank: 'Bank of Baroda', maxLoan: '₹80L', rate: '8.45%', fee: '0.5%', tenure: '15 years', collateral: 'Above ₹4L' },
-  { bank: 'PNB', maxLoan: '₹60L', rate: '8.55%', fee: '0.5%', tenure: '15 years', collateral: 'Above ₹4L' },
-  { bank: 'Canara Bank', maxLoan: '₹40L', rate: '8.60%', fee: '0.5%', tenure: '10 years', collateral: 'Above ₹4L' },
-];
-
 const tabItems = [
-  { label: 'News & Updates' },
   { label: 'Exams' },
   { label: 'Notifications' },
-  { label: 'Education Loans' },
   { label: 'University Comparison' },
   { label: 'Test Series', href: 'https://admin-panel-three-sable.vercel.app/' },
 ];
-const EXTERNAL_LINKS = {
-  news: 'https://epaper.vidyarthimitra.org/',
-  tests: 'https://admin-panel-three-sable.vercel.app/',
-};
 
 export default function Home() {
   const { openChat } = useAiChat();
   const [activeTab, setActiveTab] = useState(0);
-  const [news, setNews] = useState([]);
   const [exams, setExams] = useState([]);
   const [universities, setUniversities] = useState([]);
   const [questions, setQuestions] = useState([]);
@@ -55,12 +39,10 @@ export default function Home() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/news/featured').catch(() => ({ data: { data: [] } })),
       api.get('/exams/upcoming').catch(() => ({ data: { data: [] } })),
       api.get('/universities?limit=8').catch(() => ({ data: { data: [] } })),
       api.get('/questions').catch(() => ({ data: { data: [] } })),
-    ]).then(([n, e, u, q]) => {
-      setNews(n.data.data || []);
+    ]).then(([e, u, q]) => {
       setExams(e.data.data || []);
       setUniversities(u.data.data || []);
       setQuestions((q.data.data || []).slice(0, 5));
@@ -102,7 +84,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6-Tab Section */}
+      {/* Explore Section */}
       <section className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex overflow-x-auto gap-2 mb-8 pb-2 scrollbar-hide">
           {tabItems.map((tab, i) => (
@@ -126,26 +108,6 @@ export default function Home() {
         </div>
 
         {activeTab === 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {news.length === 0 && !loading && <p className="text-light-muted col-span-3 text-center py-8">No news available yet. Connect to backend to see data.</p>}
-            {news.map((n, i) => (
-              <div key={i} className="card p-5">
-                <span className="badge badge-orange mb-3">{n.category}</span>
-                <h3 className="font-semibold mb-2 line-clamp-2">{n.title}</h3>
-                <p className="text-sm text-light-muted dark:text-dark-muted line-clamp-2 mb-3">{n.summary}</p>
-                <div className="flex items-center justify-between text-xs text-light-muted">
-                  <span>{n.source}</span>
-                  <span>{n.publishedAt && new Date(n.publishedAt).toLocaleDateString()}</span>
-                </div>
-                <a href={EXTERNAL_LINKS.news} target="_blank" rel="noreferrer" className="inline-flex mt-4 text-sm font-medium text-primary hover:underline">
-                  Open E-Paper
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 1 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {exams.map((e, i) => (
               <div key={i} className="card p-5">
@@ -166,7 +128,7 @@ export default function Home() {
           </div>
         )}
 
-        {activeTab === 2 && (
+        {activeTab === 1 && (
           <div className="space-y-4">
             {[
               { title: 'JEE Main 2026 Session 1 Registration Open', type: 'Admission', date: 'Nov 2025' },
@@ -186,38 +148,7 @@ export default function Home() {
           </div>
         )}
 
-        {activeTab === 3 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-light-border dark:border-dark-border">
-                  <th className="text-left py-3 px-4">Bank</th>
-                  <th className="text-left py-3 px-4">Max Loan</th>
-                  <th className="text-left py-3 px-4">Interest Rate</th>
-                  <th className="text-left py-3 px-4">Fee</th>
-                  <th className="text-left py-3 px-4">Tenure</th>
-                  <th className="text-left py-3 px-4">Collateral</th>
-                  <th className="py-3 px-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {loanData.map((l, i) => (
-                  <tr key={i} className="border-b border-light-border dark:border-dark-border hover:bg-light-card dark:hover:bg-dark-card">
-                    <td className="py-3 px-4 font-medium">{l.bank}</td>
-                    <td className="py-3 px-4">{l.maxLoan}</td>
-                    <td className="py-3 px-4">{l.rate}</td>
-                    <td className="py-3 px-4">{l.fee}</td>
-                    <td className="py-3 px-4">{l.tenure}</td>
-                    <td className="py-3 px-4">{l.collateral}</td>
-                    <td className="py-3 px-4"><button className="text-primary text-xs font-medium hover:underline">Apply</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === 4 && (
+        {activeTab === 2 && (
           <div className="card p-8 max-w-lg mx-auto text-center">
             <Target className="w-12 h-12 text-primary mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2">University Comparison</h3>

@@ -6,10 +6,6 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import logo from '../../assets/logo.png';
 
-const EXTERNAL_LINKS = {
-  news: 'https://epaper.vidyarthimitra.org/',
-};
-
 export default function Navbar() {
   const { dark, toggle } = useTheme();
   const { user, logout } = useAuth();
@@ -27,9 +23,7 @@ export default function Navbar() {
     { to: '/universities', label: 'Universities' },
     { to: '/courses', label: 'Courses' },
     { to: '/exams', label: 'Exams' },
-    { href: EXTERNAL_LINKS.news, label: 'News', external: true },
     { to: '/compare-universities', label: 'Comparison' },
-    { to: '/loans', label: 'Loans' },
   ];
   const visibleNavLinks = user?.role === 'admin' ? [...navLinks, { to: '/admin', label: 'Admin' }] : navLinks;
 
@@ -75,21 +69,9 @@ export default function Navbar() {
 
           <div className="hidden lg:flex items-center gap-1">
             {visibleNavLinks.map(l => (
-              l.external ? (
-                <a
-                  key={l.label}
-                  href={l.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 text-sm font-medium text-light-muted dark:text-dark-muted hover:text-primary transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-dark-card"
-                >
-                  {l.label}
-                </a>
-              ) : (
-                <Link key={l.to} to={l.to} className="px-3 py-2 text-sm font-medium text-light-muted dark:text-dark-muted hover:text-primary transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-dark-card">
-                  {l.label}
-                </Link>
-              )
+              <Link key={l.to} to={l.to} className="px-3 py-2 text-sm font-medium text-light-muted dark:text-dark-muted hover:text-primary transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-dark-card">
+                {l.label}
+              </Link>
             ))}
           </div>
 
@@ -183,22 +165,9 @@ export default function Navbar() {
               <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 w-full text-sm rounded-xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card outline-none" />
             </div>
             {visibleNavLinks.map(l => (
-              l.external ? (
-                <a
-                  key={l.label}
-                  href={l.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-2.5 text-sm font-medium hover:bg-light-card dark:hover:bg-dark-card rounded-lg"
-                >
-                  {l.label}
-                </a>
-              ) : (
-                <Link key={l.to} to={l.to} onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-medium hover:bg-light-card dark:hover:bg-dark-card rounded-lg">
-                  {l.label}
-                </Link>
-              )
+              <Link key={l.to} to={l.to} onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-medium hover:bg-light-card dark:hover:bg-dark-card rounded-lg">
+                {l.label}
+              </Link>
             ))}
             {!user && (
               <div className="flex gap-2 mt-4 px-4">

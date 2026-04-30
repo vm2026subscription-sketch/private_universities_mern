@@ -8,6 +8,26 @@ const userSchema = new mongoose.Schema({
   googleId: String,
   avatar: String,
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
+
+  // Multi-provider auth
+  phone: { type: String, unique: true, sparse: true },
+  countryCode: { type: String, default: '+91' },
+  isPhoneVerified: { type: Boolean, default: false },
+  phoneOtp: String,
+  phoneOtpExpiry: Date,
+  authProvider: { type: String, enum: ['local', 'google', 'phone'], default: 'local' },
+
+  // Account status & tracking
+  status: { type: String, enum: ['active', 'suspended', 'banned'], default: 'active' },
+  lastLogin: Date,
+  loginCount: { type: Number, default: 0 },
+  refreshTokens: [{
+    token: String,
+    device: String,
+    createdAt: { type: Date, default: Date.now }
+  }],
+
+  // Expanded profile
   profile: {
     age: Number,
     gender: String,
@@ -21,8 +41,19 @@ const userSchema = new mongoose.Schema({
     budgetMin: Number,
     budgetMax: Number,
     targetYear: Number,
-    collegeType: { type: String, enum: ['private', 'deemed', 'both'], default: 'both' }
+    collegeType: { type: String, enum: ['private', 'deemed', 'both'], default: 'both' },
+    dateOfBirth: Date,
+    bio: String,
+    education: [{
+      institution: String,
+      degree: String,
+      year: Number
+    }],
+    interests: [String],
+    profileImage: String
   },
+  profileCompleteness: { type: Number, default: 0 },
+
   savedUniversities: [{ type: mongoose.Schema.Types.ObjectId, ref: 'University' }],
   savedCourses:      [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   applications: [{

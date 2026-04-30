@@ -367,7 +367,13 @@ export default function UniversityDetail() {
             {uni.newsLinks?.length ? (
               <div className="space-y-3">
                 {uni.newsLinks.map((item, i) => (
-                  <a key={i} href={item.url} target="_blank" rel="noreferrer" className="block rounded-xl bg-light-card dark:bg-dark-border p-4 hover:border-primary border border-transparent transition-colors">
+                  <a
+                    key={i}
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-xl bg-light-card dark:bg-dark-border p-4 hover:border-primary border border-transparent transition-colors"
+                  >
                     <p className="font-medium">{item.title}</p>
                     <p className="text-xs text-light-muted dark:text-dark-muted mt-1">{item.url}</p>
                   </a>
@@ -378,6 +384,7 @@ export default function UniversityDetail() {
             )}
           </div>
         )}
+
       </div>
     </div>
   );

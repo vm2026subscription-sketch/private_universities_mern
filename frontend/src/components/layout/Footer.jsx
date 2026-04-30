@@ -2,10 +2,6 @@ import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import { useAiChat } from '../../context/AiChatContext';
 
-const EXTERNAL_LINKS = {
-  news: 'https://epaper.vidyarthimitra.org/',
-};
-
 export default function Footer() {
   const { openChat } = useAiChat();
 
@@ -25,14 +21,12 @@ export default function Footer() {
               <Link to="/universities" className="block text-sm text-light-muted dark:text-dark-muted hover:text-primary">Universities</Link>
               <Link to="/courses" className="block text-sm text-light-muted dark:text-dark-muted hover:text-primary">Courses</Link>
               <Link to="/exams" className="block text-sm text-light-muted dark:text-dark-muted hover:text-primary">Exams</Link>
-              <a href={EXTERNAL_LINKS.news} target="_blank" rel="noreferrer" className="block text-sm text-light-muted dark:text-dark-muted hover:text-primary">News</a>
             </div>
           </div>
           <div>
             <h4 className="font-semibold mb-3">Tools</h4>
             <div className="space-y-2">
               <Link to="/compare-universities" className="block text-sm text-light-muted dark:text-dark-muted hover:text-primary">University Comparison</Link>
-              <Link to="/loans" className="block text-sm text-light-muted dark:text-dark-muted hover:text-primary">Education Loans</Link>
               <button type="button" onClick={openChat} className="block text-sm text-light-muted dark:text-dark-muted hover:text-primary">Vidyarthi Mitra AI</button>
             </div>
           </div>
