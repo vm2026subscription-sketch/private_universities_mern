@@ -86,11 +86,10 @@ exports.generateQuestionHelp = async (req, res) => {
 
     res.json({ success: true, data: { suggestion } });
   } catch (error) {
+    console.error('Gemini Error:', error);
     res.status(500).json({
       success: false,
-      message: error.message.includes('GEMINI_API_KEY')
-        ? 'Gemini is not configured on the server'
-        : 'Unable to generate AI help right now',
+      message: error.message || 'Unable to generate AI help right now',
     });
   }
 };
