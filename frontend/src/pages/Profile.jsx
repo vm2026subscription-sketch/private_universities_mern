@@ -44,6 +44,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [compareList, setCompareList] = useState([]);
+  const [allUniversities, setAllUniversities] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -57,16 +58,18 @@ export default function Profile() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [profileRes, coursesRes, recommendRes, trendsRes] = await Promise.all([
+      const [profileRes, coursesRes, recommendRes, trendsRes, allUniRes] = await Promise.all([
         api.get('/users/profile'),
         api.get('/courses'),
         api.get('/users/recommendations'),
-        api.get('/universities/trends')
+        api.get('/universities/trends'),
+        api.get('/universities?limit=1000')
       ]);
       setFullUser(profileRes.data.data);
       setAllCourses(coursesRes.data.data || []);
       setRecommendations(recommendRes.data.data || []);
       setTrends(trendsRes.data);
+      setAllUniversities(allUniRes.data.data || []);
     } catch (err) {
       toast.error('Failed to load profile data');
     } finally {
@@ -508,7 +511,10 @@ export default function Profile() {
           )}
 
           {activeTab === 'map' && (
-            <GeographicView universities={fullUser?.savedUniversities || []} />
+            <GeographicView 
+              universities={allUniversities} 
+              savedUniversities={fullUser?.savedUniversities || []} 
+            />
           )}
 
           {activeTab === 'compare' && (
