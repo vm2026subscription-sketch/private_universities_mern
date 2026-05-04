@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- metas -->
+    <base href="/">
+    <meta charset="utf-8"/>
+    <meta name="author" content="ARNI UNIVERSITY"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="keywords" content="ARNI UNIVERSITY"/>
+    <meta name="description" content="ARNI UNIVERSITY"/>
+
+    <!-- title  -->
+    <title>ARNI University | Bringing Ambition to Life</title>
+    <script async="" defer="" src="https://www.instagram.com/embed.js"></script>
+    <!-- favicon -->
+    <link rel="shortcut icon" href="assets/img/icons/favicon.ico"/>
+    <link rel="apple-touch-icon" href="assets/img/icons/favicon.ico"/>
+    <link rel="apple-touch-icon" sizes="72x72" href="assets/img/icons/favicon.ico"/>
+    <link rel="apple-touch-icon" sizes="114x114" href="assets/img/icons/favicon.ico"/>
+
+    <!-- plugins -->
+    <link rel="stylesheet" href="assets/css/plugins.css"/>
+
+    <!-- search css -->
+    <link rel="stylesheet" href="assets/search/search.css"/>
+
+    <!-- quform css -->
+    <link rel="stylesheet" href="assets/quform/css/base.css">
+
+    <!-- core style css -->
+    <link href="assets/css/styles.css" rel="stylesheet"/>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<link rel="stylesheet" href="styles.css"></head>
+<body>
+
+<div id="preloader"></div>
+
+<div class="main-wrapper">
+    <app-root></app-root>
+</div>
+
+<!-- start scroll to top -->
+<!--<a href="assets/#!" class="scroll-to-top"><i class="fas fa-angle-up" aria-hidden="true"></i></a>-->
+<!-- end scroll to top -->
+
+<!-- jQuery -->
+<script src="assets/js/jquery.min.js"></script>
+
+<!-- popper js -->
+<script src="assets/js/popper.min.js"></script>
+
+<!-- bootstrap -->
+<script src="assets/js/bootstrap.min.js"></script>
+
+<!-- core.min.js -->
+<script src="assets/js/core.min.js"></script>
+
+<!-- search -->
+<script src="assets/search/search.js"></script>
+
+<!-- custom scripts -->
+<!--<script src="assets/js/main.js"></script>-->
+
+<!-- form plugins js -->
+<script src="assets/quform/js/plugins.js"></script>
+
+<!-- form scripts js -->
+<script src="assets/quform/js/scripts.js"></script>
+<script src="https://kit.fontawesome.com/8a85e8e3bb.js" crossorigin="anonymous"></script>
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+    var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+    (function () {
+        var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+        s1.async = true;
+        s1.src = 'https://embed.tawk.to/5ff52a3dc31c9117cb6bd856/1eraqq22f';
+        s1.charset = 'UTF-8';
+        s1.setAttribute('crossorigin', '*');
+        s0.parentNode.insertBefore(s1, s0);
+    })();
+</script>
+
+<script>
+    // document.body.style.zoom = 0.95;
+    // document.body.style.zoom = 0.8;
+</script>
+
+<!--End of Tawk.to Script-->
+<script src="runtime.js" type="module"></script><script src="polyfills.js" type="module"></script><script src="scripts.js" defer></script><script src="vendor.js" type="module"></script><script src="main.js" type="module"></script></body>
+</html>
