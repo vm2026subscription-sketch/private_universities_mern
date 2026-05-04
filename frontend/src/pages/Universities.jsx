@@ -126,7 +126,7 @@ export default function Universities() {
               {['both','private','deemed'].map(t => (
                 <label key={t} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
                   <input type="radio" name="type" checked={filters.type === t} onChange={() => { setFilters(f => ({ ...f, type: t })); setPage(1); }} />
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === 'both' ? 'Both Types' : t === 'deemed' ? 'Deemed to be University' : 'Private University'}
                 </label>
               ))}
             </div>
@@ -158,17 +158,37 @@ export default function Universities() {
                       {fitScore}% MATCH
                     </div>
                   )}
-                  <div className="flex items-start justify-between mb-3 mt-2">
-                    <div className="flex-1">
-                      <Link to={`/universities/${u.slug}`} className="font-semibold hover:text-primary line-clamp-1">{u.name}</Link>
-                      <p className="text-sm text-light-muted flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{u.city}, {u.state}</p>
+                  {/* University Logo */}
+                  <div className="flex items-center gap-3 mb-3">
+                    {u.logoUrl ? (
+                      <img
+                        src={u.logoUrl}
+                        alt={`${u.name} logo`}
+                        className="w-12 h-12 rounded-xl object-contain bg-white border border-light-border dark:border-dark-border p-1 shrink-0"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary text-lg font-bold shrink-0"
+                      style={{ display: u.logoUrl ? 'none' : 'flex' }}
+                    >
+                      {u.name?.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Link to={`/universities/${u.slug}`} className="font-semibold hover:text-primary line-clamp-1 block">{u.name}</Link>
+                      <p className="text-sm text-light-muted flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3 shrink-0" />{u.city}, {u.state}</p>
                     </div>
                     <button className={`p-1.5 rounded-lg border dark:border-dark-border ${isSaved ? 'bg-primary text-white border-primary' : 'hover:bg-light-card dark:hover:bg-dark-border'}`} onClick={() => handleBookmark(u._id)}>
                        <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
                     </button>
                   </div>
                   <div className="flex gap-2 flex-wrap mb-3">
-                    <span className={`badge ${u.type === 'deemed' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'badge-orange'}`}>{u.type}</span>
+                    <span className={`badge ${u.type === 'deemed' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'badge-orange'}`}>
+                      {u.type === 'deemed' ? 'Deemed to be University' : 'Private University'}
+                    </span>
                     {u.naacGrade && <span className="badge badge-green">NAAC {u.naacGrade}</span>}
                     {u.nirfRank && <span className="badge badge-blue">#{u.nirfRank}</span>}
                   </div>

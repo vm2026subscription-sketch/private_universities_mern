@@ -68,9 +68,24 @@ export default function UniversityDetail() {
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20 md:pb-8">
       <div className="card p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary text-2xl font-bold">
-            {uni.name?.charAt(0)}
+          {/* Logo with fallback to initial letter */}
+          <div className="w-20 h-20 rounded-2xl border border-light-border dark:border-dark-border bg-white dark:bg-dark-border flex items-center justify-center overflow-hidden shrink-0">
+            {uni.logoUrl ? (
+              <img
+                src={uni.logoUrl}
+                alt={`${uni.name} logo`}
+                className="w-full h-full object-contain p-1"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.classList.add('bg-primary-50');
+                  e.target.parentElement.innerHTML = `<span class="text-primary text-2xl font-bold">${uni.name?.charAt(0)}</span>`;
+                }}
+              />
+            ) : (
+              <span className="text-primary text-2xl font-bold bg-primary-50 dark:bg-dark-border w-full h-full flex items-center justify-center">{uni.name?.charAt(0)}</span>
+            )}
           </div>
+
           <div className="flex-1">
             <h1 className="text-2xl font-bold">{uni.name}</h1>
             <p className="text-light-muted flex items-center gap-1 mt-1"><MapPin className="w-4 h-4" />{uni.city}, {uni.state}</p>

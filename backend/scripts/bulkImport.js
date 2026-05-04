@@ -13,32 +13,75 @@ const DATA_DIR = path.resolve(__dirname, '../data');
 
 // Mapping for varied column names
 const UNI_MAPPINGS = {
-  name: ['University Name', 'University_Name', 'Name of University', 'Name'],
-  state: ['State', 'Province'],
-  city: ['City', 'Town'],
-  type: ['University Type', 'Type'],
-  establishedYear: ['Year of Establishment', 'Est Year', 'Established'],
-  website: ['Official Website', 'Website', 'URL'],
-  phone: ['Phone', 'Contact Number', 'Contact'],
-  email: ['Contact Email', 'Email'],
+  name: ['University Name', 'University_Name', 'Name of University', 'Name', 'Name of the University', 'universityname', 'University'],
+  state: ['State', 'Province', 'Location', 'City / State'],
+  city: ['City', 'Town', 'Location'],
+  type: ['University Type', 'Type', 'Status', 'Category'],
+  establishedYear: ['Year of Establishment', 'Est Year', 'Established', 'Year', 'Established Year', 'Establishment Year'],
+  website: ['Official Website', 'Website', 'URL', 'Official_Website'],
+  phone: ['Phone', 'Contact Number', 'Contact', 'Phone No'],
+  email: ['Contact Email', 'Email', 'Contact_Email'],
   address: ['Full Address', 'Address']
 };
 
 const COURSE_MAPPINGS = {
-  name: ['Course Name', 'Course', 'Program'],
+  name: ['Course Name', 'Course', 'Program', 'Courses Offered', 'Courses Offered (All)', 'Course_Name'],
   category: ['Degree Level', 'Level', 'Category'],
-  duration: ['Duration', 'Period'],
-  feesPerYear: ['Fee Per Year (INR)', 'Annual Fee', 'Fees'],
+  duration: ['Duration', 'Period', 'Years'],
+  feesPerYear: ['Fee Per Year (INR)', 'Annual Fee', 'Fees', 'Fees Structure (INR)', 'Fees_Structure'],
   specialization: ['Specialization', 'Branch', 'Stream'],
-  totalSeats: ['Total Seats', 'Seats'],
-  entranceExams: ['Entrance Exam Required', 'Entrance Exams', 'Exams'],
+  totalSeats: ['Total Seats', 'Seats', 'No. of Seats', 'Seat Intake'],
+  entranceExams: ['Entrance Exam Required', 'Entrance Exams', 'Exams', 'Entrance exam'],
   eligibility: ['Eligibility Criteria', 'Eligibility']
 };
 
-function getValue(row, keys) {
-  for (const key of keys) {
-    if (row[key] !== undefined && row[key] !== null) return row[key];
+function extractStateFromFileName(filePath) {
+  const lower = path.basename(filePath).toLowerCase();
+  const statesMap = [
+    ['andaman', 'Andaman and Nicobar Islands'], ['andhra', 'Andhra Pradesh'], ['arunachal', 'Arunachal Pradesh'],
+    ['assam', 'Assam'], ['bihar', 'Bihar'], ['chandigarh', 'Chandigarh'], ['chhattisgarh', 'Chhattisgarh'],
+    ['cg_', 'Chhattisgarh'], ['dadra', 'Dadra and Nagar Haveli'], ['daman', 'Daman and Diu'], ['delhi', 'Delhi NCR'],
+    ['goa', 'Goa'], ['gujarat', 'Gujarat'], ['haryana', 'Haryana'], ['hp_', 'Himachal Pradesh'], ['himachal', 'Himachal Pradesh'],
+    ['jammu', 'Jammu and Kashmir'], ['jharkhand', 'Jharkhand'], ['karnataka', 'Karnataka'], ['kerala', 'Kerala'],
+    ['ladakh', 'Ladakh'], ['lakshadweep', 'Lakshadweep'], ['madhya', 'Madhya Pradesh'], ['mp_', 'Madhya Pradesh'],
+    ['maharashtra', 'Maharashtra'], ['manipur', 'Manipur'], ['meghalaya', 'Meghalaya'], ['mizoram', 'Mizoram'],
+    ['nagaland', 'Nagaland'], ['odisha', 'Odisha'], ['puducherry', 'Puducherry'], ['punjab', 'Punjab'],
+    ['rajasthan', 'Rajasthan'], ['sikkim', 'Sikkim'], ['tamil', 'Tamil Nadu'], ['tn_', 'Tamil Nadu'],
+    ['telangana', 'Telangana'], ['tripura', 'Tripura'], ['uttar', 'Uttar Pradesh'], ['up_', 'Uttar Pradesh'],
+    ['uttarakhand', 'Uttarakhand'], ['west_bengal', 'West Bengal'], ['west bengal', 'West Bengal'], ['ap_', 'Andhra Pradesh']
+  ];
+  for (const [keyword, stateName] of statesMap) {
+    if (lower.includes(keyword)) { return stateName; }
   }
+  return null;
+}
+
+
+function getValue(row, keys) {
+  const rowKeys = Object.keys(row);
+  const normalizedSearchKeys = keys.map(k => k.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+  // 1. Try exact or normalized match
+  for (const rk of rowKeys) {
+    const nrk = rk.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (normalizedSearchKeys.includes(nrk)) return row[rk];
+  }
+
+  // 2. Try partial match
+  for (const rk of rowKeys) {
+    const nrk = rk.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (nrk === '') continue;
+    for (const nsk of normalizedSearchKeys) {
+      if (nsk.length > 3 && (nrk.includes(nsk) || nsk.includes(nrk))) return row[rk];
+    }
+  }
+  
+  // 3. Fallback for 'name' if we see __EMPTY columns
+  if (normalizedSearchKeys.includes('universityname')) {
+    const emptyKey = rowKeys.find(k => k.startsWith('__EMPTY') && row[k] && row[k].toString().length > 5);
+    if (emptyKey) return row[emptyKey];
+  }
+
   return null;
 }
 
@@ -54,36 +97,96 @@ async function processFile(filePath) {
     // Find the actual header row (sometimes there are title rows at the top)
     const rawData = xlsx.utils.sheet_to_json(sheet, { header: 1 });
     let headerRowIndex = 0;
-    for (let i = 0; i < Math.min(rawData.length, 10); i++) {
-      if (rawData[i].some(cell => cell && cell.toString().toLowerCase().includes('name'))) {
-        headerRowIndex = i;
-        break;
+    let maxScore = -1;
+    
+    for (let i = 0; i < Math.min(rawData.length, 30); i++) {
+      const row = rawData[i];
+      if (!row || !Array.isArray(row)) continue;
+      const rowStr = row.map(c => (c || '').toString().toLowerCase()).join('|');
+      let score = 0;
+      if (rowStr.includes('university') || rowStr.includes('name')) score++;
+      if (rowStr.includes('state') || rowStr.includes('city') || rowStr.includes('address') || rowStr.includes('location')) score++;
+      if (rowStr.includes('course') || rowStr.includes('program') || rowStr.includes('fee') || rowStr.includes('establishment')) score++;
+      
+      const colCount = row.filter(c => c !== null && c !== '').length;
+      if (colCount >= 4) {
+        if (score > maxScore) {
+          maxScore = score;
+          headerRowIndex = i;
+        }
       }
     }
+    
+    const foundHeaders = rawData[headerRowIndex];
+    // console.log(`[import]   Selected header row at index ${headerRowIndex} with score ${maxScore}`);
 
     const uniData = xlsx.utils.sheet_to_json(sheet, { range: headerRowIndex });
     
     const uniMap = new Map(); // Name -> DB ID
+    let uniCount = 0;
+    let skipCount = 0;
 
     for (const row of uniData) {
       const name = getValue(row, UNI_MAPPINGS.name);
-      if (!name) continue;
+      if (!name) {
+        if (skipCount === 0) console.log(`[import]   Sample row keys: ${Object.keys(row).join(', ')}`);
+        skipCount++;
+        continue;
+      }
 
-      const state = getValue(row, UNI_MAPPINGS.state);
-      if (!state) continue; // Skip if no state
+      let state = getValue(row, UNI_MAPPINGS.state);
+      const fileState = extractStateFromFileName(filePath);
+      
+      const allStates = [
+        'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
+        'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli', 'Daman and Diu', 'Delhi NCR', 'Delhi',
+        'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 
+        'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 
+        'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 
+        'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 
+        'Uttarakhand', 'West Bengal'
+      ];
+
+      function cleanState(s) {
+        if (!s) return null;
+        const lower = s.toString().toLowerCase();
+        for (const st of allStates) {
+          if (lower.includes(st.toLowerCase())) return st;
+        }
+        return null;
+      }
+
+      let cleanedState = cleanState(state);
+      if (!cleanedState) {
+        cleanedState = fileState;
+      }
+      if (!cleanedState) continue; // Skip if no state could be determined
+
+      // Normalize 'Delhi NCR' to 'Delhi' if needed, or keep as is. Let's keep it as is if it's in the list.
+      if (cleanedState === 'Delhi') cleanedState = 'Delhi NCR';
+
 
       const uniFields = {
         name: name.trim(),
         slug: slugify(name.trim(), { lower: true, strict: true }),
-        state: state.trim(),
-        city: (getValue(row, UNI_MAPPINGS.city) || 'Unknown').toString().trim(),
-        type: (getValue(row, UNI_MAPPINGS.type) || 'private').toString().toLowerCase().includes('deemed') ? 'deemed' : 'private',
+        state: cleanedState.trim(),
+        city: (getValue(row, UNI_MAPPINGS.city) || '').toString().trim(),
+        type: (getValue(row, UNI_MAPPINGS.type) || 'private').toString().toLowerCase().match(/deemed|deemed to be private|deemed university/) ? 'deemed' : 'private',
         establishedYear: parseInt(getValue(row, UNI_MAPPINGS.establishedYear)) || 2000,
         website: getValue(row, UNI_MAPPINGS.website),
         phone: getValue(row, UNI_MAPPINGS.phone),
         email: getValue(row, UNI_MAPPINGS.email),
         address: getValue(row, UNI_MAPPINGS.address),
       };
+
+      // Extract city from address if city is Unknown/empty
+      if ((!uniFields.city || uniFields.city === 'Unknown') && uniFields.address) {
+        const parts = uniFields.address.toString().split(',');
+        if (parts.length > 0) {
+          uniFields.city = parts[0].trim();
+        }
+      }
+      if (!uniFields.city) uniFields.city = 'Unknown';
 
       try {
         const uni = await University.findOneAndUpdate(
@@ -92,6 +195,7 @@ async function processFile(filePath) {
           { upsert: true, new: true }
         );
         uniMap.set(uniFields.name, uni._id);
+        uniCount++;
       } catch (err) {
         if (err.code === 11000) {
           // If slug duplicate, try adding city to slug
@@ -102,20 +206,66 @@ async function processFile(filePath) {
             { upsert: true, new: true }
           );
           uniMap.set(uniFields.name, uni._id);
+          uniCount++;
         } else throw err;
       }
     }
+    console.log(`[import]   Found ${uniCount} universities (skipped ${skipCount} rows)`);
+
+    // 1.5 Process Courses from Column (if available in main sheet)
+    let extraCourseCount = 0;
+    for (const row of uniData) {
+      const universityName = getValue(row, UNI_MAPPINGS.name);
+      const universityId = uniMap.get(universityName);
+      if (!universityId) continue;
+
+      const coursesStr = getValue(row, ['Courses Offered', 'Courses', 'Programs', 'Courses Available']);
+      if (coursesStr && coursesStr.toString().trim().length > 2) {
+        const courseNames = coursesStr.toString().split(/[,|;]|\n/).map(c => c.trim()).filter(c => c.length > 2);
+        for (const cName of courseNames) {
+          const cSlug = slugify(cName + '-' + universityId, { lower: true, strict: true });
+          const course = await Course.findOneAndUpdate(
+            { slug: cSlug },
+            {
+              name: cName,
+              slug: cSlug,
+              universityId: universityId,
+              category: getValue(row, COURSE_MAPPINGS.category) || 'General',
+              duration: (getValue(row, COURSE_MAPPINGS.duration) || '3-4 Years').toString(),
+              feesPerYear: parseFloat(getValue(row, ['Fees', 'Fee', 'Fees Structure', 'Fees (INR)'])) || 0,
+            },
+            { upsert: true, new: true }
+          );
+          await University.findByIdAndUpdate(universityId, { $addToSet: { courses: course._id } });
+          extraCourseCount++;
+        }
+      }
+    }
+    if (extraCourseCount > 0) console.log(`[import]   Processed ${extraCourseCount} column-based course entries`);
 
     // 2. Process Courses
     const courseSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('course')) || workbook.SheetNames[1];
     if (courseSheetName && workbook.Sheets[courseSheetName]) {
       const cSheet = workbook.Sheets[courseSheetName];
+      // Find header for courses
       const cRawData = xlsx.utils.sheet_to_json(cSheet, { header: 1 });
       let cHeaderIndex = 0;
-      for (let i = 0; i < Math.min(cRawData.length, 10); i++) {
-        if (cRawData[i].some(cell => cell && cell.toString().toLowerCase().includes('name'))) {
-          cHeaderIndex = i;
-          break;
+      let cMaxScore = -1;
+      
+      for (let i = 0; i < Math.min(cRawData.length, 30); i++) {
+        const row = cRawData[i];
+        if (!row || !Array.isArray(row)) continue;
+        const rowStr = row.map(c => (c || '').toString().toLowerCase()).join('|');
+        let score = 0;
+        if (rowStr.includes('course') || rowStr.includes('program') || rowStr.includes('name')) score++;
+        if (rowStr.includes('fee') || rowStr.includes('duration') || rowStr.includes('level') || rowStr.includes('category')) score++;
+        
+        const colCount = row.filter(c => c !== null && c !== '').length;
+        if (colCount >= 3) {
+          if (score > cMaxScore) {
+            cMaxScore = score;
+            cHeaderIndex = i;
+          }
         }
       }
 
@@ -143,7 +293,7 @@ async function processFile(filePath) {
         const fees = parseInt(feesStr.replace(/[^0-9]/g, '')) || 0;
         const exams = getValue(row, COURSE_MAPPINGS.entranceExams);
 
-        coursesToInsert.push({
+        const newCourse = {
           universityId: uniId,
           name: name.trim(),
           category: level,
@@ -153,11 +303,13 @@ async function processFile(filePath) {
           entranceExams: exams ? exams.toString().split(',').map(e => e.trim()) : [],
           eligibility: getValue(row, COURSE_MAPPINGS.eligibility),
           specializations: []
-        });
+        };
+        const course = await Course.create(newCourse);
+        await University.findByIdAndUpdate(uniId, { $addToSet: { courses: course._id } });
+        coursesToInsert.push(course);
       }
 
       if (coursesToInsert.length > 0) {
-        await Course.insertMany(coursesToInsert, { ordered: false }).catch(e => {});
         console.log(`[import]   Processed ${coursesToInsert.length} course entries`);
       }
     }
@@ -170,10 +322,14 @@ async function processFile(filePath) {
 function getAllExcelFiles(dir, files = []) {
   const items = fs.readdirSync(dir);
   for (const item of items) {
+    if (item.toLowerCase().includes('foreign')) {
+      console.log(`[import] Skipping foreign universities file: ${item}`);
+      continue;
+    }
     const fullPath = path.join(dir, item);
     if (fs.statSync(fullPath).isDirectory()) {
       getAllExcelFiles(fullPath, files);
-    } else if (item.endsWith('.xlsx')) {
+    } else if (item.endsWith('.xlsx') && !item.startsWith('~$')) {
       files.push(fullPath);
     }
   }

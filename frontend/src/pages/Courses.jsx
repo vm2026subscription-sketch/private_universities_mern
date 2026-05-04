@@ -280,7 +280,22 @@ export default function Courses() {
                         <span className="badge badge-orange font-black text-[10px]">{course.category}</span>
                         {course.duration && <span className="text-[10px] font-bold text-light-muted italic">{course.duration} Years</span>}
                       </div>
-                      <h2 className="text-2xl font-black group-hover:text-primary transition-colors leading-tight mb-2">{course.universityId?.name}</h2>
+                      {/* University logo + name row */}
+                      <div className="flex items-center gap-3 mb-2">
+                        {course.universityId?.logoUrl ? (
+                          <img
+                            src={course.universityId.logoUrl}
+                            alt={`${course.universityId.name} logo`}
+                            className="w-10 h-10 rounded-lg object-contain bg-white border border-light-border dark:border-dark-border p-0.5 shrink-0"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary font-bold text-base shrink-0">
+                            {course.universityId?.name?.charAt(0)}
+                          </div>
+                        )}
+                        <h2 className="text-2xl font-black group-hover:text-primary transition-colors leading-tight">{course.universityId?.name}</h2>
+                      </div>
                       <p className="text-sm font-bold text-light-muted flex items-center gap-1.5"><MapPin className="w-4 h-4 text-primary" />{course.universityId?.city}, {course.universityId?.state}</p>
                     </div>
                   </div>
