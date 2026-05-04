@@ -11,6 +11,7 @@ import Footer from './components/layout/Footer';
 import MobileNav from './components/layout/MobileNav';
 import Home from './pages/Home';
 import Universities from './pages/Universities';
+import ForeignUniversities from './pages/ForeignUniversities';
 import UniversityDetail from './pages/UniversityDetail';
 import Courses from './pages/Courses';
 import Exams from './pages/Exams';
@@ -79,6 +80,7 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/universities" element={<Universities />} />
+                    <Route path="/foreign-universities" element={<ForeignUniversities />} />
                     <Route path="/universities/:slug" element={<UniversityDetail />} />
                     <Route path="/courses" element={<Courses />} />
                     <Route path="/exams" element={<Exams />} />

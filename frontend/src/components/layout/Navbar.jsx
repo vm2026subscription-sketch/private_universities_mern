@@ -24,6 +24,7 @@ export default function Navbar() {
     { to: '/courses', label: 'Courses' },
     { to: '/exams', label: 'Exams' },
     { to: '/compare-universities', label: 'Comparison' },
+    { to: '/foreign-universities', label: 'Foreign Universities' },
   ];
   const visibleNavLinks = user?.role === 'admin' ? [...navLinks, { to: '/admin', label: 'Admin' }] : navLinks;
 
