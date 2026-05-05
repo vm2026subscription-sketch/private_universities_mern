@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Bookmark, Filter, X } from 'lucide-react';
+import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen } from 'lucide-react';
+
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext';
@@ -95,7 +96,7 @@ export default function Universities() {
             <option value="ranking">By Ranking</option>
             <option value="name">Name A-Z</option>
             <option value="package">Avg Package</option>
-            <option value="established">Established Year</option>
+
           </select>
           <button onClick={() => setShowFilters(!showFilters)} className="md:hidden p-2 rounded-xl border border-light-border dark:border-dark-border">
             <Filter className="w-5 h-5" />
@@ -151,54 +152,90 @@ export default function Universities() {
                  const isSaved = savedIds.includes(u._id);
                  const fitScore = calculateFitScore(u, userPrefs);
                  
-                 return (
-                <div key={u._id} className="card p-5 relative overflow-hidden group">
-                  {user && fitScore > 50 && (
-                    <div className="absolute top-0 right-0 bg-primary/10 text-primary text-[10px] font-black px-3 py-1 rounded-bl-xl border-b border-l border-primary/20">
-                      {fitScore}% MATCH
+                  return (
+                    <div key={u._id} className="card relative group flex flex-col h-full hover:-translate-y-1.5 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 overflow-hidden bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl">
+                      {/* Top Decoration */}
+                      <div className="h-16 bg-gradient-to-r from-primary/10 to-transparent w-full absolute top-0 left-0" />
+                      
+                      <div className="p-6 flex flex-col flex-grow relative z-10">
+                        <div className="flex items-start justify-between mb-4">
+                          {/* Logo */}
+                          <div className="w-16 h-16 rounded-2xl border-2 border-white dark:border-dark-card shadow-sm flex items-center justify-center bg-white overflow-hidden shrink-0">
+                            {u.logoUrl ? (
+                              <img
+                                src={u.logoUrl}
+                                alt={u.name}
+                                className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-110"
+                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                              />
+                            ) : null}
+                            <div
+                              className="w-full h-full bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary text-xl font-bold"
+                              style={{ display: u.logoUrl ? 'none' : 'flex' }}
+                            >
+                              {u.name?.charAt(0)}
+                            </div>
+                          </div>
+
+                          {/* Bookmark Button */}
+                          <button 
+                            className={`p-2 rounded-xl transition-all ${isSaved ? 'bg-primary/10 text-primary' : 'text-light-muted hover:bg-light-bg dark:hover:bg-dark-bg'}`} 
+                            onClick={() => handleBookmark(u._id)}
+                          >
+                              <Bookmark className="w-5 h-5" fill={isSaved ? "currentColor" : "none"} />
+                          </button>
+                        </div>
+
+                        {/* Badges row */}
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          <span className="badge badge-blue text-[9px] px-2 py-0.5">{u.type}</span>
+                          {u.naacGrade && <span className="badge badge-green text-[9px] px-2 py-0.5">NAAC {u.naacGrade}</span>}
+                          {u.nirfRank && <span className="badge badge-orange text-[9px] px-2 py-0.5">#{u.nirfRank} NIRF</span>}
+                        </div>
+
+                        <Link to={`/universities/${u.slug}`} className="text-lg font-black group-hover:text-primary transition-colors line-clamp-2 leading-tight mb-2">
+                          {u.name}
+                        </Link>
+                        
+                        <p className="text-sm font-medium text-light-muted flex items-center gap-1.5 mb-5">
+                          <MapPin className="w-4 h-4 text-primary/70 shrink-0" />
+                          <span className="truncate">{u.city === 'Unknown' ? u.state : `${u.city}, ${u.state}`}</span>
+                        </p>
+
+                        <div className="mt-auto">
+                          <div className="flex items-center justify-between py-4 border-y border-light-border dark:border-dark-border border-dashed mb-5">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-light-muted mb-1">Programs</p>
+                              <Link to={`/universities/${u.slug}`} state={{ activeTab: 1 }} className="text-primary font-black text-sm hover:underline cursor-pointer flex items-center gap-1">
+                                <BookOpen className="w-4 h-4" />
+                                {u.courses?.length || u.stats?.totalCoursesCount || 0} Courses
+                              </Link>
+                            </div>
+
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <Link 
+                              to={`/universities/${u.slug}`}
+                              className="flex-1 bg-light-bg dark:bg-dark-bg hover:bg-primary hover:text-white border border-light-border dark:border-dark-border hover:border-primary text-center font-bold py-3 px-6 rounded-2xl transition-all duration-300 shadow-sm whitespace-nowrap"
+                            >
+                              Explore
+                            </Link>
+                            {u.links?.brochureLink && (
+                              <button 
+                                onClick={() => window.open(u.links.brochureLink, '_blank')}
+                                className="w-12 h-12 bg-[#00a651]/10 text-[#00a651] hover:bg-[#00a651] hover:text-white rounded-2xl flex items-center justify-center transition-all shrink-0"
+                                title="Download Brochure"
+                              >
+                                <Download className="w-5 h-5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  {/* University Logo */}
-                  <div className="flex items-center gap-3 mb-3">
-                    {u.logoUrl ? (
-                      <img
-                        src={u.logoUrl}
-                        alt={`${u.name} logo`}
-                        className="w-12 h-12 rounded-xl object-contain bg-white border border-light-border dark:border-dark-border p-1 shrink-0"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary text-lg font-bold shrink-0"
-                      style={{ display: u.logoUrl ? 'none' : 'flex' }}
-                    >
-                      {u.name?.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Link to={`/universities/${u.slug}`} className="font-semibold hover:text-primary line-clamp-1 block">{u.name}</Link>
-                      <p className="text-sm text-light-muted flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3 shrink-0" />{u.city}, {u.state}</p>
-                    </div>
-                    <button className={`p-1.5 rounded-lg border dark:border-dark-border ${isSaved ? 'bg-primary text-white border-primary' : 'hover:bg-light-card dark:hover:bg-dark-border'}`} onClick={() => handleBookmark(u._id)}>
-                       <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
-                    </button>
-                  </div>
-                  <div className="flex gap-2 flex-wrap mb-3">
-                    <span className={`badge ${u.type === 'deemed' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'badge-orange'}`}>
-                      {u.type === 'deemed' ? 'Deemed to be University' : 'Private University'}
-                    </span>
-                    {u.naacGrade && <span className="badge badge-green">NAAC {u.naacGrade}</span>}
-                    {u.nirfRank && <span className="badge badge-blue">#{u.nirfRank}</span>}
-                  </div>
-                  <div className="text-sm text-light-muted dark:text-dark-muted space-y-1 mb-4">
-                    {u.stats?.avgPackageLPA && <p>Avg Package: ₹{u.stats.avgPackageLPA} LPA</p>}
-                    {u.stats?.placementPercentage && <p>Placement: {u.stats.placementPercentage}%</p>}
-                  </div>
-                  <Link to={`/universities/${u.slug}`} className="btn-primary w-full text-center block text-sm !py-2">View Details</Link>
-                </div>
-              )})}
+                  );
+              })}
             </div>
           )}
 

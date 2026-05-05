@@ -7,7 +7,7 @@ const universitySchema = new mongoose.Schema({
   slug: { type: String, unique: true },
   state: { type: String, required: true },
   city: { type: String, required: true },
-  type: { type: String, enum: ['private', 'deemed'], required: true },
+  type: { type: String, enum: ['private', 'deemed', 'foreign'], required: true },
   establishedYear: Number,
   naacGrade: String,
   nirfRank: Number,
@@ -32,7 +32,9 @@ const universitySchema = new mongoose.Schema({
     avgPackageLPA: Number,
     highestPackageLPA: Number,
     placementPercentage: Number,
-    totalCoursesCount: Number
+    totalCoursesCount: Number,
+    avgFees: String,
+    rating: { type: Number, default: 0 }
   },
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   highlights: [String],

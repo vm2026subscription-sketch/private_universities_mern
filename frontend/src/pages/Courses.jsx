@@ -300,10 +300,7 @@ export default function Courses() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-6 p-4 rounded-2xl bg-light-bg dark:bg-dark-border/50 mb-8">
-                     <div>
-                       <p className="text-[10px] font-black uppercase text-light-muted mb-1 tracking-widest">Est. Year</p>
-                       <p className="text-sm font-bold">{course.universityId?.establishedYear || 'N/A'}</p>
-                     </div>
+
                      <div>
                        <p className="text-[10px] font-black uppercase text-light-muted mb-1 tracking-widest">Fees / Year</p>
                        <p className="text-sm font-bold text-primary">₹{course.feesPerYear ? course.feesPerYear.toLocaleString() : 'Contact for Fees'}</p>

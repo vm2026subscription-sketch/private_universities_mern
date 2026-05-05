@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { MapPin, Globe, Phone, Mail, BookOpen, Users, Award, Building, Bookmark, Share2 } from 'lucide-react';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -10,8 +10,9 @@ const tabs = ['Overview', 'Courses', 'Admissions', 'Placements', 'Campus', 'Scho
 
 export default function UniversityDetail() {
   const { slug } = useParams();
+  const location = useLocation();
   const [uni, setUni] = useState(null);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 0);
   const [loading, setLoading] = useState(true);
 
   const { user } = useAuth();
@@ -114,7 +115,6 @@ export default function UniversityDetail() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
-            { icon: Building, label: 'Est.', value: uni.establishedYear || 'N/A' },
             { icon: Users, label: 'Students', value: uni.stats?.totalStudents?.toLocaleString() || 'N/A' },
             { icon: Award, label: 'Avg Pkg', value: uni.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : 'N/A' },
             { icon: BookOpen, label: 'Courses', value: uni.stats?.totalCoursesCount || uni.courses?.length || 0 },
@@ -146,7 +146,7 @@ export default function UniversityDetail() {
             <div>
               <h2 className="text-xl font-bold mb-3">About</h2>
               <p className="text-light-muted dark:text-dark-muted leading-relaxed">
-                {uni.description || `${uni.name} is a ${uni.type} university located in ${uni.city}, ${uni.state}. Established in ${uni.establishedYear || 'N/A'}, it offers various undergraduate and postgraduate programs.`}
+                {uni.description || `${uni.name} is a ${uni.type} university located in ${uni.city}, ${uni.state}. It offers various undergraduate and postgraduate programs.`}
               </p>
             </div>
 
