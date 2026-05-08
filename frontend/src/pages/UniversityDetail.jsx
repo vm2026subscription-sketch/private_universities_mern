@@ -19,6 +19,7 @@ export default function UniversityDetail() {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     api.get(`/universities/${slug}`)
       .then(({ data }) => {
         const u = data.data;
@@ -31,7 +32,9 @@ export default function UniversityDetail() {
           localStorage.setItem('vm_recent', JSON.stringify([entry, ...filtered].slice(0, 10)));
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('Failed to fetch university details:', err);
+      })
       .finally(() => setLoading(false));
   }, [slug]);
 

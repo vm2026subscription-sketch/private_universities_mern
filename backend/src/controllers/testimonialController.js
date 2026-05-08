@@ -42,7 +42,20 @@ exports.remove = async (req, res) => {
   }
 };
 
-// Public
+// Public submission
+exports.submitPublic = async (req, res) => {
+  try {
+    const testimonial = await Testimonial.create({
+      ...req.body,
+      isApproved: false // Requires admin approval
+    });
+    res.status(201).json({ success: true, message: 'Thank you! Your feedback has been submitted for review.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Public fetch
 exports.getApproved = async (req, res) => {
   try {
     const testimonials = await Testimonial.find({ isApproved: true }).sort({ isFeatured: -1, createdAt: -1 }).limit(20);

@@ -105,8 +105,15 @@ const createComparisonRows = (profiles) => {
 
 exports.getUniversities = async (req, res) => {
   try {
-    const { state, type, naacGrade, minFees, maxFees, entranceExam, avgPackage, nirfRank, approvals, sort, page = 1, limit = 12, courseCategory } = req.query;
+    const { search, state, type, naacGrade, minFees, maxFees, entranceExam, avgPackage, nirfRank, approvals, sort, page = 1, limit = 12, courseCategory } = req.query;
     const filter = {};
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { city: { $regex: search, $options: 'i' } },
+        { state: { $regex: search, $options: 'i' } }
+      ];
+    }
     if (state) filter.state = { $in: state.split(',') };
     if (type && type !== 'both') filter.type = type;
     if (naacGrade) filter.naacGrade = { $in: naacGrade.split(',') };

@@ -1,24 +1,15 @@
-const mongoose = require('mongoose');
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../backend/.env') });
 
-const University = require('../backend/src/models/University');
+require('dotenv').config({ path: './backend/.env' });
+const mongoose = require('mongoose');
 
 async function checkData() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to DB');
-    
-    const counts = await University.aggregate([
-      { $group: { _id: '$state', count: { $sum: 1 } } }
-    ]);
-    
-    console.log('University counts by state:');
-    console.log(JSON.stringify(counts, null, 2));
-    
-    const totalCourses = await mongoose.model('Course').countDocuments();
-    console.log('Total Courses:', totalCourses);
-
+    const University = mongoose.model('University', new mongoose.Schema({ name: String }));
+    const count = await University.countDocuments();
+    console.log(`University count: ${count}`);
+    const samples = await University.find().limit(5);
+    console.log('Sample names:', samples.map(s => s.name));
     process.exit(0);
   } catch (err) {
     console.error(err);

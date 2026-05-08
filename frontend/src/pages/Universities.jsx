@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen } from 'lucide-react';
 
 import api from '../utils/api';
@@ -20,26 +20,39 @@ const states = [
 const naacGrades = ['A++','A+','A','B++','B','Not Rated'];
 
 export default function Universities() {
+  const { user } = useAuth();
   const [universities, setUniversities] = useState([]);
+  const [savedIds, setSavedIds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ state: [], type: 'both', naacGrade: [] });
   const [sort, setSort] = useState('ranking');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
-  const [userPrefs, setUserPrefs] = useState(null);
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialSearch = searchParams.get('search') || '';
+  const initialState = searchParams.get('state');
+  const initialCity = searchParams.get('city');
   
-  const { user } = useAuth();
-  const [savedIds, setSavedIds] = useState([]);
+  const [filters, setFilters] = useState({ 
+    state: initialState ? [initialState] : [], 
+    type: 'both', 
+    naacGrade: [],
+    city: initialCity || ''
+  });
 
   useEffect(() => {
-    if (user) {
-      api.get('/users/profile').then(({ data }) => {
-        setSavedIds(data.data.savedUniversities?.map(u => u._id) || []);
-        setUserPrefs(data.data.profile || null);
-      }).catch(console.error);
-    }
-  }, [user]);
+    const searchParams = new URLSearchParams(location.search);
+    const newState = searchParams.get('state');
+    const newCity = searchParams.get('city');
+    
+    setFilters(f => ({
+      ...f,
+      state: newState ? [newState] : f.state,
+      city: newCity || f.city
+    }));
+    setPage(1);
+  }, [location.search]);
 
   const handleBookmark = async (universityId) => {
     if (!user) return toast.error('Please login to save universities');
@@ -61,7 +74,9 @@ export default function Universities() {
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
+    if (initialSearch) params.set('search', initialSearch);
     if (filters.state.length) params.set('state', filters.state.join(','));
+    if (filters.city) params.set('city', filters.city);
     if (filters.type !== 'both') params.set('type', filters.type);
     if (filters.naacGrade.length) params.set('naacGrade', filters.naacGrade.join(','));
     params.set('sort', sort);
@@ -75,7 +90,7 @@ export default function Universities() {
       }
       setTotal(data.total || 0);
     }).catch(() => setUniversities([])).finally(() => setLoading(false));
-  }, [filters, sort, page]);
+  }, [filters, sort, page, initialSearch]);
 
   const toggleFilter = (key, value) => {
     setFilters(f => {
@@ -150,6 +165,7 @@ export default function Universities() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {universities.map(u => {
                  const isSaved = savedIds.includes(u._id);
+                 const userPrefs = user?.profile;
                  const fitScore = calculateFitScore(u, userPrefs);
                  
                   return (
