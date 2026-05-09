@@ -19,6 +19,8 @@ export default function Courses() {
   const selectedCategory = searchParams.get('category') || 'All';
   const selectedState = searchParams.get('state') || 'All';
   const selectedCourse = searchParams.get('course') || '';
+  const universityId = searchParams.get('universityId');
+  const universityName = searchParams.get('universityName');
   
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +32,11 @@ export default function Courses() {
     const loadCourses = async () => {
       setLoading(true);
       try {
-        // Fetch based on category to keep response size manageable
-        const query = selectedCategory !== 'All' ? `?category=${encodeURIComponent(selectedCategory)}` : '';
-        const { data } = await api.get(`/courses${query}`);
+        let queryParams = new URLSearchParams();
+        if (selectedCategory !== 'All') queryParams.append('category', selectedCategory);
+        if (universityId) queryParams.append('universityId', universityId);
+        
+        const { data } = await api.get(`/courses?${queryParams.toString()}`);
         if (active) setCourses(data.data || []);
       } catch {
         if (active) setCourses([]);
@@ -42,7 +46,7 @@ export default function Courses() {
     };
     loadCourses();
     return () => { active = false; };
-  }, [selectedCategory]);
+  }, [selectedCategory, universityId]);
 
   // Normalize course names for better grouping
   const normalizeCourseName = (name) => {
@@ -147,10 +151,23 @@ export default function Courses() {
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20 md:pb-12 min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-8">
         <div>
-          <h1 className="text-4xl font-black mb-2 tracking-tight">Explore Courses</h1>
+          <h1 className="text-4xl font-black mb-2 tracking-tight">
+            {universityName ? `Courses at ${universityName}` : 'Explore Courses'}
+          </h1>
           <p className="text-sm font-medium text-light-muted dark:text-dark-muted flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" /> Find the right course across {courses.length} listings in top universities.
+            <BookOpen className="w-4 h-4 text-primary" /> 
+            {universityName ? `Showing ${courses.length} courses offered by this institution.` : `Find the right course across ${courses.length} listings in top universities.`}
           </p>
+          {universityName && (
+            <button onClick={() => {
+              const params = new URLSearchParams(searchParams);
+              params.delete('universityId');
+              params.delete('universityName');
+              setSearchParams(params);
+            }} className="text-primary text-sm font-bold mt-2 hover:underline inline-flex items-center gap-1">
+              <X className="w-4 h-4" /> Clear University Filter
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

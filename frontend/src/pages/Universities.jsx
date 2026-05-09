@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen } from 'lucide-react';
-
+import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award } from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext';
@@ -119,43 +119,78 @@ export default function Universities() {
         </div>
       </div>
 
-      <div className="flex gap-8">
-        <aside className={`${showFilters ? 'fixed inset-0 z-50 bg-white dark:bg-dark-bg p-6 overflow-y-auto' : 'hidden'} md:block md:static md:w-64 shrink-0`}>
-          <div className="flex items-center justify-between mb-4 md:hidden">
-            <h3 className="font-bold">Filters</h3>
-            <button onClick={() => setShowFilters(false)}><X className="w-5 h-5" /></button>
-          </div>
-          <div className="space-y-6">
-            <div>
-              <h4 className="font-semibold text-sm mb-3">State</h4>
-              <div className="max-h-60 overflow-y-auto pr-2">
-                {states.map(s => (
-                  <label key={s} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
-                    <input type="radio" checked={filters.state.includes(s)} onChange={() => toggleFilter('state', s)} />
-                    {s}
-                  </label>
-                ))}
+      <div className="flex flex-col md:flex-row gap-8">
+        <aside className={`${showFilters ? 'fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md p-6 overflow-y-auto' : 'hidden'} md:block md:static md:w-72 shrink-0`}>
+          <div className="bg-white dark:bg-dark-card rounded-[2rem] p-6 border border-slate-100 dark:border-white/5 shadow-xl h-full md:h-auto overflow-y-auto md:overflow-visible">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="font-black text-lg">Filters</h3>
+              <button className="md:hidden" onClick={() => setShowFilters(false)}><X className="w-5 h-5" /></button>
+            </div>
+            
+            <div className="space-y-8">
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">State</h4>
+                <div className="max-h-60 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                  {states.map(s => (
+                    <label key={s} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
+                      <input 
+                        type="radio" 
+                        name="state"
+                        checked={filters.state.includes(s)} 
+                        onChange={() => toggleFilter('state', s)} 
+                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
+                      />
+                      <span className={`text-sm font-bold transition-colors ${filters.state.includes(s) ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{s}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Institution Type</h4>
+                <div className="space-y-2">
+                  {['both','private','deemed'].map(t => (
+                    <label key={t} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
+                      <input 
+                        type="radio" 
+                        name="type" 
+                        checked={filters.type === t} 
+                        onChange={() => { setFilters(f => ({ ...f, type: t })); setPage(1); }} 
+                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
+                      />
+                      <span className={`text-sm font-bold transition-colors ${filters.type === t ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                        {t === 'both' ? 'All Types' : t === 'deemed' ? 'Deemed University' : 'Private University'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">NAAC Grade</h4>
+                <div className="space-y-2">
+                  {naacGrades.map(g => (
+                    <label key={g} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
+                      <input 
+                        type="radio" 
+                        name="naacGrade"
+                        checked={filters.naacGrade.includes(g)} 
+                        onChange={() => toggleFilter('naacGrade', g)} 
+                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
+                      />
+                      <span className={`text-sm font-bold transition-colors ${filters.naacGrade.includes(g) ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{g}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
-            <div>
-              <h4 className="font-semibold text-sm mb-3">Type</h4>
-              {['both','private','deemed'].map(t => (
-                <label key={t} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
-                  <input type="radio" name="type" checked={filters.type === t} onChange={() => { setFilters(f => ({ ...f, type: t })); setPage(1); }} />
-                  {t === 'both' ? 'Both Types' : t === 'deemed' ? 'Deemed to be University' : 'Private University'}
-                </label>
-              ))}
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm mb-3">NAAC Grade</h4>
-              {naacGrades.map(g => (
-                <label key={g} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
-                  <input type="radio" checked={filters.naacGrade.includes(g)} onChange={() => toggleFilter('naacGrade', g)} />
-                  {g}
-                </label>
-              ))}
-            </div>
-            <button onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [] }); setPage(1); }} className="text-sm text-primary font-medium">Clear All Filters</button>
+            
+            <button 
+              onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [] }); setPage(1); }} 
+              className="w-full mt-8 py-3 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all"
+            >
+              Reset Filters
+            </button>
           </div>
         </aside>
 
@@ -169,87 +204,106 @@ export default function Universities() {
                  const fitScore = calculateFitScore(u, userPrefs);
                  
                   return (
-                    <div key={u._id} className="card relative group flex flex-col h-full hover:-translate-y-1.5 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 overflow-hidden bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl">
-                      {/* Top Decoration */}
-                      <div className="h-16 bg-gradient-to-r from-primary/10 to-transparent w-full absolute top-0 left-0" />
-                      
-                      <div className="p-6 flex flex-col flex-grow relative z-10">
-                        <div className="flex items-start justify-between mb-4">
-                          {/* Logo */}
-                          <div className="w-16 h-16 rounded-2xl border-2 border-white dark:border-dark-card shadow-sm flex items-center justify-center bg-white overflow-hidden shrink-0">
-                            {u.logoUrl ? (
-                              <img
-                                src={u.logoUrl}
-                                alt={u.name}
-                                className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-110"
-                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                              />
-                            ) : null}
-                            <div
-                              className="w-full h-full bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary text-xl font-bold"
-                              style={{ display: u.logoUrl ? 'none' : 'flex' }}
-                            >
-                              {u.name?.charAt(0)}
-                            </div>
+                    <motion.div 
+                      key={u._id} 
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group relative h-full min-h-[380px] [perspective:1500px]"
+                    >
+                      <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.overview ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
+                        {/* Front Face */}
+                        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-lg flex flex-col overflow-hidden">
+                          {/* Top Badges */}
+                          <div className="absolute top-5 left-5 z-20 flex gap-2">
+                            {u.type && (
+                              <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-slate-100">
+                                {u.type}
+                              </div>
+                            )}
                           </div>
 
                           {/* Bookmark Button */}
                           <button 
-                            className={`p-2 rounded-xl transition-all ${isSaved ? 'bg-primary/10 text-primary' : 'text-light-muted hover:bg-light-bg dark:hover:bg-dark-bg'}`} 
-                            onClick={() => handleBookmark(u._id)}
+                            onClick={(e) => { e.preventDefault(); handleBookmark(u._id); }}
+                            className={`absolute top-5 right-5 z-20 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-90 ${isSaved ? 'bg-primary text-white' : 'bg-white/90 backdrop-blur-md text-slate-400 hover:text-primary hover:bg-white'}`}
                           >
-                              <Bookmark className="w-5 h-5" fill={isSaved ? "currentColor" : "none"} />
+                            <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
                           </button>
-                        </div>
+                          
+                          <div className="p-6 pt-16 flex flex-col h-full relative">
+                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 blur-[40px] rounded-full" />
+                            
+                            <div className="relative z-10 flex flex-col h-full">
+                              <div className="flex items-center gap-4 mb-5">
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-md border border-slate-50 p-2 flex items-center justify-center overflow-hidden shrink-0">
+                                  {u.logoUrl ? (
+                                    <img src={u.logoUrl} alt={u.name} className="w-full h-full object-contain" />
+                                  ) : (
+                                    <span className="text-2xl font-black text-primary">{u.name[0]}</span>
+                                  )}
+                                </div>
+                                <div>
+                                   <h3 className="text-lg font-black text-slate-900 dark:text-white line-clamp-2 leading-tight">{u.name}</h3>
+                                </div>
+                              </div>
 
-                        {/* Badges row */}
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          <span className="badge badge-blue text-[9px] px-2 py-0.5">{u.type}</span>
-                          {u.naacGrade && <span className="badge badge-green text-[9px] px-2 py-0.5">NAAC {u.naacGrade}</span>}
-                          {u.nirfRank && <span className="badge badge-orange text-[9px] px-2 py-0.5">#{u.nirfRank} NIRF</span>}
-                        </div>
+                              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-6 px-1">
+                                <MapPin className="w-3.5 h-3.5 text-primary" />
+                                {u.city === 'Unknown' ? u.state : `${u.city}, ${u.state}`}
+                              </div>
 
-                        <Link to={`/universities/${u.slug}`} className="text-lg font-black group-hover:text-primary transition-colors line-clamp-2 leading-tight mb-2">
-                          {u.name}
-                        </Link>
-                        
-                        <p className="text-sm font-medium text-light-muted flex items-center gap-1.5 mb-5">
-                          <MapPin className="w-4 h-4 text-primary/70 shrink-0" />
-                          <span className="truncate">{u.city === 'Unknown' ? u.state : `${u.city}, ${u.state}`}</span>
-                        </p>
+                              <div className="flex flex-wrap gap-2 mb-6 mt-auto">
+                                {u.naacGrade && (
+                                  <div className="flex items-center gap-1.5 bg-green-50 text-green-600 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                    <Award className="w-3 h-3" /> NAAC {u.naacGrade}
+                                  </div>
+                                )}
+                                {u.nirfRank && (
+                                  <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                    <Star className="w-3 h-3 fill-orange-600" /> #{u.nirfRank} NIRF
+                                  </div>
+                                )}
+                              </div>
 
-                        <div className="mt-auto">
-                          <div className="flex items-center justify-between py-4 border-y border-light-border dark:border-dark-border border-dashed mb-5">
-                            <div>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-light-muted mb-1">Programs</p>
-                              <Link to={`/universities/${u.slug}`} state={{ activeTab: 1 }} className="text-primary font-black text-sm hover:underline cursor-pointer flex items-center gap-1">
-                                <BookOpen className="w-4 h-4" />
-                                {u.courses?.length || u.stats?.totalCoursesCount || 0} Courses
-                              </Link>
+                              <div className="flex items-center gap-3">
+                                <Link 
+                                  to={`/universities/${u.slug}`}
+                                  className="flex-1 py-3 bg-slate-900 dark:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+                                >
+                                  View Details
+                                </Link>
+                                {u.links?.brochureLink && (
+                                  <button 
+                                    onClick={(e) => { e.preventDefault(); window.open(u.links.brochureLink, '_blank'); }}
+                                    className="w-12 h-12 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white rounded-xl flex items-center justify-center transition-all shrink-0 active:scale-95"
+                                    title="Download Brochure"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
-
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <Link 
-                              to={`/universities/${u.slug}`}
-                              className="flex-1 bg-light-bg dark:bg-dark-bg hover:bg-primary hover:text-white border border-light-border dark:border-dark-border hover:border-primary text-center font-bold py-3 px-6 rounded-2xl transition-all duration-300 shadow-sm whitespace-nowrap"
-                            >
-                              Explore
-                            </Link>
-                            {u.links?.brochureLink && (
-                              <button 
-                                onClick={() => window.open(u.links.brochureLink, '_blank')}
-                                className="w-12 h-12 bg-[#00a651]/10 text-[#00a651] hover:bg-[#00a651] hover:text-white rounded-2xl flex items-center justify-center transition-all shrink-0"
-                                title="Download Brochure"
-                              >
-                                <Download className="w-5 h-5" />
-                              </button>
-                            )}
                           </div>
                         </div>
+
+                        {/* Back Face (Overview) - Only render if overview exists */}
+                        {u.overview && (
+                          <div className="absolute inset-0 w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden] bg-gradient-to-br from-orange-500 to-primary rounded-[2.5rem] p-8 flex flex-col text-white shadow-2xl overflow-hidden z-30">
+                             <h3 className="text-2xl font-black mb-4 flex items-center gap-2"><BookOpen className="w-6 h-6" /> Overview</h3>
+                             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 text-sm text-white/90 leading-relaxed font-medium">
+                               {u.overview}
+                             </div>
+                             <Link 
+                                to={`/universities/${u.slug}`}
+                                className="mt-6 py-3 w-full bg-white text-primary font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-lg active:scale-95"
+                              >
+                                Explore Full Details
+                             </Link>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    </motion.div>
                   );
               })}
             </div>

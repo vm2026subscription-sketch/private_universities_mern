@@ -129,6 +129,9 @@ exports.getUniversities = async (req, res) => {
     if (approvals) {
       approvals.split(',').forEach(a => { filter[`approvals.${a.toLowerCase()}`] = true; });
     }
+    if (entranceExam) {
+      filter['admissions.acceptedExams'] = { $in: entranceExam.split(',').map(e => new RegExp(e, 'i')) };
+    }
 
     if (courseCategory) {
       const courses = await Course.find({ category: { $regex: new RegExp(`^${courseCategory}$`, 'i') } });

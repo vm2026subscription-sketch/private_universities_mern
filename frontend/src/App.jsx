@@ -9,6 +9,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import MobileNav from './components/layout/MobileNav';
+import AccessibilityWidget from './components/layout/AccessibilityWidget';
 import Home from './pages/Home';
 import Universities from './pages/Universities';
 import ForeignUniversities from './pages/ForeignUniversities';
@@ -23,6 +24,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import OpenChatRoute from './pages/OpenChatRoute';
+import RankPredictor from './pages/RankPredictor';
 import NotFound from './pages/NotFound';
 
 // New modular admin
@@ -75,7 +77,14 @@ export default function App() {
 
               {/* Public routes with Navbar/Footer */}
               <Route path="*" element={
-                <div className="min-h-screen bg-white dark:bg-dark-bg text-light-text dark:text-dark-text">
+                <div className="min-h-screen bg-transparent text-light-text dark:text-dark-text relative">
+                  {/* Global Animated Background */}
+                  <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#f8fafc] dark:bg-dark-bg transition-colors duration-500">
+                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[100px] animate-blob mix-blend-multiply dark:mix-blend-screen" />
+                    <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-orange-400/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen" />
+                    <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-blue-400/15 rounded-full blur-[150px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen" />
+                  </div>
+
                   <Navbar />
                   <Routes>
                     <Route path="/" element={<Home />} />
@@ -85,6 +94,7 @@ export default function App() {
                     <Route path="/courses" element={<Courses />} />
                     <Route path="/exams" element={<Exams />} />
                     <Route path="/compare-universities" element={<UniversityComparison />} />
+                    <Route path="/rank-predictor" element={<RankPredictor />} />
                     <Route path="/ask" element={<OpenChatRoute />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
@@ -95,6 +105,7 @@ export default function App() {
                   </Routes>
                   <Footer />
                   <MobileNav />
+                  <AccessibilityWidget />
                   <AiChatWidget />
                 </div>
               } />
