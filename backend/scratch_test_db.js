@@ -1,6 +1,7 @@
+require('dotenv').config({ path: './backend/.env' });
 const mongoose = require('mongoose');
 
-const uri = "mongodb://Atharva:Vidyarthi123@ac-hrfsaua-shard-00-00.vpgdsga.mongodb.net:27017,ac-hrfsaua-shard-00-01.vpgdsga.mongodb.net:27017,ac-hrfsaua-shard-00-02.vpgdsga.mongodb.net:27017/vidyarthi-mitra?ssl=true&replicaSet=atlas-ujt6qf-shard-0&authSource=admin&retryWrites=true&w=majority";
+const uri = process.env.MONGODB_URI;
 
 console.log('Attempting to connect to MongoDB Atlas...');
 
