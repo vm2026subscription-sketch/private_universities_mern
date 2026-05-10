@@ -5,7 +5,7 @@ const otpLogSchema = new mongoose.Schema({
   otp: { type: String, required: true },
   type: { type: String, enum: ['sms', 'whatsapp', 'email'], required: true },
   status: { type: String, enum: ['sent', 'verified', 'expired', 'failed'], default: 'sent' },
-  provider: { type: String, enum: ['twilio', 'msg91', 'nodemailer'], default: 'twilio' },
+  provider: { type: String, enum: ['twilio', 'twilio_verify', 'msg91', 'nodemailer'], default: 'twilio' },
   purpose: { type: String, enum: ['login', 'register', 'verify', 'reset'], default: 'verify' },
   ipAddress: String,
   userAgent: String,

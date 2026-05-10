@@ -21,7 +21,6 @@ pageSchema.pre('save', function (next) {
   next();
 });
 
-pageSchema.index({ slug: 1 });
 pageSchema.index({ isPublished: 1 });
 
 module.exports = mongoose.model('Page', pageSchema);

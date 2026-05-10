@@ -3,9 +3,15 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 const otpService = require('../services/otpService');
+const { getSafeUser } = require('../utils/userSerializer');
 
 const ADMIN_EMAIL = 'vidyarthimitrauniversity@gmail.com';
+const MIN_PASSWORD_LENGTH = 6;
+
 const getAdminEmail = () => (process.env.ADMIN_EMAIL || ADMIN_EMAIL).toLowerCase();
+const getClientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
+const normalizeEmail = (email = '') => String(email).trim().toLowerCase();
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const ensureAdminRole = async (user) => {
   if (user?.email?.toLowerCase() === getAdminEmail() && user.role !== 'admin') {
@@ -14,21 +20,6 @@ const ensureAdminRole = async (user) => {
   }
   return user;
 };
-
-const getSafeUser = (user) => ({
-  id: user._id,
-  name: user.name,
-  email: user.email,
-  phone: user.phone,
-  countryCode: user.countryCode,
-  role: user.role,
-  avatar: user.avatar,
-  isEmailVerified: user.isEmailVerified,
-  isPhoneVerified: user.isPhoneVerified,
-  authProvider: user.authProvider,
-  status: user.status,
-  profileCompleteness: user.profileCompleteness,
-});
 
 const setVerificationCode = (user) => {
   const code = `${Math.floor(100000 + Math.random() * 900000)}`;
@@ -61,7 +52,24 @@ const updateLoginTracking = async (user) => {
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone, countryCode } = req.body;
-    const normalizedEmail = email.toLowerCase();
+    const normalizedName = String(name || '').trim();
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedName || !normalizedEmail || !password) {
+      return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ success: false, message: 'Enter a valid email address' });
+    }
+
+    if (String(password).length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
+      });
+    }
+
     const exists = await User.findOne({ email: normalizedEmail });
     if (exists) return res.status(400).json({ success: false, message: 'Email already registered' });
 
@@ -71,7 +79,7 @@ exports.register = async (req, res) => {
     }
 
     const role = normalizedEmail === getAdminEmail() ? 'admin' : 'user';
-    const userData = { name, email: normalizedEmail, password, role, authProvider: 'local' };
+    const userData = { name: normalizedName, email: normalizedEmail, password, role, authProvider: 'local' };
     if (phone) {
       userData.phone = phone;
       userData.countryCode = countryCode || '+91';
@@ -100,16 +108,27 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    const normalizedEmail = normalizeEmail(req.body.email);
+    const { password } = req.body;
+
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
     if (!user || !user.password) return res.status(401).json({ success: false, message: 'Invalid credentials' });
     if (user.status === 'banned') return res.status(403).json({ success: false, message: 'Account has been banned' });
     if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account is suspended' });
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ success: false, message: 'Please verify your email before logging in' });
+    }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
     await ensureAdminRole(user);
     await updateLoginTracking(user);
+
     const token = generateToken(user._id);
     res.json({ success: true, token, user: getSafeUser(user) });
   } catch (error) {
@@ -122,8 +141,6 @@ exports.getMe = async (req, res) => {
   res.json({ success: true, user: getSafeUser(req.user) });
 };
 
-// ── Phone OTP Auth ──────────────────────────────────────────────
-
 exports.sendOtp = async (req, res) => {
   try {
     const { identifier, type = 'sms', purpose = 'login' } = req.body;
@@ -134,12 +151,13 @@ exports.sendOtp = async (req, res) => {
       type,
       purpose,
       ipAddress: req.ip,
-      userAgent: req.headers['user-agent']
+      userAgent: req.headers['user-agent'],
     });
 
     res.json({ success: true, message: result.message, expiresAt: result.expiresAt });
   } catch (error) {
-    res.status(429).json({ success: false, message: error.message });
+    const statusCode = /too many otp requests/i.test(error.message) ? 429 : 500;
+    res.status(statusCode).json({ success: false, message: error.message });
   }
 };
 
@@ -154,9 +172,9 @@ exports.verifyPhoneOtp = async (req, res) => {
     }
 
     let user = await User.findOne({ phone });
+    const isNewUser = !user;
 
     if (!user) {
-      // Auto-register on first phone OTP login
       const email = `${phone.replace(/[^0-9]/g, '')}@phone.vidyarthimitra.local`;
       user = await User.create({
         name: name || `User ${phone.slice(-4)}`,
@@ -165,7 +183,7 @@ exports.verifyPhoneOtp = async (req, res) => {
         countryCode: countryCode || '+91',
         isPhoneVerified: true,
         authProvider: 'phone',
-        status: 'active'
+        status: 'active',
       });
     } else {
       if (user.status === 'banned') return res.status(403).json({ success: false, message: 'Account has been banned' });
@@ -176,22 +194,26 @@ exports.verifyPhoneOtp = async (req, res) => {
 
     await ensureAdminRole(user);
     await updateLoginTracking(user);
-    const token = generateToken(user._id);
 
-    res.json({ success: true, token, user: getSafeUser(user), isNewUser: !user.isEmailVerified });
+    const token = generateToken(user._id);
+    res.json({ success: true, token, user: getSafeUser(user), isNewUser });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ── Email Verification ──────────────────────────────────────────
-
 exports.verifyEmail = async (req, res) => {
   try {
-    const { email, code } = req.body;
+    const normalizedEmail = normalizeEmail(req.body.email);
+    const code = String(req.body.code || '').trim();
+
+    if (!normalizedEmail || !code) {
+      return res.status(400).json({ success: false, message: 'Email and verification code are required' });
+    }
+
     const hashedCode = crypto.createHash('sha256').update(code).digest('hex');
     const user = await User.findOne({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       emailVerificationCode: hashedCode,
       emailVerificationExpiry: { $gt: Date.now() },
     });
@@ -213,7 +235,12 @@ exports.verifyEmail = async (req, res) => {
 
 exports.resendVerificationEmail = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email.toLowerCase() });
+    const normalizedEmail = normalizeEmail(req.body.email);
+    if (!normalizedEmail) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     if (user.isEmailVerified) return res.status(400).json({ success: false, message: 'Email is already verified' });
 
@@ -227,23 +254,37 @@ exports.resendVerificationEmail = async (req, res) => {
   }
 };
 
-// ── Password Reset ──────────────────────────────────────────────
-
 exports.forgotPassword = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(404).json({ success: false, message: 'No user with that email' });
+    const normalizedEmail = normalizeEmail(req.body.email);
+    if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ success: false, message: 'Enter a valid email address' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a reset link has been sent.',
+      });
+    }
+
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.resetPasswordExpiry = Date.now() + 30 * 60 * 1000;
     await user.save();
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    const resetUrl = `${getClientUrl()}/reset-password/${resetToken}`;
     await sendEmail({
       to: user.email,
       subject: 'Vidyarthi Mitra - Password Reset',
-      html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. Link expires in 30 minutes.</p>`
+      html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. Link expires in 30 minutes.</p>`,
     });
-    res.json({ success: true, message: 'Reset email sent' });
+
+    res.json({
+      success: true,
+      message: 'If an account with that email exists, a reset link has been sent.',
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -251,34 +292,48 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   try {
+    const password = String(req.body.password || '');
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
+      });
+    }
+
     const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
-    const user = await User.findOne({ resetPasswordToken: hashedToken, resetPasswordExpiry: { $gt: Date.now() } });
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpiry: { $gt: Date.now() },
+    });
+
     if (!user) return res.status(400).json({ success: false, message: 'Invalid or expired token' });
-    user.password = req.body.password;
+
+    user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiry = undefined;
     await user.save();
+
     const token = generateToken(user._id);
-    res.json({ success: true, token });
+    res.json({ success: true, token, user: getSafeUser(user) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-// ── Google OAuth ────────────────────────────────────────────────
 
 exports.googleCallback = async (req, res) => {
   if (!req.user.isEmailVerified) {
     req.user.isEmailVerified = true;
     await req.user.save();
   }
+
   if (req.user.authProvider === 'local' && req.user.googleId) {
     req.user.authProvider = 'google';
     await req.user.save();
   }
+
   await updateLoginTracking(req.user);
   const token = generateToken(req.user._id);
-  res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
+  res.redirect(`${getClientUrl()}/auth/callback?token=${token}`);
 };
 
 exports.logout = (req, res) => {
