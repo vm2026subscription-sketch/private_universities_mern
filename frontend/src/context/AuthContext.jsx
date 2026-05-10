@@ -3,6 +3,16 @@ import api from '../utils/api';
 
 const AuthContext = createContext();
 
+const getStoredUser = () => {
+  try {
+    const stored = localStorage.getItem('vm_user');
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    localStorage.removeItem('vm_user');
+    return null;
+  }
+};
+
 const getGoogleAuthUrl = () => {
   const baseUrl = import.meta.env.VITE_API_URL || '/api/v1';
   const normalizedBaseUrl = /^https?:\/\//i.test(baseUrl)
@@ -13,11 +23,8 @@ const getGoogleAuthUrl = () => {
 };
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('vm_user');
-    return stored ? JSON.parse(stored) : null;
-  });
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(getStoredUser);
+  const [loading] = useState(false);
 
   const setAuthSession = (token, userData) => {
     localStorage.setItem('vm_token', token);
@@ -39,7 +46,10 @@ export function AuthProvider({ children }) {
 
   const register = async (name, email, password, phone, countryCode) => {
     const payload = { name, email, password };
-    if (phone) { payload.phone = phone; payload.countryCode = countryCode || '+91'; }
+    if (phone) {
+      payload.phone = phone;
+      payload.countryCode = countryCode || '+91';
+    }
     const { data } = await api.post('/auth/register', payload);
     return data;
   };
@@ -54,7 +64,19 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  // Phone OTP methods
+  const forgotPassword = async (email) => {
+    const { data } = await api.post('/auth/forgot-password', { email });
+    return data;
+  };
+
+  const resetPassword = async (token, password) => {
+    const { data } = await api.post(`/auth/reset-password/${token}`, { password });
+    if (data.token && data.user) {
+      setAuthSession(data.token, data.user);
+    }
+    return data;
+  };
+
   const sendOtp = async (identifier, type = 'sms', purpose = 'login') => {
     const { data } = await api.post('/auth/send-otp', { identifier, type, purpose });
     return data;
@@ -98,9 +120,20 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, login, register, verifyEmail, resendVerificationEmail,
-      sendOtp, verifyPhoneOtp,
-      continueWithGoogle, completeGoogleAuth, logout, updateUser, loading
+      user,
+      login,
+      register,
+      verifyEmail,
+      resendVerificationEmail,
+      forgotPassword,
+      resetPassword,
+      sendOtp,
+      verifyPhoneOtp,
+      continueWithGoogle,
+      completeGoogleAuth,
+      logout,
+      updateUser,
+      loading,
     }}>
       {children}
     </AuthContext.Provider>

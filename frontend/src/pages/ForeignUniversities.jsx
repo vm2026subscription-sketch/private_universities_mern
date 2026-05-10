@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Globe, BookOpen, Clock, IndianRupee, ArrowRight } from 'lucide-react';
 import api from '../utils/api';
@@ -6,26 +6,33 @@ import { CardSkeleton } from '../components/common/LoadingSkeleton';
 
 export default function ForeignUniversities() {
   const [universities, setUniversities] = useState([]);
-  const [courses, setCourses] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    api.get(`/universities?type=foreign&limit=50`).then(async ({ data }) => {
-      const unis = data.data || [];
-      setUniversities(unis);
+    let active = true;
 
-      const coursesMap = {};
-      await Promise.all(unis.map(async (uni) => {
-        try {
-          const res = await api.get(`/courses?universityId=${uni._id}&limit=50`);
-          coursesMap[uni._id] = res.data.data || [];
-        } catch (err) {
-          coursesMap[uni._id] = [];
+    const loadUniversities = async () => {
+      setLoading(true);
+      try {
+        const { data } = await api.get('/universities?type=foreign&limit=50');
+        if (active) {
+          setUniversities(data.data || []);
         }
-      }));
-      setCourses(coursesMap);
-    }).catch(console.error).finally(() => setLoading(false));
+      } catch {
+        if (active) {
+          setUniversities([]);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadUniversities();
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -39,7 +46,7 @@ export default function ForeignUniversities() {
 
       {loading ? (
         <div className="space-y-6">
-          {[1, 2, 3].map(i => <CardSkeleton key={i} />)}
+          {[1, 2, 3].map((item) => <CardSkeleton key={item} count={1} />)}
         </div>
       ) : universities.length === 0 ? (
         <div className="text-center py-20">
@@ -48,73 +55,78 @@ export default function ForeignUniversities() {
         </div>
       ) : (
         <div className="space-y-8">
-          {universities.map(uni => (
-            <div key={uni._id} className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          {universities.map((university) => {
+            const courses = university.courses || [];
 
-              {/* University Header */}
-              <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start border-b border-light-border dark:border-dark-border bg-slate-50 dark:bg-slate-900/20">
-                <div className="w-24 h-24 shrink-0 bg-white border border-light-border dark:border-dark-border rounded-xl flex items-center justify-center p-2">
-                  {uni.logoUrl ? (
-                    <img src={uni.logoUrl} alt={uni.name} className="max-w-full max-h-full object-contain" onError={e => { e.target.style.display='none'; }} />
-                  ) : (
-                    <Globe className="w-10 h-10 text-light-muted opacity-50" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="px-2.5 py-1 text-xs font-bold bg-indigo-500/10 text-indigo-500 rounded-lg">
-                      Foreign University
-                    </span>
+            return (
+              <div key={university._id} className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start border-b border-light-border dark:border-dark-border bg-slate-50 dark:bg-slate-900/20">
+                  <div className="w-24 h-24 shrink-0 bg-white border border-light-border dark:border-dark-border rounded-xl flex items-center justify-center p-2">
+                    {university.logoUrl ? (
+                      <img
+                        src={university.logoUrl}
+                        alt={university.name}
+                        className="max-w-full max-h-full object-contain"
+                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <Globe className="w-10 h-10 text-light-muted opacity-50" />
+                    )}
                   </div>
-                  <h2 className="text-2xl font-bold mb-2">{uni.name}</h2>
-                  <div className="flex items-center gap-2 text-light-muted dark:text-dark-muted text-sm">
-                    <MapPin className="w-4 h-4" />
-                    <span>{uni.city}{uni.city && uni.state ? ', ' : ''}{uni.state}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="px-2.5 py-1 text-xs font-bold bg-indigo-500/10 text-indigo-500 rounded-lg">
+                        Foreign University
+                      </span>
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2">{university.name}</h2>
+                    <div className="flex items-center gap-2 text-light-muted dark:text-dark-muted text-sm">
+                      <MapPin className="w-4 h-4" />
+                      <span>{university.city}{university.city && university.state ? ', ' : ''}{university.state}</span>
+                    </div>
                   </div>
-                </div>
-                <Link to={`/universities/${uni.slug}`} className="btn-primary whitespace-nowrap hidden md:inline-flex shrink-0">
-                  View Full Profile <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
-              </div>
-
-              {/* Courses Section */}
-              <div className="p-6 md:p-8">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-primary" />
-                  Programs Offered
-                </h3>
-
-                {courses[uni._id] && courses[uni._id].length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {courses[uni._id].map(course => (
-                      <div key={course._id} className="p-4 rounded-xl border border-light-border dark:border-dark-border hover:border-primary/30 transition-colors">
-                        <h4 className="font-bold text-primary mb-3">{course.name}</h4>
-                        <div className="flex items-center gap-4 text-sm text-light-muted dark:text-dark-muted">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="w-4 h-4" />
-                            {course.duration || 'N/A'}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <IndianRupee className="w-4 h-4" />
-                            {course.feesPerYear ? course.feesPerYear.toLocaleString() + '/yr' : 'Fees TBD'}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-light-muted">No course details available yet.</p>
-                )}
-
-                <div className="mt-6 md:hidden">
-                  <Link to={`/universities/${uni.slug}`} className="btn-primary w-full justify-center">
+                  <Link to={`/universities/${university.slug}`} className="btn-primary whitespace-nowrap hidden md:inline-flex shrink-0">
                     View Full Profile <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </div>
-              </div>
 
-            </div>
-          ))}
+                <div className="p-6 md:p-8">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    Programs Offered
+                  </h3>
+
+                  {courses.length > 0 ? (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {courses.slice(0, 8).map((course) => (
+                        <div key={course._id} className="p-4 rounded-xl border border-light-border dark:border-dark-border hover:border-primary/30 transition-colors">
+                          <h4 className="font-bold text-primary mb-3">{course.name}</h4>
+                          <div className="flex items-center gap-4 text-sm text-light-muted dark:text-dark-muted">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-4 h-4" />
+                              {course.duration || 'N/A'}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <IndianRupee className="w-4 h-4" />
+                              {course.feesPerYear ? `${course.feesPerYear.toLocaleString()}/yr` : 'Fees TBD'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-light-muted">No course details available yet.</p>
+                  )}
+
+                  <div className="mt-6 md:hidden">
+                    <Link to={`/universities/${university.slug}`} className="btn-primary w-full justify-center">
+                      View Full Profile <ArrowRight className="w-4 h-4 ml-2" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

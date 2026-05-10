@@ -96,7 +96,7 @@ export default function UniversityComparison() {
             <span className="badge badge-blue mb-4 inline-flex">Backend Powered Tool</span>
             <h1 className="text-3xl md:text-4xl font-bold mb-3">University Comparison</h1>
             <p className="text-light-muted dark:text-dark-muted">
-              Compare fees, placements, rankings, approvals, courses, and entrance exams using your website's real university data.
+              Compare fees, placements, rankings, approvals, courses, and entrance exams using your website&apos;s real university data.
             </p>
           </div>
 
@@ -127,7 +127,7 @@ export default function UniversityComparison() {
 
             {(loadingResults || results.length > 0) && (
               <div className="mt-3 border border-light-border dark:border-dark-border rounded-2xl overflow-hidden">
-                {loadingResults && <p className="px-4 py-3 text-sm text-light-muted dark:text-dark-muted">Searching universities...</p>}
+                {loadingResults ? <p className="px-4 py-3 text-sm text-light-muted dark:text-dark-muted">Searching universities...</p> : null}
                 {!loadingResults && results.map((university) => (
                   <button
                     key={university._id}
@@ -192,7 +192,7 @@ export default function UniversityComparison() {
         </div>
       </section>
 
-      {comparison && (
+      {comparison ? (
         <>
           <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {Object.entries(summaryLabels).map(([key, label]) => {
@@ -228,7 +228,7 @@ export default function UniversityComparison() {
                       {row.values.map((entry) => (
                         <td key={`${row.key}-${entry.universityId}`} className="py-3 px-3">
                           <div className={`inline-flex items-center gap-2 ${row.bestUniversityIds.includes(entry.universityId) ? 'text-primary font-semibold' : ''}`}>
-                            {row.bestUniversityIds.includes(entry.universityId) && <Check className="w-4 h-4" />}
+                            {row.bestUniversityIds.includes(entry.universityId) ? <Check className="w-4 h-4" /> : null}
                             <span>{formatValue(row.type, entry.value)}</span>
                           </div>
                         </td>
@@ -243,18 +243,22 @@ export default function UniversityComparison() {
               <div className="card p-5">
                 <h3 className="font-semibold mb-3">Common Course Categories</h3>
                 <div className="flex flex-wrap gap-2">
-                  {(comparison.summary.commonCourseCategories || []).length ? comparison.summary.commonCourseCategories.map((category) => (
-                    <span key={category} className="badge badge-blue">{category}</span>
-                  )) : <span className="text-sm text-light-muted dark:text-dark-muted">No common categories found.</span>}
+                  {(comparison.summary.commonCourseCategories || []).length
+                    ? comparison.summary.commonCourseCategories.map((category) => (
+                      <span key={category} className="badge badge-blue">{category}</span>
+                    ))
+                    : <span className="text-sm text-light-muted dark:text-dark-muted">No common categories found.</span>}
                 </div>
               </div>
 
               <div className="card p-5">
                 <h3 className="font-semibold mb-3">Common Entrance Exams</h3>
                 <div className="flex flex-wrap gap-2">
-                  {(comparison.summary.commonEntranceExams || []).length ? comparison.summary.commonEntranceExams.map((exam) => (
-                    <span key={exam} className="badge badge-orange">{exam}</span>
-                  )) : <span className="text-sm text-light-muted dark:text-dark-muted">No common exams found.</span>}
+                  {(comparison.summary.commonEntranceExams || []).length
+                    ? comparison.summary.commonEntranceExams.map((exam) => (
+                      <span key={exam} className="badge badge-orange">{exam}</span>
+                    ))
+                    : <span className="text-sm text-light-muted dark:text-dark-muted">No common exams found.</span>}
                 </div>
               </div>
             </div>
@@ -269,7 +273,7 @@ export default function UniversityComparison() {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold">{university.name}</h3>
-                    <p className="text-sm text-light-muted dark:text-dark-muted">{university.city}, {university.state} • {university.type}</p>
+                    <p className="text-sm text-light-muted dark:text-dark-muted">{university.city}, {university.state} - {university.type}</p>
                   </div>
                 </div>
 
@@ -288,32 +292,38 @@ export default function UniversityComparison() {
                   <div>
                     <p className="font-medium mb-2">Approvals</p>
                     <div className="flex flex-wrap gap-2">
-                      {university.approvals.length ? university.approvals.map((approval) => (
-                        <span key={approval} className="badge badge-green">{approval}</span>
-                      )) : <span className="text-light-muted dark:text-dark-muted">N/A</span>}
+                      {university.approvals.length
+                        ? university.approvals.map((approval) => (
+                          <span key={approval} className="badge badge-green">{approval}</span>
+                        ))
+                        : <span className="text-light-muted dark:text-dark-muted">N/A</span>}
                     </div>
                   </div>
 
                   <div>
                     <p className="font-medium mb-2">Top Recruiters</p>
                     <div className="flex flex-wrap gap-2">
-                      {university.topRecruiters.length ? university.topRecruiters.map((recruiter) => (
-                        <span key={recruiter} className="badge badge-blue">{recruiter}</span>
-                      )) : <span className="text-light-muted dark:text-dark-muted">N/A</span>}
+                      {university.topRecruiters.length
+                        ? university.topRecruiters.map((recruiter) => (
+                          <span key={recruiter} className="badge badge-blue">{recruiter}</span>
+                        ))
+                        : <span className="text-light-muted dark:text-dark-muted">N/A</span>}
                     </div>
                   </div>
 
                   <div>
                     <p className="font-medium mb-2">Popular Courses</p>
                     <div className="space-y-2">
-                      {university.featuredCourses.length ? university.featuredCourses.map((course) => (
-                        <div key={`${university._id}-${course.name}-${course.category}`} className="rounded-2xl bg-light-card dark:bg-dark-card px-4 py-3">
-                          <p className="font-medium">{course.name}</p>
-                          <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
-                            {course.category} • {course.duration || 'N/A'} years • {course.feesPerYear ? `Rs ${course.feesPerYear.toLocaleString()}/yr` : 'Fees N/A'}
-                          </p>
-                        </div>
-                      )) : <p className="text-light-muted dark:text-dark-muted">No course data available.</p>}
+                      {university.featuredCourses.length
+                        ? university.featuredCourses.map((course) => (
+                          <div key={`${university._id}-${course.name}-${course.category}`} className="rounded-2xl bg-light-card dark:bg-dark-card px-4 py-3">
+                            <p className="font-medium">{course.name}</p>
+                            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
+                              {course.category} - {course.duration || 'N/A'} years - {course.feesPerYear ? `Rs ${course.feesPerYear.toLocaleString()}/yr` : 'Fees N/A'}
+                            </p>
+                          </div>
+                        ))
+                        : <p className="text-light-muted dark:text-dark-muted">No course data available.</p>}
                     </div>
                   </div>
                 </div>
@@ -321,7 +331,7 @@ export default function UniversityComparison() {
             ))}
           </section>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
