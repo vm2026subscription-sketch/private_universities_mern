@@ -1,4 +1,7 @@
 const Question = require('../models/Question');
+const University = require('../models/University');
+const FAQ = require('../models/FAQ');
+const Exam = require('../models/Exam');
 const { generateGeminiReply } = require('../utils/gemini');
 
 exports.getQuestions = async (req, res) => {
@@ -115,15 +118,68 @@ exports.markBestAnswer = async (req, res) => {
 exports.generateQuestionHelp = async (req, res) => {
   try {
     const { title, content, category } = req.body;
-    const prompt = [title, content].filter(Boolean).join('\n');
-    if (!prompt.trim()) {
+    const promptText = [title, content].filter(Boolean).join('\n');
+    if (!promptText.trim()) {
       return res.status(400).json({ success: false, message: 'Question is required' });
     }
 
+    // --- Dynamic Context Extraction (RAG) ---
+    // 1. Check for specific university mentions in the prompt
+    let specificUniversity = null;
+    const allUniversities = await University.find({}).select('name');
+    const mentionedUniv = allUniversities.find(u => 
+      promptText.toLowerCase().includes(u.name.toLowerCase()) || 
+      (u.name.split(' ').length > 1 && promptText.toLowerCase().includes(u.name.split(' ')[0].toLowerCase()))
+    );
+
+    if (mentionedUniv) {
+      specificUniversity = await University.findById(mentionedUniv._id).select('name state city stats description nirfRank admissions courses slug').populate('courses', 'name duration fees');
+    }
+
+    // 2. Fetch general site context
+    const [topUniversities, recentFAQs, upcomingExams] = await Promise.all([
+      University.find({ type: { $ne: 'foreign' } }).sort({ nirfRank: 1, 'stats.rating': -1 }).limit(3).select('name state city stats description nirfRank slug'),
+      FAQ.find({ isPublished: true }).limit(3).select('question answer'),
+      Exam.find({}).limit(3).select('name registrationEndDate examDate website'),
+    ]);
+
+    let siteContext = 'Current Website Knowledge Base:\n';
+    
+    if (specificUniversity) {
+      siteContext += `\nDETAILED INFO FOR ${specificUniversity.name.toUpperCase()}:\n`;
+      siteContext += `- Direct Page URL: /universities/${specificUniversity.slug}\n`;
+      siteContext += `- Location: ${specificUniversity.city}, ${specificUniversity.state}\n`;
+      siteContext += `- NIRF Rank: ${specificUniversity.nirfRank || 'N/A'}\n`;
+      siteContext += `- Average Package: ${specificUniversity.stats?.avgPackageLPA || 'N/A'} LPA\n`;
+      siteContext += `- Highest Package: ${specificUniversity.stats?.highestPackageLPA || 'N/A'} LPA\n`;
+      siteContext += `- Admission Overview: ${specificUniversity.admissions?.overview || 'Standard process'}\n`;
+      if (specificUniversity.admissions?.process?.length > 0) {
+        siteContext += `- Admission Steps: ${specificUniversity.admissions.process.join(' -> ')}\n`;
+      }
+      siteContext += `- Description: ${specificUniversity.description}\n`;
+    }
+
+
+    if (topUniversities.length > 0) {
+      siteContext += '\nGeneral Top Universities Featured:\n' + topUniversities.map(u => 
+        `- ${u.name} (${u.city}, ${u.state}): NIRF Rank ${u.nirfRank || 'N/A'}, Avg Package ${u.stats?.avgPackageLPA || 'N/A'} LPA.`
+      ).join('\n');
+    }
+
+    if (recentFAQs.length > 0) {
+      siteContext += '\nFrequently Asked:\n' + recentFAQs.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n');
+    }
+
+    if (upcomingExams.length > 0) {
+      siteContext += '\nUpcoming Exams:\n' + upcomingExams.map(e => 
+        `- ${e.name}: Registration ends ${e.registrationEndDate ? e.registrationEndDate.toDateString() : 'TBA'}.`
+      ).join('\n');
+    }
+
     const suggestion = await generateGeminiReply({
-      prompt,
+      prompt: promptText,
       category,
-      context: 'Focus on Indian universities, admissions, exams, fees, placements, scholarships, and application strategy.',
+      context: siteContext || 'Focus on Indian universities, admissions, exams, fees, placements, scholarships, and application strategy.',
     });
 
     res.json({ success: true, data: { suggestion } });
@@ -135,3 +191,5 @@ exports.generateQuestionHelp = async (req, res) => {
     });
   }
 };
+
+
