@@ -1,24 +1,42 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, GraduationCap, Search, User } from 'lucide-react';
+import { Home, GraduationCap, Globe, BookOpen, User } from 'lucide-react';
 
 export default function MobileNav() {
   const { pathname } = useLocation();
   const links = [
-    { to: '/', icon: Home, label: 'Home' },
-    { to: '/universities', icon: GraduationCap, label: 'Universities' },
-    { to: '/compare-universities', icon: Search, label: 'Compare' },
-    { to: '/profile', icon: User, label: 'Profile' },
+    { to: '/',                    icon: Home,          label: 'Home'        },
+    { to: '/universities',        icon: GraduationCap, label: 'Universities' },
+    { to: '/courses',             icon: BookOpen,      label: 'Courses'     },
+    { to: '/foreign-universities',icon: Globe,         label: 'Abroad'      },
+    { to: '/profile',             icon: User,          label: 'Profile'     },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-card border-t border-light-border dark:border-dark-border md:hidden z-50">
-      <div className="flex justify-around py-2">
-        {links.map(l => (
-          <Link key={l.to} to={l.to} className={`flex flex-col items-center gap-1 px-3 py-1 ${pathname === l.to ? 'text-primary' : 'text-light-muted dark:text-dark-muted'}`}>
-            <l.icon className="w-5 h-5" />
-            <span className="text-[10px] font-medium">{l.label}</span>
-          </Link>
-        ))}
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-dark-card/95 backdrop-blur border-t border-light-border dark:border-dark-border md:hidden z-50 pb-safe">
+      <div className="flex justify-around py-1.5">
+        {links.map(l => {
+          const isActive = l.to === '/' ? pathname === '/' : pathname.startsWith(l.to);
+          return (
+            <Link
+              key={l.to}
+              to={l.to}
+              className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${
+                isActive
+                  ? 'text-primary'
+                  : 'text-slate-400 dark:text-slate-500 hover:text-primary'
+              }`}
+            >
+              <div className={`relative flex items-center justify-center w-8 h-8 rounded-xl transition-all ${
+                isActive ? 'bg-primary/10 scale-110' : ''
+              }`}>
+                <l.icon className="w-5 h-5" />
+              </div>
+              <span className={`text-[9px] font-bold uppercase tracking-wide ${isActive ? 'text-primary' : ''}`}>
+                {l.label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

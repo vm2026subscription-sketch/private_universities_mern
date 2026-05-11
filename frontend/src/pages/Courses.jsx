@@ -34,6 +34,7 @@ export default function Courses() {
       try {
         let queryParams = new URLSearchParams();
         if (selectedCategory !== 'All') queryParams.append('category', selectedCategory);
+        if (selectedState !== 'All') queryParams.append('state', selectedState);
         if (universityId) queryParams.append('universityId', universityId);
         
         const { data } = await api.get(`/courses?${queryParams.toString()}`);
@@ -46,7 +47,7 @@ export default function Courses() {
     };
     loadCourses();
     return () => { active = false; };
-  }, [selectedCategory, universityId]);
+  }, [selectedCategory, universityId, selectedState]);
 
   // Normalize course names for better grouping
   const normalizeCourseName = (name) => {

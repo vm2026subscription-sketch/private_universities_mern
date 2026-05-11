@@ -115,7 +115,14 @@ exports.getUniversities = async (req, res) => {
       ];
     }
     if (state) filter.state = { $in: state.split(',') };
-    if (type && type !== 'both') filter.type = type;
+    
+    // Default: exclude 'foreign' unless explicitly requested
+    if (type && type !== 'both') {
+      filter.type = type;
+    } else {
+      filter.type = { $ne: 'foreign' };
+    }
+    
     if (naacGrade) filter.naacGrade = { $in: naacGrade.split(',') };
     if (nirfRank) {
       const [min, max] = nirfRank.split('-').map(Number);

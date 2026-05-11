@@ -30,9 +30,11 @@ export default function Footer() {
             <h4 className="font-black text-white mb-6 uppercase tracking-widest text-xs">Explore</h4>
             <div className="space-y-4">
               <Link to="/universities" className="block text-sm hover:text-primary transition-colors">Universities</Link>
+              <Link to="/foreign-universities" className="block text-sm hover:text-primary transition-colors">Study Abroad</Link>
               <Link to="/courses" className="block text-sm hover:text-primary transition-colors">Top Courses</Link>
               <Link to="/exams" className="block text-sm hover:text-primary transition-colors">Entrance Exams</Link>
               <Link to="/compare-universities" className="block text-sm hover:text-primary transition-colors">Compare Colleges</Link>
+              <Link to="/rank-predictor" className="block text-sm hover:text-primary transition-colors">Rank Predictor</Link>
             </div>
           </div>
 

@@ -2,12 +2,19 @@ const Course = require('../models/Course');
 
 exports.getCourses = async (req, res) => {
   try {
-    const { category, universityId, name } = req.query;
+    const { category, universityId, name, state } = req.query;
     const filter = {};
     if (category) filter.category = { $regex: new RegExp(`^${category}$`, 'i') };
     if (universityId) filter.universityId = universityId;
     if (name) filter.name = { $regex: new RegExp(name, 'i') };
-    const courses = await Course.find(filter).populate('universityId', 'name slug city state logoUrl');
+    
+    let courses = await Course.find(filter).populate('universityId', 'name slug city state logoUrl');
+    
+    // Server-side state filter
+    if (state && state !== 'All') {
+      courses = courses.filter(c => c.universityId && c.universityId.state && c.universityId.state.toLowerCase() === state.toLowerCase());
+    }
+
     res.json({ success: true, data: courses });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
