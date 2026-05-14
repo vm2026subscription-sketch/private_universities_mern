@@ -30,6 +30,11 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const OpenChatRoute = lazy(() => import('./pages/OpenChatRoute'));
 const RankPredictor = lazy(() => import('./pages/RankPredictor'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const Contact = lazy(() => import('./pages/Contact'));
+const About = lazy(() => import('./pages/About'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
+const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
 const UsersManager = lazy(() => import('./pages/admin/UsersManager'));
@@ -82,6 +87,11 @@ function PublicLayout() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route path="/refund-cancellation" element={<RefundPolicy />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />

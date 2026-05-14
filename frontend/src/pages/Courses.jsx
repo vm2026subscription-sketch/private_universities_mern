@@ -218,9 +218,9 @@ export default function Courses() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 pb-20 md:pb-12 min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
+    <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
       {/* Professional Compact Hero */}
-      <div className="relative mb-10 rounded-[3rem] overflow-hidden bg-slate-900 text-white shadow-2xl">
+      <div className="relative mb-6 shrink-0 rounded-[3rem] overflow-hidden bg-slate-900 text-white shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-indigo-500/20" />
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         
@@ -290,10 +290,10 @@ export default function Courses() {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
+      <div className="flex flex-col lg:flex-row gap-10 items-start flex-1">
         {/* Advanced Sidebar Filter */}
-        <aside className={`${showFilters ? 'fixed inset-0 z-[150] bg-white dark:bg-dark-bg p-6 overflow-y-auto' : 'hidden'} lg:block lg:w-80 shrink-0 lg:static`}>
-          <div className={`${showFilters ? 'relative' : 'sticky top-24'} space-y-6 pb-10 lg:pb-0`}>
+        <aside className={`${showFilters ? 'fixed inset-0 z-[150] bg-white dark:bg-dark-bg p-6 overflow-y-auto' : 'hidden'} lg:block lg:w-80 shrink-0 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)] lg:overflow-y-auto custom-scrollbar`}>
+          <div className="space-y-6 pb-10 lg:pb-4">
             {/* Mobile Close Button */}
             {showFilters && (
               <div className="flex items-center justify-between mb-8 lg:hidden">
@@ -418,7 +418,7 @@ export default function Courses() {
         </aside>
 
         {/* Dynamic Content Area */}
-        <div className="flex-1">
+        <div className="flex-1 w-full pb-20">
           {(selectedCourse || selectedCategory !== 'All') ? (
             <motion.div 
               initial={{ opacity: 0, scale: 0.98 }}
@@ -565,7 +565,7 @@ export default function Courses() {
                                     params.set('course', item.name);
                                     setSearchParams(params);
                                   } else {
-                                    window.location.href = `/universities/${item.universityId?.slug}`;
+                                    navigate(`/universities/${item.universityId?.slug || item.universityId?._id}`, { state: { activeTab: 1 } });
                                   }
                                 }}>
                               {selectedCourse ? item.universityId?.name : item.name}
@@ -623,7 +623,7 @@ export default function Courses() {
                           <button 
                             onClick={() => {
                               if (selectedCourse) {
-                                window.location.href = `/universities/${item.universityId?.slug}`;
+                                navigate(`/universities/${item.universityId?.slug || item.universityId?._id}`, { state: { activeTab: 1 } });
                               } else {
                                 const params = new URLSearchParams(searchParams);
                                 params.set('course', item.name);

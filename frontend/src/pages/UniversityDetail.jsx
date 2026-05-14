@@ -26,6 +26,7 @@ export default function UniversityDetail() {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     setLoading(true);
     setLogoFailed(false);
     api.get(`/universities/${slug}`)
