@@ -5,6 +5,9 @@ const courseSchema = new mongoose.Schema({
   name: { type: String, required: true },
   slug: { type: String, unique: true },
   category: { type: String, required: true },
+  stream: { type: String, default: 'Others' },
+  baseCourse: { type: String },
+  specializationName: { type: String },
   duration: String,
   specializations: [{
     name: String,
@@ -19,6 +22,9 @@ const courseSchema = new mongoose.Schema({
 
 courseSchema.index({ universityId: 1 });
 courseSchema.index({ category: 1 });
+courseSchema.index({ stream: 1 });
+courseSchema.index({ baseCourse: 1 });
+courseSchema.index({ specializationName: 1 });
 courseSchema.index({ name: 1 });
 courseSchema.index({ slug: 1 });
 
