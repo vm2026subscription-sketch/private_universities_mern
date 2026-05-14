@@ -81,7 +81,7 @@ export default function Navbar() {
 
           <div className="hidden lg:flex items-center gap-1">
             {visibleNavLinks.map(l => {
-              const isActive = l.to === '/' ? location.pathname === '/' : location.pathname.startsWith(l.to);
+              const isActive = location.pathname === l.to || (l.to !== '/' && location.pathname?.startsWith(l.to + '/'));
               return (
               <div 
                 key={l.to} 
@@ -89,15 +89,21 @@ export default function Navbar() {
               >
                 <Link 
                   to={l.to} 
-                  className={`relative px-4 py-2.5 text-sm font-bold tracking-tight transition-all rounded-xl flex items-center gap-1 group overflow-hidden ${
-                    isActive ? 'text-primary' : 'text-slate-600 dark:text-slate-300 hover:text-primary'
+                  className={`relative px-4 py-3 text-sm font-black tracking-tight transition-all flex items-center gap-1 group overflow-hidden ${
+                    isActive ? 'text-accent' : 'text-slate-600 dark:text-slate-300 hover:text-accent'
                   }`}
                 >
                   <span className="relative z-10">{l.label}</span>
-                  {/* Subtle slide-up background highlight */}
-                  <span className={`absolute inset-0 bg-primary/5 dark:bg-primary/10 transition-transform duration-300 ease-out ${isActive ? 'translate-y-0' : 'translate-y-[100%] group-hover:translate-y-0'}`} />
-                  {/* Left-to-right animated bottom border (Multi-color gradient) */}
-                  <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-gradient-to-r from-fuchsia-600 via-orange-500 to-emerald-500 transition-transform duration-300 origin-left ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+                  
+                  {/* Subtle background highlight on hover/active */}
+                  <span className={`absolute inset-0 bg-accent/5 transition-transform duration-300 ease-out ${isActive ? 'translate-y-0' : 'translate-y-[100%] group-hover:translate-y-0'}`} />
+
+                  {/* MIT ADT style multi-colored bar BELOW link */}
+                  <div className={`absolute bottom-0 left-0 w-full flex h-[4px] transition-transform duration-300 ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`}>
+                    <div className="flex-1 bg-[#9c0b89]" />
+                    <div className="flex-1 bg-[#ff6b00]" />
+                    <div className="flex-1 bg-[#00a651]" />
+                  </div>
                 </Link>
               </div>
             )})}
@@ -151,7 +157,7 @@ export default function Navbar() {
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button onClick={() => setShowDropdown(!showDropdown)} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-all">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-primary/20">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white text-sm font-black shadow-lg shadow-primary/20 border border-accent/30">
                     {user.name?.charAt(0)?.toUpperCase()}
                   </div>
                   <ChevronDown className={`w-4 h-4 hidden md:block transition-transform ${showDropdown ? 'rotate-180' : ''}`} />

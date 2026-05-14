@@ -5,15 +5,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "#FF6B00", light: "#FF8C42", dark: "#E55A00", 50: "#FFF3E6", 100: "#FFE0CC", 200: "#FFC299", 300: "#FFA366", 400: "#FF8533", 500: "#FF6B00", 600: "#E55A00", 700: "#CC4F00", 800: "#994000", 900: "#663000" },
-        dark: { bg: "#0F0F0F", card: "#1A1A1A", border: "#2A2A2A", text: "#F5F5F5", muted: "#666666" },
-        light: { bg: "#FFFFFF", card: "#F9F9F9", border: "#E5E5E5", text: "#1A1A1A", muted: "#666666" },
-        success: "#22C55E",
+        primary: { DEFAULT: "#002147", light: "#003366", dark: "#001630", 50: "#E6EAEE", 100: "#CCD6DF", 200: "#99ADB2", 300: "#668485", 400: "#335B58", 500: "#002147", 600: "#001B3A", 700: "#001630", 800: "#001021", 900: "#000B16" },
+        accent: { DEFAULT: "#C5A022", light: "#D4B44A", dark: "#A0821B", 50: "#F9F6E9", 100: "#F2EDD3", 200: "#E6DAA7", 300: "#D9C77B", 400: "#CDB44F", 500: "#C5A022", 600: "#B1901F", 700: "#9E801B", 800: "#766014", 900: "#4F400E" },
+        dark: { bg: "#020817", card: "#0F172A", border: "#1E293B", text: "#F8FAFC", muted: "#94A3B8" },
+        light: { bg: "#FFFFFF", card: "#F8FAFC", border: "#E2E8F0", text: "#0F172A", muted: "#64748B" },
+        success: "#10B981",
         warning: "#F59E0B",
         error: "#EF4444"
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif']
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Playfair Display"', 'serif']
       },
       borderRadius: { xl: "12px", "2xl": "16px" }
     }

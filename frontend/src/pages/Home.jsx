@@ -242,9 +242,9 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-4xl mx-auto"
           >
-            <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight text-white drop-shadow-lg leading-tight">
+            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 tracking-tight text-white drop-shadow-lg leading-tight">
               Discover Top <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-orange-500">Universities</span> in India
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent-light to-accent">Universities</span> in India
             </h1>
             <p className="text-white/90 drop-shadow-md mb-10 text-lg md:text-xl max-w-2xl mx-auto font-medium">
               Explore simplified admissions, authentic campus details, and directly connect with institutions.
@@ -262,7 +262,7 @@ export default function Home() {
                   placeholder="Search for a university..."
                   className="w-full py-4 bg-transparent text-slate-900 text-lg font-bold placeholder:text-slate-400 focus:outline-none"
                 />
-                <button type="submit" className="bg-gradient-to-r from-fuchsia-600 to-orange-500 hover:from-fuchsia-500 hover:to-orange-400 text-white px-8 md:px-12 font-black text-base transition-all whitespace-nowrap rounded-xl shadow-lg shadow-orange-500/25 active:scale-95">
+                <button type="submit" className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-white px-8 md:px-12 font-black text-base transition-all whitespace-nowrap rounded-xl shadow-lg shadow-primary/25 active:scale-95 border border-accent/30">
                   Search
                 </button>
               </div>
@@ -297,7 +297,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 py-20">
         <div className="text-center mb-16">
           <p className="text-primary font-black text-xs uppercase tracking-[0.3em] mb-4">The Vidyarthi Mitra Edge</p>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white">Why 50,000+ Students Trust Us</h2>
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">Why 50,000+ Students Trust Us</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {[
@@ -332,7 +332,7 @@ export default function Home() {
       {/* Explore by State Section */}
       <section className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-10">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Explore by State</h2>
+          <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Explore by State</h2>
           <Link to="/universities" className="text-primary font-bold text-sm">View All States</Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">

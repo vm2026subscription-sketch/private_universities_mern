@@ -53,7 +53,7 @@ export default function Exams() {
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between mb-10">
         <div>
           <span className="badge badge-orange mb-4 inline-flex">Exam Updates</span>
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Upcoming Entrance Exams</h1>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3 text-primary">Upcoming Entrance Exams</h1>
           <p className="text-light-muted dark:text-dark-muted max-w-2xl">
             Track exam dates, registration deadlines, eligibility, and official links from the backend.
           </p>
@@ -107,7 +107,7 @@ export default function Exams() {
                     {exam.shortName ? <span className="badge badge-blue">{exam.shortName}</span> : null}
                     <span className="badge badge-orange capitalize">{exam.category || 'others'}</span>
                   </div>
-                  <h2 className="text-xl font-semibold">{exam.name}</h2>
+                  <h2 className="text-xl font-serif font-bold">{exam.name}</h2>
                 </div>
                 {exam.officialUrl ? (
                   <a href={exam.officialUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm inline-flex items-center gap-1">

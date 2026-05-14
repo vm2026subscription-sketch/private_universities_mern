@@ -34,7 +34,7 @@ export default function AdminLayout() {
 
   const isActive = (path) => {
     if (path === '/admin') return location.pathname === '/admin';
-    return location.pathname.startsWith(path);
+    return location.pathname?.startsWith(path);
   };
 
   const SidebarContent = () => (

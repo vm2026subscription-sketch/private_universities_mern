@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, Accessibility, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../utils/api';
+import { toast } from 'react-hot-toast';
 
 const AccessibilityWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,6 +70,51 @@ const AccessibilityWidget = () => {
     };
   }, [isSpeaking]);
 
+  const handleTranslate = async (lang) => {
+    if (lang === 'en') {
+      window.location.reload();
+      return;
+    }
+
+    try {
+      // Find elements that have text nodes directly as children (to avoid nested translation issues)
+      const elements = Array.from(document.querySelectorAll('h1, h2, h3, p, span, button:not(#accessibility-widget *)'))
+        .filter(el => Array.from(el.childNodes).some(node => node.nodeType === 3 && node.textContent.trim().length > 0));
+
+      toast.loading(`Translating to ${lang}...`, { id: 'translate' });
+
+      for (const el of elements) {
+        // Use a data attribute to store original text to prevent stacking prefixes
+        const originalText = el.getAttribute('data-original-text') || el.innerText || el.textContent;
+        if (!el.hasAttribute('data-original-text')) {
+          el.setAttribute('data-original-text', originalText);
+        }
+
+        if (originalText && originalText.trim().length > 3 && originalText.length < 500) {
+          try {
+            const { data } = await api.post('/bhashini/translate', {
+              text: originalText.trim(),
+              targetLanguage: lang
+            });
+            if (data.success) {
+              // For the mock demo, let's make it cleaner
+              const cleanTranslated = data.isMock 
+                ? `[${lang.toUpperCase()}] ${originalText.trim()}` 
+                : data.translatedText;
+              
+              el.innerText = cleanTranslated;
+            }
+          } catch (e) {
+            console.error('Translation error:', e);
+          }
+        }
+      }
+      toast.success('Translation complete', { id: 'translate' });
+    } catch (error) {
+      toast.error('Translation failed', { id: 'translate' });
+    }
+  };
+
   const handleSpeak = () => {
     if (isSpeaking) {
       setIsSpeaking(false);
@@ -83,7 +130,7 @@ const AccessibilityWidget = () => {
       <div className="bg-[#9c0b89] py-4 px-2 rounded-r-2xl shadow-2xl flex flex-col gap-4 relative z-20">
         <button 
           onClick={handleSpeak}
-          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isSpeaking ? 'bg-primary text-white scale-110 shadow-[0_0_15px_rgba(255,107,0,0.5)]' : 'bg-white/20 text-white hover:bg-white/30'}`}
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isSpeaking ? 'bg-[#ff6b00] text-white scale-110 shadow-[0_0_15px_rgba(255,107,0,0.5)]' : 'bg-white/20 text-white hover:bg-white/30'}`}
           title={isSpeaking ? "Turn off Click-to-Speak" : "Turn on Click-to-Speak"}
         >
           <Volume2 className="w-6 h-6" />
@@ -95,6 +142,13 @@ const AccessibilityWidget = () => {
         >
           {isOpen ? <X className="w-6 h-6" /> : <Accessibility className="w-6 h-6" />}
         </button>
+        
+        {/* Colorful Bar at bottom (SS3 reference) */}
+        <div className="flex w-full h-2 rounded-full overflow-hidden mt-2 border border-white/10">
+          <div className="flex-1 bg-[#9c0b89]" />
+          <div className="flex-1 bg-[#ff6b00]" />
+          <div className="flex-1 bg-[#00a651]" />
+        </div>
       </div>
 
       {/* Menu Panel */}
@@ -150,7 +204,7 @@ const AccessibilityWidget = () => {
               </MenuButton>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 border-b pb-2 mb-2">
               <span className="text-[10px] uppercase font-bold text-slate-400 px-2 tracking-wider">Spacing</span>
               <MenuButton 
                 active={activeFilters.spacing === 'small'} 
@@ -170,6 +224,23 @@ const AccessibilityWidget = () => {
               >
                 Large Spacing
               </MenuButton>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] uppercase font-bold text-slate-400 px-2 tracking-wider">Language (Bhashini)</span>
+              <select 
+                className="w-full py-2.5 px-4 rounded-lg text-sm font-medium bg-slate-900 text-white outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) => handleTranslate(e.target.value)}
+                defaultValue="en"
+              >
+                <option value="en">English</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="mr">मराठी (Marathi)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+                <option value="ta">தமிழ் (Tamil)</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+              </select>
             </div>
           </motion.div>
         )}
