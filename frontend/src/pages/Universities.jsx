@@ -105,7 +105,7 @@ export default function Universities() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20 md:pb-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Universities</h1>
+        <h1 className="text-3xl font-serif font-bold text-primary">Universities</h1>
         <div className="flex items-center gap-3">
           <select value={sort} onChange={e => setSort(e.target.value)} className="input-field !w-auto !py-2 text-sm">
             <option value="ranking">By Ranking</option>

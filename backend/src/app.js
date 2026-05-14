@@ -18,6 +18,7 @@ const questionRoutes = require('./routes/questions');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 const uploadRoutes = require('./routes/upload');
+const bhashiniRoutes = require('./routes/bhashini');
 
 const errorHandler = require('./middleware/errorHandler');
 
@@ -94,6 +95,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/bhashini', bhashiniRoutes);
 app.use('/api/v1', publicRoutes);
 
 app.use(errorHandler);

@@ -17,4 +17,9 @@ const courseSchema = new mongoose.Schema({
   eligibility: String
 }, { timestamps: true });
 
+courseSchema.index({ universityId: 1 });
+courseSchema.index({ category: 1 });
+courseSchema.index({ name: 1 });
+courseSchema.index({ slug: 1 });
+
 module.exports = mongoose.model('Course', courseSchema);

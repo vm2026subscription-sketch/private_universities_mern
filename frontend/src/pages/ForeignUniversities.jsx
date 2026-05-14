@@ -59,9 +59,9 @@ export default function ForeignUniversities() {
           <Globe className="w-4 h-4" />
           Study Abroad in India
         </div>
-        <h1 className="text-4xl md:text-5xl font-black mb-4 text-slate-900 dark:text-white">
+        <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 text-slate-900 dark:text-white">
           World-Class Universities,<br />
-          <span className="text-gradient">Right Here in India</span>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent-light to-accent">Right Here in India</span>
         </h1>
         <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-base leading-relaxed">
           International universities have established campuses across India. Get a globally recognised degree without leaving the country.
@@ -129,7 +129,7 @@ export default function ForeignUniversities() {
                         UGC Approved
                       </span>
                     </div>
-                    <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mb-2 leading-tight">
+                    <h2 className="text-xl md:text-2xl font-serif font-bold text-slate-900 dark:text-white mb-2 leading-tight">
                       {uni.name}
                     </h2>
                     <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-3">

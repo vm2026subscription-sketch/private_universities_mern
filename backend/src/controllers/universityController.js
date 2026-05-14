@@ -174,10 +174,19 @@ exports.getUniversity = async (req, res) => {
     }
     
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+
+    // Fallback: If courses array is empty (due to seeder logic), fetch them manually
+    if (!university.courses || university.courses.length === 0) {
+      const manualCourses = await Course.find({ universityId: university._id });
+      if (manualCourses.length > 0) {
+        university = university.toObject();
+        university.courses = manualCourses;
+      }
+    }
     
     // Increment views for trend analysis
     university.views = (university.views || 0) + 1;
-    await university.save();
+    if (university.save) await university.save();
 
     res.json({ success: true, data: university });
   } catch (error) {
@@ -290,6 +299,51 @@ exports.getTrends = async (req, res) => {
       { $limit: 8 }
     ]);
     res.json({ success: true, popularUniversities, trendingCourses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const recommender = require('../utils/recommender');
+
+exports.getSimilarUniversities = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const university = await University.findById(id);
+    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+
+    // Fetch pool of potential similar universities
+    let pool = await University.find({ 
+      _id: { $ne: university._id },
+      type: university.type
+    }).limit(20);
+
+    // If same type pool is small, add other universities in same state
+    if (pool.length < 4) {
+      const statePool = await University.find({
+        _id: { $ne: university._id },
+        state: university.state,
+        type: { $ne: university.type }
+      }).limit(20);
+      pool = [...pool, ...statePool];
+    }
+
+    // Still small? Add any universities
+    if (pool.length < 4) {
+      const generalPool = await University.find({
+        _id: { $ne: university._id, $nin: pool.map(p => p._id) }
+      }).limit(20);
+      pool = [...pool, ...generalPool];
+    }
+
+    const recommendations = recommender.getRecommendations(
+      university, 
+      pool, 
+      ['description', 'overview', 'state', 'city', 'name'], 
+      4
+    );
+
+    res.json({ success: true, data: recommendations });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

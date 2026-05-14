@@ -51,9 +51,9 @@ export default function AiChatWidget() {
         <button
           type="button"
           onClick={openChat}
-          className="rounded-full bg-gradient-to-br from-primary to-primary-600 p-4 text-white shadow-[0_8px_30px_rgb(var(--color-primary-rgb),0.4)] hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center relative overflow-hidden"
+          className="rounded-full bg-gradient-to-br from-primary to-primary-light p-4 text-white shadow-[0_8px_30px_rgba(0,33,71,0.4)] hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center relative overflow-hidden border border-accent/20"
         >
-          <div className="absolute inset-0 bg-white/20 animate-ping rounded-full" />
+          <div className="absolute inset-0 bg-accent/20 animate-ping rounded-full" />
           <Bot className="w-7 h-7 relative z-10" />
         </button>
       </motion.div>
@@ -213,16 +213,16 @@ export default function AiChatWidget() {
       <div className="flex flex-col h-[640px]">
         {/* Header */}
         <div
-          className="flex cursor-move items-center justify-between bg-gradient-to-r from-primary to-primary-600 px-5 py-4 text-white select-none shrink-0"
+          className="flex cursor-move items-center justify-between bg-gradient-to-r from-primary to-primary-light px-5 py-4 text-white select-none shrink-0 border-b border-accent/20"
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
         >
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="rounded-2xl bg-white/20 p-2.5 backdrop-blur-md">
+              <div className="rounded-2xl bg-white/10 p-2.5 backdrop-blur-md border border-accent/30">
                 <Bot className="w-5 h-5" />
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-primary rounded-full" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent border-2 border-primary rounded-full" />
             </div>
             <div>
               <p className="font-bold text-sm tracking-tight">Vidyarthi Mitra AI</p>
@@ -298,7 +298,7 @@ export default function AiChatWidget() {
                 key={prompt} 
                 type="button" 
                 onClick={() => askGemini(prompt)} 
-                className="rounded-full bg-primary/5 hover:bg-primary/10 border border-primary/10 px-3.5 py-1.5 text-xs text-primary font-medium transition-all hover:scale-105 active:scale-95"
+                className="rounded-full bg-accent/5 hover:bg-accent/10 border border-accent/10 px-3.5 py-1.5 text-xs text-primary font-bold transition-all hover:scale-105 active:scale-95"
               >
                 {prompt}
               </button>
@@ -321,7 +321,7 @@ export default function AiChatWidget() {
             <button 
               type="submit" 
               disabled={loading || !input.trim()} 
-              className="absolute right-1.5 bottom-1.5 w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-lg shadow-primary/20"
+              className="absolute right-1.5 bottom-1.5 w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light text-white flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-lg shadow-primary/20 border border-accent/20"
             >
               <Send className="w-4 h-4" />
             </button>

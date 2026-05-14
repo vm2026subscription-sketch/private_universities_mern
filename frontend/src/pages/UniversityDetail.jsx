@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { 
   MapPin, Globe, Phone, Mail, BookOpen, Users, Award, 
-  Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2 
+  Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2, ArrowRight 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
@@ -18,6 +18,7 @@ export default function UniversityDetail() {
   const [uni, setUni] = useState(null);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 0);
   const [loading, setLoading] = useState(true);
+  const [similarUnis, setSimilarUnis] = useState([]);
 
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
@@ -39,6 +40,16 @@ export default function UniversityDetail() {
         console.error('Failed to fetch university details:', err);
       })
       .finally(() => setLoading(false));
+
+    // Fetch similar universities
+    api.get(`/universities/${slug}`)
+      .then(({ data }) => {
+        if (data.data?._id) {
+          api.get(`/universities/${data.data._id}/similar`)
+            .then(res => setSimilarUnis(res.data.data))
+            .catch(() => {});
+        }
+      });
   }, [slug]);
 
   useEffect(() => {
@@ -83,7 +94,7 @@ export default function UniversityDetail() {
         {uni.bannerImageUrl ? (
           <img src={uni.bannerImageUrl} alt={uni.name} className="w-full h-full object-cover opacity-50" />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-r from-primary to-orange-600 opacity-20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary-light opacity-20" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#f8fafc] dark:from-dark-bg to-transparent" />
       </div>
@@ -106,7 +117,7 @@ export default function UniversityDetail() {
                   {uni.naacGrade && <span className="bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">NAAC {uni.naacGrade}</span>}
                   {uni.nirfRank && <span className="bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">#{uni.nirfRank} NIRF</span>}
                 </div>
-                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">{uni.name}</h1>
+                <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white mb-2">{uni.name}</h1>
                 <p className="text-slate-500 font-bold flex items-center justify-center md:justify-start gap-2 uppercase text-xs tracking-widest">
                   <MapPin className="w-4 h-4 text-primary" /> {uni.city}, {uni.state}
                 </p>
@@ -128,9 +139,9 @@ export default function UniversityDetail() {
               </button>
               {uni.website && (
                 <a 
-                  href={uni.website.startsWith('http') ? uni.website : `https://${uni.website}`} 
+                  href={uni.website?.startsWith('http') ? uni.website : `https://${uni.website}`} 
                   target="_blank" rel="noreferrer"
-                  className="bg-primary text-white font-black text-sm px-8 py-4 rounded-2xl shadow-xl shadow-primary/30 hover:scale-105 transition-all"
+                  className="bg-gradient-to-br from-primary to-primary-light text-white font-black text-sm px-8 py-4 rounded-2xl shadow-xl shadow-primary/30 hover:scale-105 transition-all border border-accent/20"
                 >
                   APPLY NOW
                 </a>
@@ -140,12 +151,12 @@ export default function UniversityDetail() {
 
           <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mt-12 pt-10 border-t border-slate-50 dark:border-white/5">
             {[
-              { icon: Users, label: 'Students', value: uni.stats?.totalStudents?.toLocaleString() || '5,000+' },
-              { icon: Award, label: 'Avg Package', value: uni.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : '4.5 LPA' },
+              { icon: Users, label: 'Students', value: uni.stats?.totalStudents?.toLocaleString() || 'N/A' },
+              { icon: Award, label: 'Avg Package', value: uni.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : 'N/A' },
               { icon: BookOpen, label: 'Courses', value: uni.stats?.totalCoursesCount || uni.courses?.length || 0, link: `/courses?universityId=${uni._id}&universityName=${encodeURIComponent(uni.name)}` },
-              { icon: Building, label: 'Campus', value: uni.stats?.campusSizeAcres ? `${uni.stats.campusSizeAcres} Acres` : '50+ Acres' },
-              { icon: CheckCircle2, label: 'Placement', value: uni.stats?.placementPercentage ? `${uni.stats.placementPercentage}%` : '85%' },
-              { icon: Award, label: 'Highest Pkg', value: uni.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : '12 LPA' },
+              { icon: Building, label: 'Campus', value: uni.stats?.campusSizeAcres ? `${uni.stats.campusSizeAcres} Acres` : 'N/A' },
+              { icon: CheckCircle2, label: 'Placement', value: uni.stats?.placementPercentage ? `${uni.stats.placementPercentage}%` : 'N/A' },
+              { icon: Award, label: 'Highest Pkg', value: uni.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : 'N/A' },
             ].map((s, i) => {
               const content = (
                 <>
@@ -198,7 +209,7 @@ export default function UniversityDetail() {
               {activeTab === 0 && (
                 <div className="space-y-12">
                   <div>
-                    <h2 className="text-2xl font-black mb-6">About the Institution</h2>
+                    <h2 className="text-2xl font-serif font-bold mb-6">About the Institution</h2>
                     <p className="text-slate-500 font-medium leading-relaxed text-lg">
                       {uni.description || `${uni.name} is a leading ${uni.type} institution located in the educational hub of ${uni.city}, ${uni.state}. Established with a vision to provide world-class education, it offers a wide range of undergraduate and postgraduate programs across various disciplines.`}
                     </p>
@@ -219,7 +230,7 @@ export default function UniversityDetail() {
                                <item.icon className="w-4 h-4 text-slate-400" />
                              </div>
                              {item.link ? (
-                               <a href={item.value.startsWith('http') ? item.value : `https://${item.value}`} target="_blank" rel="noreferrer" className="text-slate-600 font-bold hover:text-primary transition-colors mt-2 break-all">{item.value}</a>
+                               <a href={item.value?.startsWith('http') ? item.value : `https://${item.value}`} target="_blank" rel="noreferrer" className="text-slate-600 font-bold hover:text-primary transition-colors mt-2 break-all">{item.value}</a>
                              ) : (
                                <span className="text-slate-600 font-bold mt-2 leading-relaxed">{item.value}</span>
                              )}
@@ -253,6 +264,38 @@ export default function UniversityDetail() {
             </motion.div>
           </AnimatePresence>
         </div>
+        {/* Similar Universities Section */}
+        {similarUnis.length > 0 && (
+          <div className="mb-20">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">Similar Universities</h2>
+              <Link to="/universities" className="text-primary font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:underline">
+                View All <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {similarUnis.map((u) => (
+                <Link 
+                  key={u._id} 
+                  to={`/universities/${u.slug}`}
+                  className="bg-white dark:bg-dark-card rounded-[2.5rem] p-6 border border-slate-100 dark:border-white/5 shadow-lg hover:-translate-y-2 transition-all group"
+                >
+                  <div className="w-16 h-16 bg-slate-50 rounded-2xl mb-4 flex items-center justify-center overflow-hidden border border-slate-100 p-2">
+                    {u.logoUrl ? (
+                      <img src={u.logoUrl} alt={u.name} className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-2xl font-black text-primary">{u.name[0]}</span>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-2 line-clamp-1 group-hover:text-primary transition-colors">{u.name}</h3>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <MapPin className="w-3 h-3 text-primary" /> {u.city}, {u.state}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
