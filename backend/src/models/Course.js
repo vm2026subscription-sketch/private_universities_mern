@@ -35,4 +35,5 @@ courseSchema.index({ baseCourse: 1 });
 courseSchema.index({ specializationName: 1 });
 courseSchema.index({ name: 1 });
 
+
 module.exports = mongoose.model('Course', courseSchema);

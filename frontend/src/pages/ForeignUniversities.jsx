@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { MapPin, Globe, BookOpen, Clock, IndianRupee, ArrowRight, ExternalLink, Award } from 'lucide-react';
 import api from '../utils/api';
 import { ListSkeleton } from '../components/common/LoadingSkeleton';
+import UniversityLogo from '../components/common/UniversityLogo';
 
 // Country flag emojis
 const countryFlag = (name = '') => {
-  const n = name.toLowerCase();
+  const n = (name || '').toLowerCase();
   if (n.includes('united kingdom') || n.includes('uk')) return '🇬🇧';
   if (n.includes('united states') || n.includes('usa') || n.includes('us')) return '🇺🇸';
   if (n.includes('australia')) return '🇦🇺';
@@ -19,7 +20,7 @@ const countryFlag = (name = '') => {
 
 // Country → accent color
 const countryAccent = (name = '') => {
-  const n = name.toLowerCase();
+  const n = (name || '').toLowerCase();
   if (n.includes('united kingdom') || n.includes('uk')) return 'from-blue-600 to-red-600';
   if (n.includes('united states') || n.includes('usa')) return 'from-blue-700 to-red-500';
   if (n.includes('australia')) return 'from-blue-500 to-yellow-400';
@@ -109,13 +110,8 @@ export default function ForeignUniversities() {
 
                 {/* Header */}
                 <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start border-b border-light-border dark:border-dark-border">
-                  {/* Logo */}
                   <div className="w-20 h-20 shrink-0 bg-slate-50 dark:bg-slate-800 border border-light-border dark:border-dark-border rounded-2xl flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
-                    {uni.logoUrl ? (
-                      <img src={uni.logoUrl} alt={uni.name} className="max-w-full max-h-full object-contain" onError={e => { e.target.style.display='none'; }} />
-                    ) : (
-                      <span className="text-4xl">{flag}</span>
-                    )}
+                    <UniversityLogo logoUrl={uni.logoUrl} name={uni.name} />
                   </div>
 
                   {/* Info */}

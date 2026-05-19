@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { Helmet } from 'react-helmet-async';
 import QASection from '../components/QASection';
+import UniversityLogo from '../components/common/UniversityLogo';
 
 const tabs = ['Overview', 'Courses', 'Admissions', 'Placements', 'Campus', 'Scholarships', 'Q&A', 'News'];
 
@@ -108,13 +109,8 @@ export default function UniversityDetail() {
         <div className="bg-white dark:bg-dark-card rounded-[3rem] p-8 md:p-10 shadow-2xl border border-slate-100 dark:border-white/5 mb-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="flex flex-col md:flex-row gap-8 items-center md:items-end">
-              {/* Logo */}
-              <div className="w-32 h-32 rounded-[2.5rem] bg-white shadow-2xl border-4 border-white flex items-center justify-center overflow-hidden shrink-0">
-                {uni.logoUrl && !logoFailed ? (
-                  <img src={uni.logoUrl} alt={uni.name} className="w-full h-full object-contain p-4" onError={() => setLogoFailed(true)} />
-                ) : (
-                  <span className="text-4xl font-black text-primary">{uni.name[0]}</span>
-                )}
+              <div className="w-32 h-32 rounded-[2.5rem] bg-white shadow-2xl border-4 border-white flex items-center justify-center overflow-hidden shrink-0 p-4">
+                <UniversityLogo logoUrl={uni.logoUrl} name={uni.name} />
               </div>
               <div className="text-center md:text-left">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4">

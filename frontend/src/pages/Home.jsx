@@ -12,6 +12,7 @@ import {
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAiChat } from '../context/AiChatContext';
+import UniversityLogo from '../components/common/UniversityLogo';
 
 const mockUniversities = [
   { name: 'SAGE University', city: 'Indore', state: 'MP', slug: 'sage-university-indore', naacGrade: 'A+', stats: { avgPackageLPA: '5.5' }, logo: 'https://ui-avatars.com/api/?name=SAGE+University&background=FF6B00&color=fff&bold=true' },
@@ -504,20 +505,7 @@ export default function Home() {
 
                     <div className="relative z-10 flex gap-6 items-center">
                       <div className="w-24 h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-50 group-hover:border-transparent transition-colors p-2 shrink-0">
-                        {(u.logoUrl || u.logo) ? (
-                          <img
-                            src={u.logoUrl || u.logo}
-                            alt={u.name}
-                            className="w-full h-full object-contain"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <div className={`${(u.logoUrl || u.logo) ? 'hidden' : 'flex'} absolute inset-0 items-center justify-center bg-slate-100 dark:bg-white/5 text-slate-400 font-black text-2xl uppercase border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl`}>
-                          {u.name.substring(0, 2)}
-                        </div>
+                        <UniversityLogo logoUrl={u.logoUrl || u.logo} name={u.name} />
                       </div>
 
                       <div className="flex-1 min-w-0">

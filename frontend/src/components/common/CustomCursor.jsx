@@ -14,11 +14,11 @@ export default function CustomCursor() {
       const target = e.target;
       // If hovering over interactive elements
       if (
-        target.tagName.toLowerCase() === 'button' ||
-        target.tagName.toLowerCase() === 'a' ||
-        target.closest('button') ||
-        target.closest('a') ||
-        target.classList.contains('cursor-pointer')
+        target?.tagName?.toLowerCase() === 'button' ||
+        target?.tagName?.toLowerCase() === 'a' ||
+        target?.closest?.('button') ||
+        target?.closest?.('a') ||
+        target?.classList?.contains('cursor-pointer')
       ) {
         setIsHovering(true);
       } else {

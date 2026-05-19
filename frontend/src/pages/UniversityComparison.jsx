@@ -64,6 +64,17 @@ export default function UniversityComparison() {
     localStorage.setItem('compareRecentSearches', JSON.stringify(updated));
   };
 
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('compareRecentSearches');
+  };
+
+  const removeRecentSearch = (id) => {
+    const updated = recentSearches.filter(u => u._id !== id);
+    setRecentSearches(updated);
+    localStorage.setItem('compareRecentSearches', JSON.stringify(updated));
+  };
+
   const addUniversity = (university) => {
     if (selectedIds.has(university._id)) {
       toast.error('University already selected');
@@ -215,17 +226,38 @@ export default function UniversityComparison() {
                       )
                     ) : (
                       <div className="p-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 px-2">Recent Searches</h4>
-                        {recentSearches.map((u) => (
-                          <button
-                            key={u._id}
-                            onClick={() => addUniversity(u)}
-                            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors text-left group/recent"
+                        <div className="flex items-center justify-between mb-3 px-2">
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Recent Searches</h4>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); clearRecentSearches(); }}
+                            className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
                           >
-                            <Search className="w-4 h-4 text-slate-300 group-hover/recent:text-primary" />
-                            <span className="font-semibold text-sm text-slate-700 dark:text-slate-300 truncate">{u.name}</span>
+                            Clear All
                           </button>
-                        ))}
+                        </div>
+                        <div className="space-y-1">
+                          {recentSearches.map((u) => (
+                            <div key={u._id} className="flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-colors group/recent">
+                              <button
+                                type="button"
+                                onClick={() => addUniversity(u)}
+                                className="flex-1 flex items-center gap-3 px-4 py-2 text-left"
+                              >
+                                <Search className="w-4 h-4 text-slate-300 group-hover/recent:text-primary shrink-0" />
+                                <span className="font-semibold text-sm text-slate-700 dark:text-slate-300 truncate">{u.name}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeRecentSearch(u._id); }}
+                                className="p-2 text-slate-400 hover:text-red-500 mr-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                                title="Remove from recents"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </motion.div>

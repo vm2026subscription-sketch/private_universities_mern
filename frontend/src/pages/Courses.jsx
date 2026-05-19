@@ -157,6 +157,10 @@ export default function Courses() {
 
   const handleStreamChange = (stream) => {
     const params = new URLSearchParams(searchParams);
+    // Clear stale course/category/specialization params when switching streams
+    params.delete('course');
+    params.delete('category');
+    params.delete('specialization');
     if (stream === 'All') params.delete('stream');
     else params.set('stream', stream);
     setSearchParams(params);
