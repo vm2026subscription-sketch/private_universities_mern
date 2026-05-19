@@ -45,37 +45,41 @@ const stats = [
 ];
 
 const mainStreams = [
-  { name: 'MBA/PGDM', icon: Briefcase, color: 'text-blue-500', bg: 'bg-blue-50' },
+  { name: 'MBA/PGDM', icon: Briefcase, color: 'text-orange-500', bg: 'bg-orange-50' },
   { name: 'Engineering', icon: Building2, color: 'text-orange-500', bg: 'bg-orange-50' },
   { name: 'Medical', icon: Stethoscope, color: 'text-red-500', bg: 'bg-red-50' },
   { name: 'Design', icon: Palette, color: 'text-purple-500', bg: 'bg-purple-50' },
   { name: 'Law', icon: Scale, color: 'text-slate-500', bg: 'bg-slate-50' },
   { name: 'Science', icon: Atom, color: 'text-green-500', bg: 'bg-green-50' },
-  { name: 'Study Abroad', icon: GraduationCap, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+  { name: 'Study Abroad', icon: GraduationCap, color: 'text-amber-500', bg: 'bg-amber-50' },
 ];
 
 const featuredUniversities = [
   {
     _id: '69f9c6e51a40e83778437bb8',
     name: 'Thakur College of Engineering (TCET)',
+    slug: 'thakur-college-of-engineering-and-technology',
     location: 'Mumbai, Maharashtra',
     image: 'https://images.shiksha.com/mediadata/images/1489300063phpA1CPrW.jpeg',
   },
   {
     _id: '69f9c6b91a40e8377843776c',
     name: 'Amity University Chhattisgarh',
+    slug: 'amity-university-chhattisgarh',
     location: 'Raipur, Chhattisgarh',
     image: 'https://images.shiksha.com/mediadata/images/articles/1663141472phpCZG1Ea.jpeg',
   },
   {
     _id: '69f9c6be1a40e837784377a8',
     name: 'SAGE University',
+    slug: 'sage-university',
     location: 'Indore, Madhya Pradesh',
     image: 'https://spiderimg.amarujala.com/assets/images/2020/06/27/750x506/sage-university_1593237922.jpeg',
   },
   {
     _id: '69f9c6bb1a40e83778437778',
     name: 'OP Jindal University',
+    slug: 'op-jindal-university',
     location: 'Raigarh, Chhattisgarh',
     image: 'https://educationpost.in/_next/image?url=https%3A%2F%2Fapi.educationpost.in%2Fs3-images%2F1747130783336-OP%20Jindal%20University.jpg&w=3840&q=75',
   },
@@ -107,6 +111,12 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const featuredUniversity = featuredUniversities[currentSlide % featuredUniversities.length];
+
+  const getUniversityPath = (university) => {
+    const routeParam = university?.slug || university?._id;
+    return routeParam ? `/universities/${routeParam}` : '/universities';
+  };
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -124,32 +134,31 @@ export default function Home() {
           api.get('/public/testimonials').catch(() => ({ data: { data: [] } }))
         ]);
 
-        if (uniRes.data.success) {
-          let fetched = uniRes.data.data || [];
+        const fetchedUniversities = Array.isArray(uniRes?.data?.data) ? [...uniRes.data.data] : [];
+        const fetchedExams = Array.isArray(examRes?.data?.data) ? examRes.data.data : [];
+        const fetchedQuestions = Array.isArray(testRes?.data?.data) ? testRes.data.data : [];
 
-          // Priority institutions we want at top
-          const priority = ['Thakur', 'Amity', 'SAGE', 'Jindal', 'ITM', 'ISBM', 'AAFT', 'C.V. Raman', 'Dev Sanskriti'];
+        const priority = ['Thakur', 'Amity', 'SAGE', 'Jindal', 'ITM', 'ISBM', 'AAFT', 'C.V. Raman', 'Dev Sanskriti'];
+        const sortedUniversities = fetchedUniversities.sort((a, b) => {
+          const aHasLogo = a.logoUrl?.trim() ? 1 : 0;
+          const bHasLogo = b.logoUrl?.trim() ? 1 : 0;
+          if (aHasLogo !== bHasLogo) return bHasLogo - aHasLogo;
 
-          const sorted = fetched.sort((a, b) => {
-            // First: universities with logos
-            const aHasLogo = (a.logoUrl && a.logoUrl.trim() !== '') ? 1 : 0;
-            const bHasLogo = (b.logoUrl && b.logoUrl.trim() !== '') ? 1 : 0;
-            if (aHasLogo !== bHasLogo) return bHasLogo - aHasLogo;
+          const aP = priority.findIndex((name) => a.name?.includes(name));
+          const bP = priority.findIndex((name) => b.name?.includes(name));
+          if (aP !== -1 && bP === -1) return -1;
+          if (bP !== -1 && aP === -1) return 1;
+          return (aP === -1 ? 999 : aP) - (bP === -1 ? 999 : bP);
+        });
 
-            // Then: priority name match
-            const aP = priority.findIndex(p => a.name.includes(p));
-            const bP = priority.findIndex(p => b.name.includes(p));
-            if (aP !== -1 && bP === -1) return -1;
-            if (bP !== -1 && aP === -1) return 1;
-            return (aP === -1 ? 999 : aP) - (bP === -1 ? 999 : bP);
-          });
-
-          setUniversities(sorted.length > 0 ? sorted.slice(0, 6) : mockUniversities.slice(0, 6));
-        }
-        if (examRes.data.success) setExams(examRes.data.data.length > 0 ? examRes.data.data : mockExams);
-        if (testRes.data.success) setQuestions(testRes.data.data.length > 0 ? testRes.data.data : mockQuestions);
+        setUniversities(sortedUniversities.length > 0 ? sortedUniversities.slice(0, 6) : mockUniversities.slice(0, 6));
+        setExams(fetchedExams.length > 0 ? fetchedExams : mockExams);
+        setQuestions(fetchedQuestions.length > 0 ? fetchedQuestions : mockQuestions);
       } catch (error) {
         console.error('Data fetch failed:', error);
+        setUniversities(mockUniversities.slice(0, 6));
+        setExams(mockExams);
+        setQuestions(mockQuestions);
       } finally {
         setLoading(false);
       }
@@ -198,10 +207,10 @@ export default function Home() {
             className="absolute inset-0"
           >
             <img
-              src={featuredUniversities[currentSlide % featuredUniversities.length].image}
-              alt={featuredUniversities[currentSlide % featuredUniversities.length].name}
+              src={featuredUniversity.image}
+              alt={featuredUniversity.name}
               className="w-full h-full object-cover cursor-pointer"
-              onClick={() => navigate(`/universities/${featuredUniversities[currentSlide % featuredUniversities.length]._id}`)}
+              onClick={() => navigate(getUniversityPath(featuredUniversity))}
               onError={(e) => { e.target.style.opacity = '0'; }}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/75"></div>
@@ -226,12 +235,12 @@ export default function Home() {
             key={`tag-${currentSlide}`}
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            onClick={() => navigate(`/universities/${featuredUniversities[currentSlide % featuredUniversities.length]._id}`)}
+            onClick={() => navigate(getUniversityPath(featuredUniversity))}
             className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/20 hover:bg-primary/80 hover:border-primary transition-all cursor-pointer group"
           >
             <GraduationCap className="w-4 h-4 text-primary group-hover:text-white" />
-            <span className="text-white font-bold text-sm">{featuredUniversities[currentSlide % featuredUniversities.length].name}</span>
-            <span className="text-white/50 text-xs">— {featuredUniversities[currentSlide % featuredUniversities.length].location}</span>
+            <span className="text-white font-bold text-sm">{featuredUniversity.name}</span>
+            <span className="text-white/50 text-xs">— {featuredUniversity.location}</span>
             <span className="text-primary group-hover:text-white text-xs font-bold ml-1">View →</span>
           </motion.button>
         </div>
@@ -285,7 +294,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-white transition-colors duration-500 leading-none">{s.value}</p>
-                  <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-100 uppercase tracking-widest mt-1 transition-colors duration-500">{s.label}</p>
+                  <p className="text-[10px] font-bold text-slate-400 group-hover:text-orange-100 uppercase tracking-widest mt-1 transition-colors duration-500">{s.label}</p>
                 </div>
               </div>
             </div>
@@ -426,10 +435,10 @@ export default function Home() {
         initial={{ x: -100 }}
         animate={{ x: 0 }}
         onClick={() => setShowFeedback(true)}
-        className="fixed left-0 top-1/2 -translate-y-1/2 z-[60] bg-primary text-white py-6 px-2 rounded-r-xl cursor-pointer shadow-2xl border-l-[6px] border-transparent hover:bg-white hover:text-primary hover:border-orange-500 hover:pl-4 transition-all duration-300 group flex items-center justify-center"
-        style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+        className="fixed bottom-24 right-4 md:bottom-auto md:top-1/2 md:right-0 md:-translate-y-1/2 z-[60] bg-primary text-white py-3 px-5 md:px-2 md:py-6 rounded-2xl md:rounded-l-xl md:rounded-r-none cursor-pointer shadow-2xl border-b-4 md:border-b-0 md:border-r-[6px] border-transparent hover:bg-white hover:text-primary hover:border-orange-500 md:hover:pr-4 transition-all duration-300 group flex items-center justify-center"
       >
-        <span className="font-black tracking-[0.2em] text-sm uppercase">FEEDBACK</span>
+        <span className="font-black tracking-[0.2em] text-xs uppercase md:hidden">Feedback</span>
+        <span className="hidden md:block font-black tracking-[0.2em] text-sm uppercase" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>FEEDBACK</span>
       </motion.div>
 
       {/* Main Content Area */}
@@ -442,12 +451,12 @@ export default function Home() {
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <motion.div whileHover={{ y: -5 }} className="relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br from-indigo-600 to-indigo-800 text-white shadow-xl group">
+              <motion.div whileHover={{ y: -5 }} className="relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br from-primary to-primary-dark text-white shadow-xl group">
                 <div className="relative z-10 flex flex-col h-full">
                   <span className="bg-white/20 text-[10px] font-black px-3 py-1 rounded-full uppercase self-start">Maharashtra State</span>
                   <h3 className="font-black text-2xl mt-4 mb-2">DTE Admissions</h3>
                   <p className="text-sm text-white/80 mb-6 flex-grow">Complete guide to Engineering, Pharmacy & MBA admissions.</p>
-                  <button className="w-full bg-white text-indigo-600 font-black py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto">
+                  <button className="w-full bg-white text-primary font-black py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto">
                     View Updates
                   </button>
                 </div>
@@ -489,7 +498,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {(universities.length > 0 ? universities : mockUniversities).map((u, i) => (
                 <motion.div key={i} whileHover={{ y: -5 }}>
-                  <Link to={`/universities/${u._id}`} className="group relative bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-transparent hover:shadow-2xl hover:shadow-primary/20 transition-all overflow-hidden block">
+                  <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-transparent hover:shadow-2xl hover:shadow-primary/20 transition-all overflow-hidden block">
                     {/* Left-to-right animated background (Gradient matching SS1) */}
                     <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
 
@@ -623,7 +632,7 @@ export default function Home() {
             </div>
           </section>
 
-          <div className="card border-none shadow-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-[2.5rem] p-8 overflow-hidden relative">
+          <div className="card border-none shadow-2xl bg-gradient-to-br from-slate-900 to-primary-dark text-white rounded-[2.5rem] p-8 overflow-hidden relative">
             <div className="absolute top-0 right-0 p-6 opacity-20">
               <Newspaper className="w-20 h-20" />
             </div>
@@ -669,9 +678,9 @@ export default function Home() {
             </button>
           </section>
 
-          <section className="bg-gradient-to-br from-indigo-700 to-primary p-10 rounded-[2.5rem] text-white">
+          <section className="bg-gradient-to-br from-primary-dark to-primary p-10 rounded-[2.5rem] text-white">
             <h2 className="text-2xl font-black mb-4">Stay Ahead</h2>
-            <p className="text-sm text-indigo-100 mb-8 opacity-90">Get the latest admission alerts and entrance exam tips directly in your inbox.</p>
+            <p className="text-sm text-orange-100 mb-8 opacity-90">Get the latest admission alerts and entrance exam tips directly in your inbox.</p>
             <div className="flex gap-2">
               <input type="text" placeholder="Email" className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 text-sm outline-none" />
               <button className="bg-white text-primary px-6 py-3 rounded-xl font-black text-xs">JOIN</button>
@@ -682,7 +691,7 @@ export default function Home() {
       {/* Advanced Feedback Modal */}
       <AnimatePresence>
         {showFeedback && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center px-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

@@ -85,7 +85,7 @@ exports.upvoteQuestion = async (req, res) => {
     const question = await Question.findById(req.params.id);
     if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
 
-    const idx = question.upvotes.indexOf(req.user._id);
+    const idx = question.upvotes.findIndex((userId) => userId.toString() === req.user._id.toString());
     if (idx > -1) question.upvotes.splice(idx, 1);
     else question.upvotes.push(req.user._id);
 

@@ -4,7 +4,7 @@ const Course = require('../models/Course');
 const Exam = require('../models/Exam');
 const News = require('../models/News');
 const Question = require('../models/Question');
-const slugify = require('slugify');
+const { buildUniqueSlug, normalizeSlug } = require('../utils/slug');
 
 const splitPipe = (value) => String(value || '').split('|').map((item) => item.trim()).filter(Boolean);
 const parseBool = (value) => ['true', '1', 'yes', 'y'].includes(String(value || '').trim().toLowerCase());
@@ -204,7 +204,16 @@ exports.deleteQuestion = async (req, res) => {
 
 exports.createUniversity = async (req, res) => {
   try {
-    const university = await University.create(req.body);
+    const payload = { ...req.body };
+    if (payload.name) {
+      payload.slug = await buildUniqueSlug({
+        model: University,
+        value: payload.name,
+        fallback: 'university',
+      });
+    }
+
+    const university = await University.create(payload);
     const populatedUniversity = await University.findById(university._id).populate('courses');
     res.status(201).json({ success: true, data: populatedUniversity });
   } catch (error) {
@@ -215,7 +224,14 @@ exports.createUniversity = async (req, res) => {
 exports.updateUniversity = async (req, res) => {
   try {
     const payload = { ...req.body };
-    if (payload.name) payload.slug = slugify(payload.name, { lower: true, strict: true });
+    if (payload.name) {
+      payload.slug = await buildUniqueSlug({
+        model: University,
+        value: payload.name,
+        currentId: req.params.id,
+        fallback: 'university',
+      });
+    }
 
     const university = await University.findByIdAndUpdate(req.params.id, payload, {
       new: true,
@@ -244,7 +260,16 @@ exports.deleteUniversity = async (req, res) => {
 
 exports.createCourse = async (req, res) => {
   try {
-    const course = await Course.create(req.body);
+    const payload = { ...req.body };
+    if (payload.name) {
+      payload.slug = await buildUniqueSlug({
+        model: Course,
+        value: payload.name,
+        fallback: 'course',
+      });
+    }
+
+    const course = await Course.create(payload);
     await University.findByIdAndUpdate(course.universityId, { $addToSet: { courses: course._id } });
     const populatedCourse = await Course.findById(course._id).populate('universityId', 'name slug city state');
     res.status(201).json({ success: true, data: populatedCourse });
@@ -259,7 +284,17 @@ exports.updateCourse = async (req, res) => {
     if (!existingCourse) return res.status(404).json({ success: false, message: 'Course not found' });
 
     const oldUniversityId = existingCourse.universityId?.toString();
-    const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
+    const payload = { ...req.body };
+    if (payload.name) {
+      payload.slug = await buildUniqueSlug({
+        model: Course,
+        value: payload.name,
+        currentId: req.params.id,
+        fallback: 'course',
+      });
+    }
+
+    const course = await Course.findByIdAndUpdate(req.params.id, payload, {
       new: true,
       runValidators: true,
     }).populate('universityId', 'name slug city state');
@@ -365,13 +400,21 @@ exports.bulkImportUniversities = async (req, res) => {
 
       const query = row.universityCode
         ? { universityCode: String(row.universityCode).trim().toUpperCase() }
-        : { slug: slugify(row.slug || row.name, { lower: true, strict: true }) };
+        : { slug: normalizeSlug(row.slug || row.name, 'university') };
 
       const payload = buildUniversityImportPayload(row);
-      if (payload.universityCode) payload.universityCode = payload.universityCode.toUpperCase();
-      if (payload.name) payload.slug = slugify(payload.name, { lower: true, strict: true });
-
       const existing = await University.findOne(query);
+
+      if (payload.universityCode) payload.universityCode = payload.universityCode.toUpperCase();
+      if (payload.name) {
+        payload.slug = await buildUniqueSlug({
+          model: University,
+          value: payload.name,
+          currentId: existing?._id,
+          fallback: 'university',
+        });
+      }
+
       if (existing) {
         await University.findByIdAndUpdate(existing._id, payload, { new: true, runValidators: true });
         updated += 1;
@@ -410,6 +453,31 @@ exports.bulkImportCourses = async (req, res) => {
       }
 
       const payload = buildCourseImportPayload(row, university._id);
+      if (payload.name) {
+        const existing = await Course.findOne({
+          universityId: university._id,
+          name: payload.name,
+          category: payload.category,
+        });
+
+        payload.slug = await buildUniqueSlug({
+          model: Course,
+          value: payload.name,
+          currentId: existing?._id,
+          fallback: 'course',
+        });
+
+        if (existing) {
+          await Course.findByIdAndUpdate(existing._id, payload, { new: true, runValidators: true });
+          updated += 1;
+        } else {
+          const course = await Course.create(payload);
+          await University.findByIdAndUpdate(university._id, { $addToSet: { courses: course._id } });
+          created += 1;
+        }
+        continue;
+      }
+
       const existing = await Course.findOne({
         universityId: university._id,
         name: payload.name,

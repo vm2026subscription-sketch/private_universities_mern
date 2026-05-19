@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const University = require('../models/University');
 const Course = require('../models/Course');
-const slugify = require('slugify');
+const { buildUniqueSlug } = require('../utils/slug');
 
 const uniq = (items) => [...new Set(items.filter(Boolean))];
 
@@ -196,7 +196,16 @@ exports.getUniversity = async (req, res) => {
 
 exports.createUniversity = async (req, res) => {
   try {
-    const university = await University.create(req.body);
+    const payload = { ...req.body };
+    if (payload.name) {
+      payload.slug = await buildUniqueSlug({
+        model: University,
+        value: payload.name,
+        fallback: 'university',
+      });
+    }
+
+    const university = await University.create(payload);
     res.status(201).json({ success: true, data: university });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -206,7 +215,14 @@ exports.createUniversity = async (req, res) => {
 exports.updateUniversity = async (req, res) => {
   try {
     const payload = { ...req.body };
-    if (payload.name) payload.slug = slugify(payload.name, { lower: true, strict: true });
+    if (payload.name) {
+      payload.slug = await buildUniqueSlug({
+        model: University,
+        value: payload.name,
+        currentId: req.params.id,
+        fallback: 'university',
+      });
+    }
     const university = await University.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
     res.json({ success: true, data: university });

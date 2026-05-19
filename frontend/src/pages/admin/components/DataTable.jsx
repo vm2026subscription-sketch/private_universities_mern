@@ -9,7 +9,8 @@ export default function DataTable({
   actions,
   pageSize = 10,
   emptyMessage = 'No data found',
-  filters
+  filters,
+  rowSelection
 }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -48,6 +49,17 @@ export default function DataTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-light-card dark:bg-dark-card border-b border-light-border dark:border-dark-border">
+              {rowSelection && (
+                <th className="px-4 py-3 text-left font-medium text-light-muted dark:text-dark-muted whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={rowSelection.allSelected}
+                    onChange={rowSelection.onToggleAll}
+                    className="w-4 h-4 rounded border-light-border accent-primary"
+                    aria-label="Select all rows"
+                  />
+                </th>
+              )}
               {columns.map(col => (
                 <th key={col.key} className="px-4 py-3 text-left font-medium text-light-muted dark:text-dark-muted whitespace-nowrap">
                   {col.label}
@@ -59,12 +71,23 @@ export default function DataTable({
           <tbody className="divide-y divide-light-border dark:divide-dark-border">
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (actions ? 1 : 0)} className="px-4 py-8 text-center text-light-muted">
+                <td colSpan={columns.length + (actions ? 1 : 0) + (rowSelection ? 1 : 0)} className="px-4 py-8 text-center text-light-muted">
                   {emptyMessage}
                 </td>
               </tr>
             ) : paged.map((item, i) => (
               <tr key={item._id || i} className="hover:bg-light-card/50 dark:hover:bg-dark-card/50 transition-colors">
+                {rowSelection && (
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={rowSelection.selectedIds.includes(item._id)}
+                      onChange={() => rowSelection.onToggleOne(item._id)}
+                      className="w-4 h-4 rounded border-light-border accent-primary"
+                      aria-label={`Select ${item.name || item._id || i}`}
+                    />
+                  </td>
+                )}
                 {columns.map(col => (
                   <td key={col.key} className="px-4 py-3 whitespace-nowrap">
                     {col.render ? col.render(item) : String(col.key.split('.').reduce((obj, key) => obj?.[key], item) ?? '')}

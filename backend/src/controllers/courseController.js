@@ -11,7 +11,12 @@ exports.getCourses = async (req, res) => {
     // Basic filters on Course model
     const match = {};
     if (category && category !== 'All') match.category = { $regex: new RegExp(`^${category}$`, 'i') };
-    if (universityId) match.universityId = new mongoose.Types.ObjectId(universityId);
+    if (universityId) {
+      if (!mongoose.Types.ObjectId.isValid(universityId)) {
+        return res.status(400).json({ success: false, message: 'Invalid universityId' });
+      }
+      match.universityId = new mongoose.Types.ObjectId(universityId);
+    }
     if (name) match.name = { $regex: new RegExp(name, 'i') };
     if (baseCourse) match.baseCourse = { $regex: new RegExp(`^${baseCourse}$`, 'i') };
     
@@ -78,6 +83,9 @@ exports.getGroupedCourses = async (req, res) => {
 
     // Filter by universityId if provided
     if (universityId) {
+      if (!mongoose.Types.ObjectId.isValid(universityId)) {
+        return res.status(400).json({ success: false, message: 'Invalid universityId' });
+      }
       pipeline.push({ $match: { universityId: new mongoose.Types.ObjectId(universityId) } });
     }
 

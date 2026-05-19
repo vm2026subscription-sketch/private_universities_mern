@@ -5,8 +5,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "#002147", light: "#003366", dark: "#001630", 50: "#E6EAEE", 100: "#CCD6DF", 200: "#99ADB2", 300: "#668485", 400: "#335B58", 500: "#002147", 600: "#001B3A", 700: "#001630", 800: "#001021", 900: "#000B16" },
-        accent: { DEFAULT: "#C5A022", light: "#D4B44A", dark: "#A0821B", 50: "#F9F6E9", 100: "#F2EDD3", 200: "#E6DAA7", 300: "#D9C77B", 400: "#CDB44F", 500: "#C5A022", 600: "#B1901F", 700: "#9E801B", 800: "#766014", 900: "#4F400E" },
+        primary: { DEFAULT: "#F97316", light: "#FB923C", dark: "#C2410C", 50: "#FFF7ED", 100: "#FFEDD5", 200: "#FED7AA", 300: "#FDBA74", 400: "#FB923C", 500: "#F97316", 600: "#EA580C", 700: "#C2410C", 800: "#9A3412", 900: "#7C2D12" },
+        accent: { DEFAULT: "#F59E0B", light: "#FBBF24", dark: "#D97706", 50: "#FFFBEB", 100: "#FEF3C7", 200: "#FDE68A", 300: "#FCD34D", 400: "#FBBF24", 500: "#F59E0B", 600: "#D97706", 700: "#B45309", 800: "#92400E", 900: "#78350F" },
         dark: { bg: "#020817", card: "#0F172A", border: "#1E293B", text: "#F8FAFC", muted: "#94A3B8" },
         light: { bg: "#FFFFFF", card: "#F8FAFC", border: "#E2E8F0", text: "#0F172A", muted: "#64748B" },
         success: "#10B981",
