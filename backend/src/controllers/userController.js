@@ -2,6 +2,7 @@ const User = require('../models/User');
 const University = require('../models/University');
 const Course = require('../models/Course');
 const { getSafeUserProfile } = require('../utils/userSerializer');
+const mongoose = require('mongoose');
 
 const APPLICATION_STATUSES = ['applied', 'pending', 'accepted', 'rejected'];
 
@@ -82,6 +83,10 @@ exports.getSavedUniversities = async (req, res) => {
 
 exports.saveUniversity = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.universityId)) {
+      return res.status(400).json({ success: false, message: 'Invalid university ID' });
+    }
+
     const user = await User.findById(req.user._id);
     const university = await University.findById(req.params.universityId).select('_id');
 
@@ -103,6 +108,10 @@ exports.saveUniversity = async (req, res) => {
 
 exports.removeSavedUniversity = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.universityId)) {
+      return res.status(400).json({ success: false, message: 'Invalid university ID' });
+    }
+
     await User.findByIdAndUpdate(req.user._id, {
       $pull: { savedUniversities: req.params.universityId },
     });
@@ -123,6 +132,10 @@ exports.getSavedCourses = async (req, res) => {
 
 exports.saveCourse = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.courseId)) {
+      return res.status(400).json({ success: false, message: 'Invalid course ID' });
+    }
+
     const user = await User.findById(req.user._id);
     const course = await Course.findById(req.params.courseId).select('_id');
 
@@ -144,6 +157,10 @@ exports.saveCourse = async (req, res) => {
 
 exports.removeSavedCourse = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.courseId)) {
+      return res.status(400).json({ success: false, message: 'Invalid course ID' });
+    }
+
     await User.findByIdAndUpdate(req.user._id, {
       $pull: { savedCourses: req.params.courseId },
     });
@@ -246,6 +263,9 @@ exports.addApplication = async (req, res) => {
     const { universityId, notes } = req.body;
     if (!universityId) {
       return res.status(400).json({ success: false, message: 'University is required' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(universityId)) {
+      return res.status(400).json({ success: false, message: 'Invalid university ID' });
     }
 
     const university = await University.findById(universityId).select('_id');

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
@@ -19,6 +19,7 @@ const ALL_STATES = [
 ];
 
 export default function Courses() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedCategory = searchParams.get('category') || 'All';
   const selectedState = searchParams.get('state') || 'All';
@@ -32,9 +33,19 @@ export default function Courses() {
   const [streams, setStreams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [stateSearch, setStateSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [visibleCount, setVisibleCount] = useState(24);
+
+  const normalizeText = (...values) =>
+    values
+      .flat()
+      .filter((value) => value !== null && value !== undefined)
+      .map((value) => String(value).trim())
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
 
   // Fetch streams for the "Study Goal" section
   useEffect(() => {
@@ -91,15 +102,21 @@ export default function Courses() {
   // Reset pagination when filters change
   useEffect(() => {
     setVisibleCount(24);
-  }, [selectedCategory, selectedState, selectedStream, search, selectedCourse]);
+  }, [selectedCategory, selectedState, selectedStream, search, selectedCourse, selectedSpec]);
 
   // Grouped results are already coming from the backend now
   const courseGroups = useMemo(() => {
     if (selectedCourse) return [];
-    return courses.map(c => ({
-      ...c,
-      normName: c.name ? c.name.toLowerCase() : ''
-    }));
+    return courses
+      .filter((course) => course && (course.name || course.category || course.stream))
+      .map((course, index) => ({
+        ...course,
+        _id: course._id || `${course.name || 'course'}-${course.category || 'misc'}-${index}`,
+        name: course.name || 'Untitled Program',
+        category: course.category || 'Others',
+        stream: course.stream || 'Others',
+        normName: normalizeText(course.name),
+      }));
   }, [courses, selectedCourse]);
 
   const filteredCourseGroups = useMemo(() => {
@@ -116,7 +133,7 @@ export default function Courses() {
     const query = search.trim().toLowerCase();
     if (!query) return filtered;
     return filtered.filter((group) => (
-      [group.name, group.category, group.stream].join(' ').toLowerCase().includes(query)
+      normalizeText(group.name, group.category, group.stream, group.specializations).includes(query)
     ));
   }, [courseGroups, search, selectedSpec]);
 
@@ -178,48 +195,23 @@ export default function Courses() {
     const query = search.trim().toLowerCase();
     if (!query) return filtered;
     return filtered.filter((course) => {
-      return [
+      return normalizeText(
         course.universityId?.name,
         course.universityId?.city,
         course.universityId?.state,
-        course.specializationName
-      ].join(' ').toLowerCase().includes(query);
+        course.specializationName,
+        course.name
+      ).includes(query);
     });
   }, [courses, selectedCourse, search, selectedSpec]);
 
-  // Group visible courses by category for the "All" view
-  const groupedByCategory = useMemo(() => {
-    if (selectedCategory !== 'All') return { [selectedCategory]: visibleCourseGroups };
-    
-    const groups = {};
-    visibleCourseGroups.forEach(course => {
-      const cat = course.category || 'Others';
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(course);
-    });
-    return groups;
-  }, [visibleCourseGroups, selectedCategory]);
+  const visibleColleges = useMemo(() => filteredColleges.slice(0, visibleCount), [filteredColleges, visibleCount]);
 
-  const categoryOrder = ['UG', 'PG', 'PhD', 'Diploma', 'Foreign Program', 'Others'];
-
-  const streamIcons = {
-    'Arts': GraduationCap,
-    'Commerce': Building2,
-    'Science': Sparkles,
-    'Engineering': Award,
-    'Management': Users,
-    'Medical': CheckCircle2,
-    'Pharmacy': BookOpen,
-    'Nursing': CheckCircle2,
-    'Law': Award,
-    'Architecture': Building2,
-    'Agriculture': GraduationCap,
-    'Design': Sparkles,
-    'Education': BookOpen,
-    'Hospitality': Users,
-    'IT': Award,
-    'Others': BookOpen
-  };
+  const filteredStates = useMemo(() => {
+    const query = stateSearch.trim().toLowerCase();
+    if (!query) return ALL_STATES;
+    return ALL_STATES.filter((state) => state.toLowerCase().includes(query));
+  }, [stateSearch]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
@@ -359,14 +351,8 @@ export default function Courses() {
                   <input 
                     type="text"
                     placeholder="Search state..."
-                    onChange={(e) => {
-                      const query = e.target.value.toLowerCase();
-                      const items = document.querySelectorAll('.state-item');
-                      items.forEach(item => {
-                        const text = item.textContent.toLowerCase();
-                        item.style.display = text.includes(query) ? 'flex' : 'none';
-                      });
-                    }}
+                    value={stateSearch}
+                    onChange={(e) => setStateSearch(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-white dark:bg-dark-bg rounded-xl text-[11px] font-bold border border-slate-100 dark:border-transparent focus:ring-2 focus:ring-primary/20 outline-none"
                   />
                 </div>
@@ -382,7 +368,7 @@ export default function Courses() {
                 >
                   All Regions
                 </button>
-                {ALL_STATES.map((state) => (
+                {filteredStates.map((state) => (
                   <button 
                     key={state}
                     onClick={() => {
@@ -533,10 +519,10 @@ export default function Courses() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <AnimatePresence mode="popLayout">
-                  {(selectedCourse ? filteredColleges : visibleCourseGroups).map((item, idx) => (
+                  {(selectedCourse ? visibleColleges : visibleCourseGroups).map((item, idx) => (
                     <motion.div 
                       layout
-                      key={item._id || item.normName}
+                      key={item._id || item.normName || `${item.name || 'item'}-${idx}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
@@ -566,10 +552,13 @@ export default function Courses() {
                                 onClick={() => {
                                   if (!selectedCourse) {
                                     const params = new URLSearchParams(searchParams);
-                                    params.set('course', item.name);
+                                    params.set('course', item.name || '');
                                     setSearchParams(params);
                                   } else {
-                                    navigate(`/universities/${item.universityId?.slug || item.universityId?._id}`, { state: { activeTab: 1 } });
+                                    const routeParam = item.universityId?.slug || item.universityId?._id;
+                                    if (routeParam) {
+                                      navigate(`/universities/${routeParam}`, { state: { activeTab: 1 } });
+                                    }
                                   }
                                 }}>
                               {selectedCourse ? item.universityId?.name : item.name}
@@ -627,10 +616,13 @@ export default function Courses() {
                           <button 
                             onClick={() => {
                               if (selectedCourse) {
-                                navigate(`/universities/${item.universityId?.slug || item.universityId?._id}`, { state: { activeTab: 1 } });
+                                const routeParam = item.universityId?.slug || item.universityId?._id;
+                                if (routeParam) {
+                                  navigate(`/universities/${routeParam}`, { state: { activeTab: 1 } });
+                                }
                               } else {
                                 const params = new URLSearchParams(searchParams);
-                                params.set('course', item.name);
+                                params.set('course', item.name || '');
                                 setSearchParams(params);
                               }
                             }}
@@ -648,17 +640,15 @@ export default function Courses() {
                 </AnimatePresence>
               </div>
 
-              {((!selectedCourse && visibleCourseGroups.length < filteredCourseGroups.length) || (selectedCourse && filteredColleges.length > 24)) && (
+              {((!selectedCourse && visibleCourseGroups.length < filteredCourseGroups.length) || (selectedCourse && visibleColleges.length < filteredColleges.length)) && (
                 <div className="py-20 text-center">
                   <motion.button 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      if (!selectedCourse) setVisibleCount(prev => prev + 24);
-                    }}
+                    onClick={() => setVisibleCount((prev) => prev + 24)}
                     className="px-16 py-5 bg-white dark:bg-dark-card border-2 border-primary text-primary rounded-[2rem] font-black text-sm tracking-widest shadow-2xl shadow-primary/10 hover:bg-primary hover:text-white transition-all duration-300"
                   >
-                    LOAD MORE PROGRAMS
+                    {selectedCourse ? 'LOAD MORE UNIVERSITIES' : 'LOAD MORE PROGRAMS'}
                   </motion.button>
                 </div>
               )}

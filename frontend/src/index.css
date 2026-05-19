@@ -23,13 +23,13 @@
     @apply shadow-[0_0_20px_rgba(255,107,0,0.15)] hover:shadow-[0_0_30px_rgba(255,107,0,0.3)];
   }
   .btn-primary {
-    @apply bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-light transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#002147]/25 inline-flex items-center border border-[#C5A022]/20;
+    @apply bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-light transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#F97316]/25 inline-flex items-center border border-[#F59E0B]/20;
   }
   .btn-outline {
-    @apply border-2 border-[#002147]/20 text-primary px-6 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all hover:scale-[1.02] inline-flex items-center;
+    @apply border-2 border-[#F97316]/20 text-primary px-6 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all hover:scale-[1.02] inline-flex items-center;
   }
   .btn-accent {
-    @apply bg-accent text-white px-6 py-3 rounded-xl font-bold hover:bg-accent-light transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#C5A022]/25 inline-flex items-center;
+    @apply bg-accent text-white px-6 py-3 rounded-xl font-bold hover:bg-accent-light transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#F59E0B]/25 inline-flex items-center;
   }
   .animate-float {
     animation: float 3s ease-in-out infinite;
@@ -42,10 +42,10 @@
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
   }
   .badge-orange {
-    @apply bg-[#C5A022]/10 text-[#C5A022] border border-[#C5A022]/20;
+    @apply bg-[#F59E0B]/10 text-[#D97706] border border-[#F59E0B]/20;
   }
   .dark .badge-orange {
-    @apply bg-[#C5A022]/20 text-[#D4B44A] border border-[#C5A022]/30;
+    @apply bg-[#F59E0B]/20 text-[#FBBF24] border border-[#F59E0B]/30;
   }
   .badge-green {
     @apply bg-green-50 text-green-700;
@@ -72,11 +72,11 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(197, 160, 34, 0.1) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(249, 115, 22, 0.12) 50%, transparent 100%);
     animation: shimmer 1.6s infinite;
   }
   .dark .skeleton::after {
-    background: linear-gradient(90deg, transparent 0%, rgba(197, 160, 34, 0.05) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(251, 146, 60, 0.08) 50%, transparent 100%);
   }
   @keyframes shimmer {
     0%   { transform: translateX(-100%); }
@@ -85,13 +85,13 @@
 
   /* ── Text gradient ── */
   .text-gradient {
-    background: linear-gradient(135deg, #002147, #C5A022, #003366);
+    background: linear-gradient(135deg, #F97316, #F59E0B, #C2410C);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   .text-gradient-gold {
-    background: linear-gradient(135deg, #C5A022, #D4B44A);
+    background: linear-gradient(135deg, #F59E0B, #FBBF24);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -111,7 +111,7 @@
     width: 64px;
     height: 4px;
     border-radius: 99px;
-    background: linear-gradient(90deg, #002147, #C5A022);
+    background: linear-gradient(90deg, #F97316, #F59E0B);
     margin: 1rem 0;
   }
 }
@@ -171,7 +171,7 @@ button:active, a:active {
 
 /* ── Focus ring ── */
 *:focus-visible {
-  outline: 2px solid #C5A022;
+  outline: 2px solid #F59E0B;
   outline-offset: 2px;
   border-radius: 6px;
 }

@@ -17,9 +17,15 @@ api.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('vm_token');
-      localStorage.removeItem('vm_user');
-      window.location.href = '/login';
+      const token = localStorage.getItem('vm_token');
+      const requestUrl = String(error.config?.url || '');
+      const isAuthRoute = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/signup');
+
+      if (token && !isAuthRoute && window.location.pathname !== '/login') {
+        localStorage.removeItem('vm_token');
+        localStorage.removeItem('vm_user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

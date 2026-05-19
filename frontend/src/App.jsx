@@ -65,8 +65,8 @@ function PublicLayout() {
     <div className="min-h-screen bg-transparent text-light-text dark:text-dark-text relative">
       <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#f8fafc] dark:bg-dark-bg transition-colors duration-500">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[100px] animate-blob mix-blend-multiply dark:mix-blend-screen" />
-        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-orange-400/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen" />
-        <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-blue-400/15 rounded-full blur-[150px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen" />
+        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen" />
+        <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-primary-light/15 rounded-full blur-[150px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen" />
       </div>
 
       <Navbar />
