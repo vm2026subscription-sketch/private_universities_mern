@@ -1,0 +1,58 @@
+import { useState } from 'react';
+
+const getGradient = (name) => {
+  const colors = [
+    'from-blue-500 to-indigo-600',
+    'from-emerald-400 to-teal-600',
+    'from-violet-500 to-purple-600',
+    'from-rose-500 to-pink-600',
+    'from-amber-500 to-orange-600',
+    'from-fuchsia-500 to-purple-700',
+    'from-cyan-500 to-blue-600'
+  ];
+  if (!name) return colors[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
+const getInitials = (name) => {
+  if (!name) return 'U';
+  // Strip out common words to get meaningful initials
+  const clean = name
+    .replace(/(Deemed to be University|University|Institute of Technology|Institute|Central|State)/gi, '')
+    .trim();
+  const words = clean.split(/\s+/).filter(w => w.length > 0);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+};
+
+export default function UniversityLogo({ logoUrl, name, className = "w-full h-full object-contain" }) {
+  const [error, setError] = useState(false);
+
+  // If logo is absent, broken, or matches a known fallback placeholder URL
+  const isInvalid = !logoUrl || logoUrl.includes('placeholder') || error;
+
+  if (isInvalid) {
+    return (
+      <div className="w-full h-full bg-white dark:bg-dark-card rounded-xl select-none" />
+    );
+  }
+
+  return (
+    <img 
+      src={logoUrl} 
+      alt={name} 
+      className={className} 
+      onError={() => setError(true)} 
+    />
+  );
+}

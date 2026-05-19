@@ -7,6 +7,7 @@ import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { calculateFitScore } from '../utils/fitScore';
+import UniversityLogo from '../components/common/UniversityLogo';
 
 const states = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -237,11 +238,7 @@ export default function Universities() {
                             <div className="relative z-10 flex flex-col h-full">
                               <div className="flex items-center gap-4 mb-5">
                                 <div className="w-16 h-16 bg-white rounded-2xl shadow-md border border-slate-50 p-2 flex items-center justify-center overflow-hidden shrink-0">
-                                  {u.logoUrl ? (
-                                    <img src={u.logoUrl} alt={u.name} className="w-full h-full object-contain" />
-                                  ) : (
-                                    <span className="text-2xl font-black text-primary">{u.name[0]}</span>
-                                  )}
+                                  <UniversityLogo logoUrl={u.logoUrl} name={u.name} />
                                 </div>
                                 <div>
                                    <h3 className="text-lg font-black text-slate-900 dark:text-white line-clamp-2 leading-tight">{u.name}</h3>
