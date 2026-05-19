@@ -2,8 +2,17 @@ const Exam = require('../models/Exam');
 
 exports.getExams = async (req, res) => {
   try {
-    const { category } = req.query;
-    const filter = category && category !== 'all' ? { category } : {};
+    const { category, scope, state } = req.query;
+    const filter = {};
+    if (category && category !== 'all') {
+      filter.category = category;
+    }
+    if (scope && scope !== 'all') {
+      filter.scope = scope;
+    }
+    if (state && state !== 'all') {
+      filter.state = state;
+    }
     const exams = await Exam.find(filter).sort({ examDate: 1 });
     res.json({ success: true, data: exams });
   } catch (error) {

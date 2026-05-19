@@ -11,7 +11,11 @@ const examSchema = new mongoose.Schema({
   officialUrl: String,
   logoUrl: String,
   participatingUniversities: Number,
-  category: { type: String, enum: ['engineering', 'medical', 'management', 'law', 'others'], default: 'others' }
+  category: { type: String, enum: ['engineering', 'medical', 'management', 'law', 'others'], default: 'others' },
+  scope: { type: String, enum: ['national', 'state', 'university'], default: 'national' },
+  state: { type: String },
+  highlights: [String],
+  courses: [String],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Exam', examSchema);
