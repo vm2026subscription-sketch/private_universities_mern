@@ -20,6 +20,7 @@ router.get('/content', adminCtrl.getContentData);
 // Users (existing)
 router.get('/users', adminCtrl.getUsers);
 router.patch('/users/:id', adminCtrl.updateUserAccess);
+router.delete('/users/:id', adminCtrl.deleteUser);
 
 // Questions (existing)
 router.delete('/questions/:id', adminCtrl.deleteQuestion);

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Pencil, Trash2, Plus, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import DataTable from './components/DataTable';
@@ -12,6 +12,17 @@ export default function UsersManager() {
   const updateUser = async (id, payload) => {
     try { await api.patch(`/admin/users/${id}`, payload); toast.success('Updated'); load(); }
     catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+  };
+
+  const deleteUser = async (id) => {
+    if (!window.confirm('Delete this user? This action cannot be undone.')) return;
+    try {
+      await api.delete(`/admin/users/${id}`);
+      toast.success('User deleted');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete user');
+    }
   };
 
   return (
@@ -27,7 +38,13 @@ export default function UsersManager() {
         )},
         { key: 'isEmailVerified', label: 'Verified', render: u => u.isEmailVerified ? <span className="badge badge-green">Yes</span> : <span className="badge badge-orange">No</span> },
         { key: 'createdAt', label: 'Joined', render: u => new Date(u.createdAt).toLocaleDateString() },
-      ]} searchFields={['name', 'email']} searchPlaceholder="Search users..." pageSize={15} />
+      ]}
+      actions={u => (
+        <button type="button" onClick={() => deleteUser(u._id)} className="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100">
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+      searchFields={['name', 'email']} searchPlaceholder="Search users..." pageSize={15} />
     </div>
   );
 }

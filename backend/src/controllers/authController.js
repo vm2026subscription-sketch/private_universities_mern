@@ -93,6 +93,11 @@ exports.register = async (req, res) => {
       await sendVerificationEmail(user, code);
     } catch (emailError) {
       console.error('Verification email failed:', emailError.message);
+      await User.findByIdAndDelete(user._id).catch(() => {});
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to send verification email. Please try again later.',
+      });
     }
 
     res.status(201).json({
@@ -246,9 +251,17 @@ exports.resendVerificationEmail = async (req, res) => {
 
     const code = setVerificationCode(user);
     await user.save();
-    await sendVerificationEmail(user, code);
 
-    res.json({ success: true, message: 'Verification code sent again' });
+    try {
+      await sendVerificationEmail(user, code);
+      res.json({ success: true, message: 'Verification code sent again' });
+    } catch (emailError) {
+      console.error('Resend verification email failed:', emailError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to resend verification email. Please try again later.',
+      });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
