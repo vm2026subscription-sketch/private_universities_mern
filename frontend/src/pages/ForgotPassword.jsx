@@ -9,6 +9,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [resetUrl, setResetUrl] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -17,6 +18,7 @@ export default function ForgotPassword() {
     try {
       const response = await forgotPassword(email);
       toast.success(response.message || 'Password reset link sent');
+      setResetUrl(response.resetUrl || '');
       setSubmitted(true);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Could not send reset email');
@@ -54,6 +56,11 @@ export default function ForgotPassword() {
           <p className="text-sm text-center text-light-muted dark:text-dark-muted mt-5">
             Check your inbox for the reset link. If the account exists, the email is on its way.
           </p>
+        ) : null}
+        {resetUrl ? (
+          <a href={resetUrl} className="block text-center text-sm mt-3 text-primary font-medium hover:underline">
+            Open reset page directly
+          </a>
         ) : null}
 
         <p className="text-center text-sm mt-6 text-light-muted">

@@ -74,14 +74,7 @@ export default function Profile() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [
-        profileRes,
-        coursesRes,
-        recommendRes,
-        trendsRes,
-        allUniRes,
-        notificationsRes,
-      ] = await Promise.all([
+      const [profileRes, coursesRes, recommendRes, trendsRes, allUniRes, notificationsRes] = await Promise.allSettled([
         api.get('/users/profile'),
         api.get('/courses'),
         api.get('/users/recommendations'),
@@ -90,13 +83,18 @@ export default function Profile() {
         api.get('/notifications'),
       ]);
 
-      setFullUser(profileRes.data.data);
-      setAllCourses(coursesRes.data.data || []);
-      setRecommendations(recommendRes.data.data || []);
-      setTrends(trendsRes.data);
-      setAllUniversities(allUniRes.data.data || []);
-      setNotifications(notificationsRes.data.data || []);
-    } catch {
+      if (profileRes.status !== 'fulfilled') {
+        throw profileRes.reason;
+      }
+
+      setFullUser(profileRes.value.data.data);
+      setAllCourses(coursesRes.status === 'fulfilled' ? (coursesRes.value.data.data || []) : []);
+      setRecommendations(recommendRes.status === 'fulfilled' ? (recommendRes.value.data.data || []) : []);
+      setTrends(trendsRes.status === 'fulfilled' ? trendsRes.value.data : { popularUniversities: [], trendingCourses: [] });
+      setAllUniversities(allUniRes.status === 'fulfilled' ? (allUniRes.value.data.data || []) : []);
+      setNotifications(notificationsRes.status === 'fulfilled' ? (notificationsRes.value.data.data || []) : []);
+    } catch (error) {
+      console.error('Profile load failed:', error);
       toast.error('Failed to load profile data');
     } finally {
       setLoading(false);

@@ -8,21 +8,42 @@ export default function Login() {
   const [authMode, setAuthMode] = useState('email'); // email | phone
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpType, setOtpType] = useState('sms'); // sms | whatsapp
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, sendOtp, verifyPhoneOtp, continueWithGoogle } = useAuth();
+  const { login, verifyLoginOtp, sendOtp, verifyPhoneOtp, continueWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try { await login(email, password); toast.success('Welcome back!'); navigate('/'); }
+    try {
+      await login(email, password);
+      setEmailOtpSent(true);
+      toast.success('OTP sent to your email');
+    }
     catch (err) { toast.error(err.response?.data?.message || 'Login failed'); }
     finally { setLoading(false); }
+  };
+
+  const handleVerifyEmailOtp = async (e) => {
+    e.preventDefault();
+    if (!emailOtp || emailOtp.length !== 6) return toast.error('Enter 6-digit OTP');
+    setLoading(true);
+    try {
+      await verifyLoginOtp(email, emailOtp);
+      toast.success('Welcome back!');
+      navigate('/');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'OTP verification failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSendOtp = async () => {
@@ -57,7 +78,7 @@ export default function Login() {
 
         {/* Auth mode tabs */}
         <div className="flex rounded-xl bg-light-card dark:bg-dark-card p-1 mb-6">
-          <button type="button" onClick={() => { setAuthMode('email'); setOtpSent(false); }}
+          <button type="button" onClick={() => { setAuthMode('email'); setOtpSent(false); setEmailOtpSent(false); setEmailOtp(''); }}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${authMode === 'email' ? 'bg-primary text-white shadow-sm' : ''}`}>
             <Mail className="w-4 h-4" /> Email
           </button>
@@ -68,15 +89,25 @@ export default function Login() {
         </div>
 
         {authMode === 'email' ? (
-          <form onSubmit={handleEmailLogin} className="space-y-4">
-            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" required />
-            <div className="relative">
-              <input type={show ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="input-field pr-12" required />
-              <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2">{show ? <EyeOff className="w-5 h-5 text-light-muted" /> : <Eye className="w-5 h-5 text-light-muted" />}</button>
-            </div>
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline block text-right">Forgot Password?</Link>
-            <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Logging in...' : 'Login'}</button>
-          </form>
+          !emailOtpSent ? (
+            <form onSubmit={handleEmailLogin} className="space-y-4">
+              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" required />
+              <div className="relative">
+                <input type={show ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="input-field pr-12" required />
+                <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2">{show ? <EyeOff className="w-5 h-5 text-light-muted" /> : <Eye className="w-5 h-5 text-light-muted" />}</button>
+              </div>
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline block text-right">Forgot Password?</Link>
+              <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Sending OTP...' : 'Continue with OTP'}</button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyEmailOtp} className="space-y-4">
+              <input type="email" value={email} className="input-field bg-light-card dark:bg-dark-card" disabled />
+              <input type="text" placeholder="Enter 6-digit OTP" value={emailOtp} onChange={e => setEmailOtp(e.target.value.replace(/\D/g, ''))} className="input-field text-center text-lg tracking-[0.3em] font-mono" maxLength={6} autoFocus />
+              <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Verifying...' : 'Verify & Login'}</button>
+              <button type="button" onClick={() => { setEmailOtpSent(false); setEmailOtp(''); }} className="text-sm text-primary hover:underline block text-center w-full">Change Email or Password</button>
+              <button type="button" onClick={handleEmailLogin} disabled={loading} className="text-sm text-light-muted hover:text-primary block text-center w-full">Resend OTP</button>
+            </form>
+          )
         ) : (
           <div className="space-y-4">
             {/* OTP type selector */}

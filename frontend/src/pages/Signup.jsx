@@ -18,8 +18,8 @@ export default function Signup() {
     setLoading(true);
     try {
       await register(form.name, form.email, form.password, form.phone || undefined);
-      toast.success('Verification code sent to your email');
-      navigate(`/verify-email?email=${encodeURIComponent(form.email)}`);
+      toast.success('Account created successfully');
+      navigate('/');
     }
     catch (err) { toast.error(err.response?.data?.message || 'Signup failed'); }
     finally { setLoading(false); }
@@ -48,7 +48,7 @@ export default function Signup() {
               {showConfirmPassword ? <EyeOff className="w-5 h-5 text-light-muted" /> : <Eye className="w-5 h-5 text-light-muted" />}
             </button>
           </div>
-          <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Creating...' : 'Sign Up & Verify Email'}</button>
+          <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Creating...' : 'Create Account'}</button>
         </form>
         <div className="my-6 flex items-center gap-3"><div className="flex-1 h-px bg-light-border dark:bg-dark-border" /><span className="text-sm text-light-muted">OR</span><div className="flex-1 h-px bg-light-border dark:bg-dark-border" /></div>
         <button type="button" onClick={continueWithGoogle} className="w-full py-3 border border-light-border dark:border-dark-border rounded-xl font-medium hover:bg-light-card dark:hover:bg-dark-card transition text-sm">Continue with Google</button>

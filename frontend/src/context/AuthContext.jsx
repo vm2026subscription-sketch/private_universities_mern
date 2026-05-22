@@ -40,7 +40,6 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
-    setAuthSession(data.token, data.user);
     return data;
   };
 
@@ -51,6 +50,15 @@ export function AuthProvider({ children }) {
       payload.countryCode = countryCode || '+91';
     }
     const { data } = await api.post('/auth/register', payload);
+    if (data.token && data.user) {
+      setAuthSession(data.token, data.user);
+    }
+    return data;
+  };
+
+  const verifyLoginOtp = async (email, code) => {
+    const { data } = await api.post('/auth/login/verify-otp', { email, code });
+    setAuthSession(data.token, data.user);
     return data;
   };
 
@@ -122,6 +130,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user,
       login,
+      verifyLoginOtp,
       register,
       verifyEmail,
       resendVerificationEmail,

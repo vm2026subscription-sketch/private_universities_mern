@@ -12,6 +12,7 @@ const getAdminEmail = () => (process.env.ADMIN_EMAIL || ADMIN_EMAIL).toLowerCase
 const getClientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
 const normalizeEmail = (email = '') => String(email).trim().toLowerCase();
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isProduction = () => process.env.NODE_ENV === 'production';
 
 const ensureAdminRole = async (user) => {
   if (user?.email?.toLowerCase() === getAdminEmail() && user.role !== 'admin') {
@@ -85,25 +86,21 @@ exports.register = async (req, res) => {
       userData.countryCode = countryCode || '+91';
     }
 
-    const user = await User.create(userData);
-    const code = setVerificationCode(user);
-    await user.save();
+    const user = await User.create({
+      ...userData,
+      isEmailVerified: true,
+      emailVerificationCode: undefined,
+      emailVerificationExpiry: undefined,
+    });
 
-    try {
-      await sendVerificationEmail(user, code);
-    } catch (emailError) {
-      console.error('Verification email failed:', emailError.message);
-      await User.findByIdAndDelete(user._id).catch(() => {});
-      return res.status(500).json({
-        success: false,
-        message: 'Unable to send verification email. Please try again later.',
-      });
-    }
+    await ensureAdminRole(user);
+    await updateLoginTracking(user);
+    const token = generateToken(user._id);
 
     res.status(201).json({
       success: true,
-      message: 'Account created. Please verify your email to continue.',
-      email: user.email,
+      message: 'Account created successfully.',
+      token,
       user: getSafeUser(user),
     });
   } catch (error) {
@@ -124,12 +121,53 @@ exports.login = async (req, res) => {
     if (!user || !user.password) return res.status(401).json({ success: false, message: 'Invalid credentials' });
     if (user.status === 'banned') return res.status(403).json({ success: false, message: 'Account has been banned' });
     if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account is suspended' });
-    if (!user.isEmailVerified) {
-      return res.status(403).json({ success: false, message: 'Please verify your email before logging in' });
-    }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+    const result = await otpService.sendOtp({
+      identifier: user.email,
+      type: 'email',
+      purpose: 'login',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({
+      success: true,
+      requiresOtp: true,
+      message: result.message || 'OTP sent to your email',
+      email: user.email,
+      expiresAt: result.expiresAt,
+    });
+  } catch (error) {
+    const statusCode = /too many otp requests/i.test(error.message) ? 429 : 500;
+    res.status(statusCode).json({ success: false, message: error.message });
+  }
+};
+
+exports.verifyLoginOtp = async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body.email);
+    const code = String(req.body.code || '').trim();
+
+    if (!normalizedEmail || !code) {
+      return res.status(400).json({ success: false, message: 'Email and OTP code are required' });
+    }
+
+    const verification = await otpService.verifyOtp(normalizedEmail, code, 'login');
+    if (!verification.success) {
+      return res.status(400).json({ success: false, message: verification.message });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.status === 'banned') return res.status(403).json({ success: false, message: 'Account has been banned' });
+    if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account is suspended' });
+
+    if (!user.isEmailVerified) {
+      user.isEmailVerified = true;
+    }
 
     await ensureAdminRole(user);
     await updateLoginTracking(user);
@@ -257,9 +295,18 @@ exports.resendVerificationEmail = async (req, res) => {
       res.json({ success: true, message: 'Verification code sent again' });
     } catch (emailError) {
       console.error('Resend verification email failed:', emailError.message);
-      return res.status(500).json({
-        success: false,
-        message: 'Unable to resend verification email. Please try again later.',
+
+      if (isProduction()) {
+        return res.status(500).json({
+          success: false,
+          message: 'Unable to resend verification email. Please try again later.',
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Email delivery failed in local mode, so use the verification code shown below.',
+        devVerificationCode: code,
       });
     }
   } catch (error) {
@@ -288,11 +335,29 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     const resetUrl = `${getClientUrl()}/reset-password/${resetToken}`;
-    await sendEmail({
-      to: user.email,
-      subject: 'Vidyarthi Mitra - Password Reset',
-      html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. Link expires in 30 minutes.</p>`,
-    });
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Vidyarthi Mitra - Password Reset',
+        html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. Link expires in 30 minutes.</p>`,
+      });
+    } catch (emailError) {
+      console.error('Password reset email failed:', emailError.message);
+
+      if (isProduction()) {
+        return res.status(500).json({
+          success: false,
+          message: 'Could not send reset email. Please try again later.',
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Email delivery failed in local mode, so open the reset link below.',
+        resetUrl,
+      });
+    }
 
     res.json({
       success: true,

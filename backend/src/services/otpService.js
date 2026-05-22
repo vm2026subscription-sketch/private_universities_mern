@@ -224,7 +224,7 @@ exports.sendOtp = async ({ identifier, type = 'sms', purpose = 'verify', ipAddre
   }
 };
 
-exports.verifyOtp = async (identifier, code) => {
+exports.verifyOtp = async (identifier, code, purpose) => {
   const provider = getProvider();
 
   if (provider === 'twilio_verify') {
@@ -232,7 +232,7 @@ exports.verifyOtp = async (identifier, code) => {
     if (!approved) return { success: false, message: 'Invalid or expired OTP' };
 
     await OtpLog.findOneAndUpdate(
-      { identifier, provider: 'twilio_verify', status: 'sent' },
+      { identifier, provider: 'twilio_verify', status: 'sent', ...(purpose ? { purpose } : {}) },
       { status: 'verified', verifiedAt: new Date() },
       { sort: { createdAt: -1 } }
     );
@@ -245,6 +245,7 @@ exports.verifyOtp = async (identifier, code) => {
     identifier,
     otp: hashedCode,
     status: 'sent',
+    ...(purpose ? { purpose } : {}),
     expiresAt: { $gt: new Date() },
   }).sort({ createdAt: -1 });
 

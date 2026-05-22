@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const passport = require('passport');
-const { register, login, getMe, forgotPassword, resetPassword, googleCallback, logout, verifyEmail, resendVerificationEmail, sendOtp, verifyPhoneOtp } = require('../controllers/authController');
+const { register, login, verifyLoginOtp, getMe, forgotPassword, resetPassword, googleCallback, logout, verifyEmail, resendVerificationEmail, sendOtp, verifyPhoneOtp } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
@@ -23,6 +23,7 @@ const ensureGoogleAuthConfigured = (req, res, next) => {
 // Email/Password auth
 router.post('/register', register);
 router.post('/login', login);
+router.post('/login/verify-otp', verifyLoginOtp);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerificationEmail);
 router.get('/me', protect, getMe);

@@ -6,8 +6,9 @@ import { useAuth } from '../context/AuthContext';
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const emailFromQuery = searchParams.get('email') || '';
+  const codeFromQuery = searchParams.get('code') || '';
   const [email, setEmail] = useState(emailFromQuery);
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(codeFromQuery);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const { verifyEmail, resendVerificationEmail } = useAuth();
@@ -33,8 +34,13 @@ export default function VerifyEmail() {
     if (!email.trim()) return toast.error('Enter your email first');
     setResending(true);
     try {
-      await resendVerificationEmail(email);
-      toast.success('New verification code sent');
+      const response = await resendVerificationEmail(email);
+      if (response.devVerificationCode) {
+        setCode(response.devVerificationCode);
+        toast.success(`Use this code: ${response.devVerificationCode}`);
+      } else {
+        toast.success('New verification code sent');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Resend failed');
     } finally {
@@ -49,6 +55,11 @@ export default function VerifyEmail() {
         <p className="text-sm text-center text-light-muted dark:text-dark-muted mb-6">
           Enter the 6-digit verification code sent to your email after signup.
         </p>
+        {codeFromQuery ? (
+          <p className="text-xs text-center text-primary font-medium mb-4">
+            Local mode code auto-filled for testing.
+          </p>
+        ) : null}
         <form onSubmit={handleVerify} className="space-y-4">
           <input type="email" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} className="input-field" required />
           <input type="text" inputMode="numeric" maxLength={6} placeholder="6-digit verification code" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} className="input-field tracking-[0.3em]" required />

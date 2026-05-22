@@ -50,7 +50,7 @@ const getTransporter = async () => {
 };
 
 const sendEmail = async ({ to, subject, html }) => {
-  let transport = await getTransporter();
+  const transport = await getTransporter();
 
   const send = async (mailer) => mailer.sendMail({
     from: `"Vidyarthi Mitra" <${process.env.SMTP_USER || 'no-reply@example.com'}>`,
@@ -69,17 +69,6 @@ const sendEmail = async ({ to, subject, html }) => {
     }
     return info;
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production' && !useEthereal) {
-      console.warn('[email] SMTP send failed, falling back to Ethereal preview:', error.message);
-      transport = await createTestTransporter();
-      const info = await send(transport);
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-      if (previewUrl) {
-        console.log(`[email] Preview URL: ${previewUrl}`);
-      }
-      return info;
-    }
-
     throw error;
   }
 };
