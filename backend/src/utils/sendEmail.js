@@ -1,42 +1,15 @@
+const { Resend } = require('resend');
 const nodemailer = require('nodemailer');
 
-let transporter = null;
-let testTransporter = null;
-let useEthereal = false;
+// Use Resend if API key is set, otherwise fall back to SMTP
+const useResend = () => Boolean(process.env.RESEND_API_KEY);
 
-const createTestTransporter = async () => {
-  if (testTransporter) return testTransporter;
+let smtpTransporter = null;
 
-  const testAccount = await nodemailer.createTestAccount();
-  testTransporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  });
+const getSmtpTransporter = () => {
+  if (smtpTransporter) return smtpTransporter;
 
-  useEthereal = true;
-  console.log('[email] Ethereal test account created:', testAccount.user);
-  return testTransporter;
-};
-
-const getTransporter = async () => {
-  if (transporter) return transporter;
-
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        'Email not configured. Add SMTP_HOST, SMTP_USER, and SMTP_PASS to your .env file.'
-      );
-    }
-
-    return createTestTransporter();
-  }
-
-  transporter = nodemailer.createTransport({
+  smtpTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT, 10) || 587,
     secure: String(process.env.SMTP_PORT) === '465',
@@ -46,31 +19,30 @@ const getTransporter = async () => {
     },
   });
 
-  return transporter;
+  return smtpTransporter;
 };
 
 const sendEmail = async ({ to, subject, html }) => {
-  const transport = await getTransporter();
+  if (useResend()) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const from = process.env.RESEND_FROM || 'Vidyarthi Mitra <onboarding@resend.dev>';
 
-  const send = async (mailer) => mailer.sendMail({
-    from: `"Vidyarthi Mitra" <${process.env.SMTP_USER || 'no-reply@example.com'}>`,
+    const { error } = await resend.emails.send({ from, to, subject, html });
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error('Email not configured. Set RESEND_API_KEY or SMTP credentials.');
+  }
+
+  const transporter = getSmtpTransporter();
+  await transporter.sendMail({
+    from: `"Vidyarthi Mitra" <${process.env.SMTP_USER}>`,
     to,
     subject,
     html,
   });
-
-  try {
-    const info = await send(transport);
-    if (useEthereal) {
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-      if (previewUrl) {
-        console.log(`[email] Preview URL: ${previewUrl}`);
-      }
-    }
-    return info;
-  } catch (error) {
-    throw error;
-  }
 };
 
 module.exports = sendEmail;
