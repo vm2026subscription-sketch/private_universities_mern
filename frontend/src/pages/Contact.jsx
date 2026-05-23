@@ -71,7 +71,7 @@ export default function Contact() {
     }
     setSending(true);
     try {
-      await api.post('/public/contact', form);
+      await api.post('/contact', form);
       setSent(true);
       setForm({ name: '', email: '', phone: '', subject: '', message: '' });
       toast.success('Message sent! We\'ll get back to you soon.');

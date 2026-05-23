@@ -24,7 +24,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').trim();
 const googleAuthConfigured = Boolean(
   process.env.GOOGLE_CLIENT_ID &&
   process.env.GOOGLE_CLIENT_SECRET &&

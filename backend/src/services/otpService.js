@@ -225,6 +225,29 @@ exports.sendOtp = async ({ identifier, type = 'sms', purpose = 'verify', ipAddre
 };
 
 exports.verifyOtp = async (identifier, code, purpose) => {
+  // Email OTPs are always sent via nodemailer and stored locally — verify against hash
+  const hashedCode = hashOtp(code);
+  const emailRecord = await OtpLog.findOne({
+    identifier,
+    otp: hashedCode,
+    provider: 'nodemailer',
+    type: 'email',
+    status: 'sent',
+    ...(purpose ? { purpose } : {}),
+    expiresAt: { $gt: new Date() },
+  }).sort({ createdAt: -1 });
+
+  if (emailRecord) {
+    emailRecord.status = 'verified';
+    emailRecord.verifiedAt = new Date();
+    await emailRecord.save();
+    await OtpLog.updateMany(
+      { identifier, status: 'sent', _id: { $ne: emailRecord._id } },
+      { status: 'expired' }
+    );
+    return { success: true, message: 'OTP verified successfully' };
+  }
+
   const provider = getProvider();
 
   if (provider === 'twilio_verify') {
@@ -240,7 +263,7 @@ exports.verifyOtp = async (identifier, code, purpose) => {
     return { success: true, message: 'OTP verified successfully' };
   }
 
-  const hashedCode = hashOtp(code);
+
   const otpRecord = await OtpLog.findOne({
     identifier,
     otp: hashedCode,

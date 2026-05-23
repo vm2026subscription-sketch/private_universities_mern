@@ -132,7 +132,7 @@ export default function Home() {
         const [uniRes, examRes, testRes] = await Promise.all([
           api.get('/universities?limit=50').catch(() => ({ data: { data: [] } })),
           api.get('/exams/upcoming').catch(() => ({ data: { data: [] } })),
-          api.get('/public/testimonials').catch(() => ({ data: { data: [] } }))
+          api.get('/testimonials').catch(() => ({ data: { data: [] } }))
         ]);
 
         const fetchedUniversities = Array.isArray(uniRes?.data?.data) ? [...uniRes.data.data] : [];
@@ -179,7 +179,7 @@ export default function Home() {
     const data = Object.fromEntries(formData.entries());
 
     try {
-      await api.post('/public/testimonials', data);
+      await api.post('/testimonials', data);
       alert('Thank you! Your feedback has been submitted for review.');
       setShowFeedback(false);
     } catch (error) {

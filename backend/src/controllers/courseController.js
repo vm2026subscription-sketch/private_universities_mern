@@ -22,6 +22,9 @@ exports.getCourses = async (req, res) => {
     
     pipeline.push({ $match: match });
 
+    // Sort before $lookup so MongoDB can use indexes on the courses collection
+    pipeline.push({ $sort: { _id: -1 } });
+
     // Join with University to filter by state
     pipeline.push({
       $lookup: {
@@ -37,9 +40,6 @@ exports.getCourses = async (req, res) => {
     if (state && state !== 'All') {
       pipeline.push({ $match: { 'universityId.state': { $regex: new RegExp(`^${state}$`, 'i') } } });
     }
-
-    // Sort and Paginate
-    pipeline.push({ $sort: { createdAt: -1 } });
     
     // Get total count before pagination
     const countPipeline = [...pipeline, { $count: 'total' }];

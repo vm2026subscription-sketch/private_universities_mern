@@ -39,22 +39,18 @@ export default function UniversityDetail() {
           const filtered = prev.filter(r => r._id !== u._id);
           const entry = { _id: u._id, name: u.name, slug: u.slug, state: u.state, city: u.city, type: u.type, naacGrade: u.naacGrade, nirfRank: u.nirfRank };
           localStorage.setItem('vm_recent', JSON.stringify([entry, ...filtered].slice(0, 10)));
+
+          if (u._id) {
+            api.get(`/universities/${u._id}/similar`)
+              .then(res => setSimilarUnis(res.data.data))
+              .catch(() => {});
+          }
         }
       })
       .catch((err) => {
         console.error('Failed to fetch university details:', err);
       })
       .finally(() => setLoading(false));
-
-    // Fetch similar universities
-    api.get(`/universities/${slug}`)
-      .then(({ data }) => {
-        if (data.data?._id) {
-          api.get(`/universities/${data.data._id}/similar`)
-            .then(res => setSimilarUnis(res.data.data))
-            .catch(() => {});
-        }
-      });
   }, [slug]);
 
   useEffect(() => {
