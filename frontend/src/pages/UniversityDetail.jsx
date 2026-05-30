@@ -14,6 +14,17 @@ import UniversityLogo from '../components/common/UniversityLogo';
 
 const tabs = ['Overview', 'Courses', 'Admissions', 'Placements', 'Campus', 'Scholarships', 'Q&A', 'News'];
 
+const getHostname = (value) => {
+  if (!value) return '';
+
+  try {
+    const normalizedUrl = value.startsWith('http') ? value : `https://${value}`;
+    return new URL(normalizedUrl).hostname;
+  } catch {
+    return value;
+  }
+};
+
 export default function UniversityDetail() {
   const { slug } = useParams();
   const location = useLocation();
@@ -149,11 +160,11 @@ export default function UniversityDetail() {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mt-12 pt-10 border-t border-slate-50 dark:border-white/5">
             {[
               { icon: Users, label: 'Students', value: uni.stats?.totalStudents?.toLocaleString() || 'N/A' },
-              { icon: Award, label: 'Avg Package', value: uni.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : 'N/A' },
+              { icon: Award, label: 'Avg Package', value: uni.stats?.avgPackageLPA ? `INR ${uni.stats.avgPackageLPA} LPA` : 'N/A' },
               { icon: BookOpen, label: 'Courses', value: uni.stats?.totalCoursesCount || uni.courses?.length || 0, link: `/courses?universityId=${uni._id}&universityName=${encodeURIComponent(uni.name)}` },
               { icon: Building, label: 'Campus', value: uni.stats?.campusSizeAcres ? `${uni.stats.campusSizeAcres} Acres` : 'N/A' },
               { icon: CheckCircle2, label: 'Placement', value: uni.stats?.placementPercentage ? `${uni.stats.placementPercentage}%` : 'N/A' },
-              { icon: Award, label: 'Highest Pkg', value: uni.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : 'N/A' },
+              { icon: Award, label: 'Highest Pkg', value: uni.stats?.highestPackageLPA ? `INR ${uni.stats.highestPackageLPA} LPA` : 'N/A' },
             ].map((s, i) => {
               const content = (
                 <>
@@ -270,10 +281,10 @@ export default function UniversityDetail() {
                           <div>
                             <h3 className="font-bold text-lg">{course.name}</h3>
                             <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest">
-                              {course.category} • {course.duration} Year{course.duration > 1 ? 's' : ''}
+                              {course.category} | {course.duration} Year{course.duration > 1 ? 's' : ''}
                             </p>
                           </div>
-                          {course.feesPerYear ? <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-black">₹{course.feesPerYear.toLocaleString()}/yr</span> : null}
+                          {course.feesPerYear ? <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-black">INR {course.feesPerYear.toLocaleString()}/yr</span> : null}
                         </div>
                         {course.entranceExams?.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-4">
@@ -326,11 +337,11 @@ export default function UniversityDetail() {
                 <div className="space-y-12">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="p-8 rounded-[2.5rem] bg-indigo-500/5 border border-indigo-500/10 text-center">
-                      <p className="text-4xl font-serif font-black text-indigo-600 mb-2">{uni.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : 'N/A'}</p>
+                      <p className="text-4xl font-serif font-black text-indigo-600 mb-2">{uni.stats?.avgPackageLPA ? `INR ${uni.stats.avgPackageLPA} LPA` : 'N/A'}</p>
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Average Package</p>
                     </div>
                     <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/10 text-center">
-                      <p className="text-4xl font-serif font-black text-emerald-600 mb-2">{uni.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : 'N/A'}</p>
+                      <p className="text-4xl font-serif font-black text-emerald-600 mb-2">{uni.stats?.highestPackageLPA ? `INR ${uni.stats.highestPackageLPA} LPA` : 'N/A'}</p>
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Highest Package</p>
                     </div>
                     <div className="p-8 rounded-[2.5rem] bg-orange-500/5 border border-orange-500/10 text-center">
@@ -416,7 +427,7 @@ export default function UniversityDetail() {
                         <a key={idx} href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between p-6 rounded-3xl bg-slate-50 dark:bg-white/5 hover:bg-primary/5 border border-slate-100 dark:border-white/5 transition-all group">
                           <div>
                             <p className="font-bold text-lg group-hover:text-primary transition-colors">{item.title}</p>
-                            <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest">{new URL(item.url).hostname}</p>
+                            <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest">{getHostname(item.url)}</p>
                           </div>
                           <ExternalLink className="w-5 h-5 text-slate-300 group-hover:text-primary" />
                         </a>

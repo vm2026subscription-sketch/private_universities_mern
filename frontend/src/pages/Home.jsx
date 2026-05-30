@@ -13,6 +13,7 @@ import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAiChat } from '../context/AiChatContext';
 import UniversityLogo from '../components/common/UniversityLogo';
+import { toast } from 'react-hot-toast';
 
 const mockUniversities = [
   { name: 'SAGE University', city: 'Indore', state: 'MP', slug: 'sage-university-indore', naacGrade: 'A+', stats: { avgPackageLPA: '5.5' }, logo: 'https://ui-avatars.com/api/?name=SAGE+University&background=FF6B00&color=fff&bold=true' },
@@ -132,7 +133,7 @@ export default function Home() {
         const [uniRes, examRes, testRes] = await Promise.all([
           api.get('/universities?limit=50').catch(() => ({ data: { data: [] } })),
           api.get('/exams/upcoming').catch(() => ({ data: { data: [] } })),
-          api.get('/testimonials').catch(() => ({ data: { data: [] } }))
+          api.get('/questions').catch(() => ({ data: { data: [] } }))
         ]);
 
         const fetchedUniversities = Array.isArray(uniRes?.data?.data) ? [...uniRes.data.data] : [];
@@ -180,10 +181,10 @@ export default function Home() {
 
     try {
       await api.post('/testimonials', data);
-      alert('Thank you! Your feedback has been submitted for review.');
+      toast.success('Thank you! Your feedback has been submitted for review.');
       setShowFeedback(false);
     } catch (error) {
-      alert('Submission failed. Please try again.');
+      toast.error('Submission failed. Please try again.');
     }
   };
 
@@ -241,8 +242,8 @@ export default function Home() {
           >
             <GraduationCap className="w-4 h-4 text-primary group-hover:text-white" />
             <span className="text-white font-bold text-sm">{featuredUniversity.name}</span>
-            <span className="text-white/50 text-xs">— {featuredUniversity.location}</span>
-            <span className="text-primary group-hover:text-white text-xs font-bold ml-1">View →</span>
+            <span className="text-white/50 text-xs">- {featuredUniversity.location}</span>
+            <span className="text-primary group-hover:text-white text-xs font-bold ml-1">View -&gt;</span>
           </motion.button>
         </div>
 
@@ -525,7 +526,7 @@ export default function Home() {
                         <div className="flex items-center gap-6">
                           <div>
                             <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-black tracking-widest">Avg Package</p>
-                            <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-white transition-colors">₹{u.stats?.avgPackageLPA || '4.5'} LPA</p>
+                            <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-white transition-colors">INR {u.stats?.avgPackageLPA || '4.5'} LPA</p>
                           </div>
                           <div>
                             <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-black tracking-widest">Courses</p>
@@ -657,7 +658,7 @@ export default function Home() {
             <div className="space-y-6">
               {questions.map((q, i) => (
                 <div key={i} className="group cursor-pointer border-b border-slate-50 dark:border-white/5 pb-4 last:border-none" onClick={openChat}>
-                  <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{q.title}</h4>
+                  <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{q.title || q.content}</h4>
                 </div>
               ))}
             </div>

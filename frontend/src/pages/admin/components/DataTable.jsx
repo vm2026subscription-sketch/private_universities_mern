@@ -108,7 +108,7 @@ export default function DataTable({
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-light-muted">{filtered.length} items · Page {page} of {totalPages}</span>
+          <span className="text-light-muted">{filtered.length} items | Page {page} of {totalPages}</span>
           <div className="flex gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 rounded-lg hover:bg-light-card dark:hover:bg-dark-card disabled:opacity-30">
               <ChevronLeft className="w-4 h-4" />

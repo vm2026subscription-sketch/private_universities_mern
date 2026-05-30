@@ -49,11 +49,27 @@ export default function Universities() {
     
     setFilters(f => ({
       ...f,
-      state: newState ? [newState] : f.state,
-      city: newCity || f.city
+      state: newState ? [newState] : [],
+      city: newCity || ''
     }));
     setPage(1);
   }, [location.search]);
+
+  useEffect(() => {
+    if (!user) {
+      setSavedIds([]);
+      return;
+    }
+
+    api.get('/users/saved-universities')
+      .then(({ data }) => {
+        const ids = Array.isArray(data?.data) ? data.data.map((item) => item._id) : [];
+        setSavedIds(ids);
+      })
+      .catch(() => {
+        setSavedIds([]);
+      });
+  }, [user]);
 
   const handleBookmark = async (universityId) => {
     if (!user) return toast.error('Please login to save universities');
@@ -187,7 +203,7 @@ export default function Universities() {
             </div>
             
             <button 
-              onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [] }); setPage(1); }} 
+              onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [], city: '' }); setPage(1); }} 
               className="w-full mt-8 py-3 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all"
             >
               Reset Filters
@@ -212,7 +228,7 @@ export default function Universities() {
                       animate={{ opacity: 1, y: 0 }}
                       className="group relative h-full min-h-[380px] [perspective:1500px]"
                     >
-                      <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.overview ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
+                      <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
                         {/* Front Face */}
                         <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-lg flex flex-col overflow-hidden">
                           {/* Top Badges */}
@@ -284,12 +300,12 @@ export default function Universities() {
                           </div>
                         </div>
 
-                        {/* Back Face (Overview) - Only render if overview exists */}
-                        {u.overview && (
+                        {/* Back Face (Overview) - Only render if description exists */}
+                        {u.description && (
                           <div className="absolute inset-0 w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden] bg-gradient-to-br from-orange-500 to-primary rounded-[2.5rem] p-8 flex flex-col text-white shadow-2xl overflow-hidden z-30">
                              <h3 className="text-2xl font-black mb-4 flex items-center gap-2"><BookOpen className="w-6 h-6" /> Overview</h3>
                              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 text-sm text-white/90 leading-relaxed font-medium">
-                               {u.overview}
+                               {u.description}
                              </div>
                              <Link 
                                 to={`/universities/${u.slug}`}

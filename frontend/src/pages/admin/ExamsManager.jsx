@@ -70,10 +70,10 @@ export default function ExamsManager() {
 
       <DataTable data={items} columns={[
         { key: 'name', label: 'Exam', render: e => <span className="font-medium">{e.name}</span> },
-        { key: 'shortName', label: 'Short', render: e => e.shortName ? <span className="badge badge-blue">{e.shortName}</span> : '—' },
+        { key: 'shortName', label: 'Short', render: e => e.shortName ? <span className="badge badge-blue">{e.shortName}</span> : '-' },
         { key: 'conductingBody', label: 'Body' },
         { key: 'category', label: 'Category', render: e => <span className="capitalize">{e.category}</span> },
-        { key: 'examDate', label: 'Date', render: e => e.examDate ? new Date(e.examDate).toLocaleDateString() : '—' },
+        { key: 'examDate', label: 'Date', render: e => e.examDate ? new Date(e.examDate).toLocaleDateString() : '-' },
       ]} searchFields={['name', 'shortName', 'conductingBody']} searchPlaceholder="Search exams..."
         actions={ex => (<>
           <button onClick={() => edit(ex)} className="p-1.5 rounded-lg hover:bg-light-card"><Pencil className="w-4 h-4" /></button>

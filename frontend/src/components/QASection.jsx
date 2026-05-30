@@ -75,9 +75,9 @@ export default function QASection({ universityId, user }) {
                     <User className="w-5 h-5" />
                  </div>
                  <div className="flex-1">
-                    <p className="font-bold text-sm mb-1">{q.content}</p>
+                    <p className="font-bold text-sm mb-1">{q.title || q.content}</p>
                     <p className="text-[10px] text-light-muted uppercase font-black tracking-widest flex items-center gap-2">
-                       Asked by {q.userId?.name || 'Anonymous'} • {new Date(q.createdAt).toLocaleDateString()}
+                       Asked by {q.userId?.name || 'Anonymous'} | {new Date(q.createdAt).toLocaleDateString()}
                     </p>
                  </div>
               </div>

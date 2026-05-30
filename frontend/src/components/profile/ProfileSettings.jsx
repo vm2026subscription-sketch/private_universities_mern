@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { User, Mail, Lock, LogOut, Save, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const DEFAULT_AVATARS = [
   'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
@@ -30,7 +31,7 @@ export default function ProfileSettings({ user, onUpdateProfile, onChangePasswor
   const handlePassword = (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("Passwords don't match");
+      toast.error("Passwords don't match");
       return;
     }
     onChangePassword(passwordData);

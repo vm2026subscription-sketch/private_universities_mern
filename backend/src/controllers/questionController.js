@@ -133,14 +133,16 @@ exports.generateQuestionHelp = async (req, res) => {
     );
 
     if (mentionedUniv) {
-      specificUniversity = await University.findById(mentionedUniv._id).select('name state city stats description nirfRank admissions courses slug').populate('courses', 'name duration fees');
+      specificUniversity = await University.findById(mentionedUniv._id)
+        .select('name state city stats description nirfRank admissions courses slug')
+        .populate('courses', 'name duration feesPerYear');
     }
 
     // 2. Fetch general site context
     const [topUniversities, recentFAQs, upcomingExams] = await Promise.all([
       University.find({ type: { $ne: 'foreign' } }).sort({ nirfRank: 1, 'stats.rating': -1 }).limit(3).select('name state city stats description nirfRank slug'),
       FAQ.find({ isPublished: true }).limit(3).select('question answer'),
-      Exam.find({}).limit(3).select('name registrationEndDate examDate website'),
+      Exam.find({}).limit(3).select('name registrationDeadline examDate officialUrl'),
     ]);
 
     let siteContext = 'Current Website Knowledge Base:\n';
@@ -172,7 +174,7 @@ exports.generateQuestionHelp = async (req, res) => {
 
     if (upcomingExams.length > 0) {
       siteContext += '\nUpcoming Exams:\n' + upcomingExams.map(e => 
-        `- ${e.name}: Registration ends ${e.registrationEndDate ? e.registrationEndDate.toDateString() : 'TBA'}.`
+        `- ${e.name}: Registration ends ${e.registrationDeadline ? e.registrationDeadline.toDateString() : 'TBA'}.`
       ).join('\n');
     }
 

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const University = require('../models/University');
 const Course = require('../models/Course');
 const { buildUniqueSlug } = require('../utils/slug');
+const { escapeRegExp } = require('../utils/regex');
 
 const uniq = (items) => [...new Set(items.filter(Boolean))];
 
@@ -105,16 +106,38 @@ const createComparisonRows = (profiles) => {
 
 exports.getUniversities = async (req, res) => {
   try {
-    const { search, state, type, naacGrade, minFees, maxFees, entranceExam, avgPackage, nirfRank, approvals, sort, page = 1, limit = 12, courseCategory } = req.query;
+    const {
+      search,
+      state,
+      city,
+      type,
+      naacGrade,
+      minFees,
+      maxFees,
+      entranceExam,
+      avgPackage,
+      nirfRank,
+      approvals,
+      sort,
+      page = 1,
+      limit = 12,
+      courseCategory,
+    } = req.query;
     const filter = {};
+    const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
+    const normalizedLimit = Math.min(Math.max(parseInt(limit, 10) || 12, 1), 50);
+    const skip = (normalizedPage - 1) * normalizedLimit;
+
     if (search) {
+      const safeSearch = escapeRegExp(search.trim());
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { city: { $regex: search, $options: 'i' } },
-        { state: { $regex: search, $options: 'i' } }
+        { name: { $regex: safeSearch, $options: 'i' } },
+        { city: { $regex: safeSearch, $options: 'i' } },
+        { state: { $regex: safeSearch, $options: 'i' } }
       ];
     }
-    if (state) filter.state = { $in: state.split(',') };
+    if (state) filter.state = { $in: state.split(',').map((item) => item.trim()).filter(Boolean) };
+    if (city) filter.city = { $regex: escapeRegExp(city.trim()), $options: 'i' };
     
     // Default: exclude 'foreign' unless explicitly requested
     if (type && type !== 'both') {
@@ -123,7 +146,7 @@ exports.getUniversities = async (req, res) => {
       filter.type = { $ne: 'foreign' };
     }
     
-    if (naacGrade) filter.naacGrade = { $in: naacGrade.split(',') };
+    if (naacGrade) filter.naacGrade = { $in: naacGrade.split(',').map((item) => item.trim()).filter(Boolean) };
     if (nirfRank) {
       const [min, max] = nirfRank.split('-').map(Number);
       if (max) filter.nirfRank = { $gte: min, $lte: max };
@@ -134,31 +157,83 @@ exports.getUniversities = async (req, res) => {
       filter['stats.avgPackageLPA'] = max ? { $gte: min, $lte: max } : { $gte: min };
     }
     if (approvals) {
-      approvals.split(',').forEach(a => { filter[`approvals.${a.toLowerCase()}`] = true; });
+      approvals
+        .split(',')
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+        .forEach((approval) => {
+          filter[`approvals.${approval}`] = true;
+        });
     }
     if (entranceExam) {
-      filter['admissions.acceptedExams'] = { $in: entranceExam.split(',').map(e => new RegExp(e, 'i')) };
+      filter['admissions.acceptedExams'] = {
+        $in: entranceExam
+          .split(',')
+          .map((exam) => exam.trim())
+          .filter(Boolean)
+          .map((exam) => new RegExp(escapeRegExp(exam), 'i')),
+      };
     }
 
-    if (courseCategory) {
-      const courses = await Course.find({ category: { $regex: new RegExp(`^${courseCategory}$`, 'i') } });
-      const uniIds = courses.map(c => c.universityId);
+    const parsedMinFees = Number(minFees);
+    const parsedMaxFees = Number(maxFees);
+    const hasMinFees = Number.isFinite(parsedMinFees);
+    const hasMaxFees = Number.isFinite(parsedMaxFees);
+
+    if (courseCategory || hasMinFees || hasMaxFees) {
+      const courseFilter = {};
+
+      if (courseCategory) {
+        courseFilter.category = { $regex: new RegExp(`^${escapeRegExp(courseCategory)}$`, 'i') };
+      }
+
+      if (hasMinFees || hasMaxFees) {
+        const feeRange = {};
+        if (hasMinFees) feeRange.$gte = parsedMinFees;
+        if (hasMaxFees) feeRange.$lte = parsedMaxFees;
+        courseFilter.$or = [
+          { feesPerYear: feeRange },
+          { 'specializations.feesPerYear': feeRange },
+        ];
+      }
+
+      const uniIds = await Course.distinct('universityId', courseFilter);
       filter._id = { $in: uniIds };
     }
 
     let sortObj = { nirfRank: 1 };
-    if (sort === 'fees_asc') sortObj = { 'stats.avgPackageLPA': 1 };
-    else if (sort === 'fees_desc') sortObj = { 'stats.avgPackageLPA': -1 };
+    if (sort === 'fees_asc' || sort === 'fees_desc') sortObj = null;
     else if (sort === 'package') sortObj = { 'stats.avgPackageLPA': -1 };
     else if (sort === 'name') sortObj = { name: 1 };
     else if (sort === 'established') sortObj = { establishedYear: 1 };
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const [universities, total] = await Promise.all([
-      University.find(filter).sort(sortObj).skip(skip).limit(parseInt(limit)).populate('courses'),
-      University.countDocuments(filter)
-    ]);
-    res.json({ success: true, data: universities, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
+    let universities;
+    let total;
+
+    if (sort === 'fees_asc' || sort === 'fees_desc') {
+      const allUniversities = await University.find(filter).populate('courses');
+      const sortedUniversities = allUniversities.sort((a, b) => {
+        const aMinFees = collectCourseFees(a.courses)?.min ?? Number.MAX_SAFE_INTEGER;
+        const bMinFees = collectCourseFees(b.courses)?.min ?? Number.MAX_SAFE_INTEGER;
+        return sort === 'fees_desc' ? bMinFees - aMinFees : aMinFees - bMinFees;
+      });
+
+      total = sortedUniversities.length;
+      universities = sortedUniversities.slice(skip, skip + normalizedLimit);
+    } else {
+      [universities, total] = await Promise.all([
+        University.find(filter).sort(sortObj).skip(skip).limit(normalizedLimit).populate('courses'),
+        University.countDocuments(filter)
+      ]);
+    }
+
+    res.json({
+      success: true,
+      data: universities,
+      total,
+      page: normalizedPage,
+      pages: Math.ceil(total / normalizedLimit),
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -6,19 +6,19 @@ import api from '../utils/api';
 import { ListSkeleton } from '../components/common/LoadingSkeleton';
 import UniversityLogo from '../components/common/UniversityLogo';
 
-// Country flag emojis
+// Country labels
 const countryFlag = (name = '') => {
   const n = (name || '').toLowerCase();
-  if (n.includes('united kingdom') || n.includes('uk')) return '🇬🇧';
-  if (n.includes('united states') || n.includes('usa') || n.includes('us')) return '🇺🇸';
-  if (n.includes('australia')) return '🇦🇺';
-  if (n.includes('canada')) return '🇨🇦';
-  if (n.includes('germany')) return '🇩🇪';
-  if (n.includes('france')) return '🇫🇷';
-  return '🌍';
+  if (n.includes('united kingdom') || n.includes('uk')) return 'UK';
+  if (n.includes('united states') || n.includes('usa') || n.includes('us')) return 'USA';
+  if (n.includes('australia')) return 'AUS';
+  if (n.includes('canada')) return 'CAN';
+  if (n.includes('germany')) return 'DE';
+  if (n.includes('france')) return 'FR';
+  return 'Global';
 };
 
-// Country → accent color
+// Country accent color
 const countryAccent = (name = '') => {
   const n = (name || '').toLowerCase();
   if (n.includes('united kingdom') || n.includes('uk')) return 'from-blue-600 to-red-600';
@@ -34,18 +34,9 @@ export default function ForeignUniversities() {
 
   useEffect(() => {
     setLoading(true);
-    api.get(`/universities?type=foreign&limit=50`).then(async ({ data }) => {
+    api.get(`/universities?type=foreign&limit=50`).then(({ data }) => {
       const unis = data.data || [];
       setUniversities(unis);
-      const coursesMap = {};
-      await Promise.all(unis.map(async (uni) => {
-        try {
-          const res = await api.get(`/courses?universityId=${uni._id}&limit=50`);
-          coursesMap[uni._id] = res.data.data || [];
-        } catch {
-          coursesMap[uni._id] = [];
-        }
-      }));
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);

@@ -93,7 +93,7 @@ export default function Preferences({ profile, onSave }) {
               {formData.preferredStates.map(s => (
                 <span key={s} className="badge badge-blue flex items-center gap-1.5 py-1.5">
                   {s}
-                  <button type="button" onClick={() => handleRemoveState(s)} className="hover:text-red-500">×</button>
+                  <button type="button" onClick={() => handleRemoveState(s)} className="hover:text-red-500" aria-label={`Remove ${s}`}>x</button>
                 </span>
               ))}
               {formData.preferredStates.length === 0 && <p className="text-xs text-light-muted">No preferred states added.</p>}

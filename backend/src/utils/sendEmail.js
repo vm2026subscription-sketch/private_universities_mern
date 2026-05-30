@@ -1,4 +1,3 @@
-const { Resend } = require('resend');
 const nodemailer = require('nodemailer');
 
 // Use Resend if API key is set, otherwise fall back to SMTP
@@ -24,6 +23,7 @@ const getSmtpTransporter = () => {
 
 const sendEmail = async ({ to, subject, html }) => {
   if (useResend()) {
+    const { Resend } = require('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const from = process.env.RESEND_FROM || 'Vidyarthi Mitra <onboarding@resend.dev>';
 

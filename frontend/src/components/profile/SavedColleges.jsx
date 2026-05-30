@@ -144,7 +144,7 @@ export default function SavedColleges({ savedUnis, ratings, notes, compareList, 
                   <textarea
                     value={noteText}
                     onChange={e => setNoteText(e.target.value)}
-                    placeholder="Add a note about this college…"
+                    placeholder="Add a note about this college..."
                     rows={3}
                     className="input-field text-sm resize-none"
                   />
