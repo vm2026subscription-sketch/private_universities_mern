@@ -528,10 +528,43 @@ export default function AiChatWidget() {
               <Send className="w-4 h-4" />
             </button>
           </form>
+          {/* AI Tool Quick Links */}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0">Ask on:</span>
+            <a
+              href="https://gemini.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-200/60 dark:border-blue-500/20 hover:from-blue-500/20 hover:to-indigo-500/20 transition-all group"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="url(#gemini-grad)"/>
+                <defs>
+                  <linearGradient id="gemini-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#4285F4"/>
+                    <stop offset="100%" stopColor="#34A853"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-wide group-hover:text-blue-700">Gemini</span>
+            </a>
+            <a
+              href="https://grok.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800/60 dark:to-slate-700/60 border border-slate-200/80 dark:border-slate-600/30 hover:from-slate-200 hover:to-slate-100 dark:hover:from-slate-700/80 transition-all group"
+            >
+              <svg className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 3h8v8H3zm0 10h8v8H3zM13 3h8v8h-8zm5 10l-5 8h10z"/>
+              </svg>
+              <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 tracking-wide group-hover:text-slate-800">Grok</span>
+            </a>
+          </div>
+
           <button
             type="button"
             onClick={postLastQuestion}
-            className="mt-4 w-full rounded-xl border border-light-border dark:border-dark-border py-2.5 text-xs font-bold text-muted-foreground hover:bg-light-card dark:hover:bg-dark-bg transition-all flex items-center justify-center gap-2 border-dashed"
+            className="mt-2 w-full rounded-xl border border-light-border dark:border-dark-border py-2.5 text-xs font-bold text-muted-foreground hover:bg-light-card dark:hover:bg-dark-bg transition-all flex items-center justify-center gap-2 border-dashed"
           >
             <MessageSquare className="w-3.5 h-3.5" />
             Post to community for student discussion
