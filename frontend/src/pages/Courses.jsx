@@ -108,11 +108,11 @@ export default function Courses() {
   const courseGroups = useMemo(() => {
     if (selectedCourse) return [];
     return courses
-      .filter((course) => course && (course.name || course.category || course.stream))
+      .filter((course) => course && course.name && course.name.trim() !== '' && (course.category || course.stream))
       .map((course, index) => ({
         ...course,
-        _id: course._id || `${course.name || 'course'}-${course.category || 'misc'}-${index}`,
-        name: course.name || 'Untitled Program',
+        _id: course._id || `${course.name}-${course.category || 'misc'}-${index}`,
+        name: course.name.trim(),
         category: course.category || 'Others',
         stream: course.stream || 'Others',
         normName: normalizeText(course.name),

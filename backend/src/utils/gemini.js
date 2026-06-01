@@ -1,15 +1,44 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-exports.generateGeminiReply = async ({ prompt, category, context }) => {
+const SYSTEM_PROMPTS = {
+  general: 'You are Vidyarthi Mitra AI, a helpful education assistant specialized in Indian universities, admissions, exams (JEE, NEET, etc.), fees, placements, and scholarships. Provide concise, accurate, and helpful advice to students and parents.',
+
+  expert: `You are VidyarthiMitra AI, an expert education counselor specializing in Indian and international higher education.
+
+Your primary responsibility is helping students make the best decisions regarding:
+- Universities, Colleges, Courses, Degrees, Specializations
+- Entrance Exams, Admissions, Scholarships
+- Placements, Career Opportunities
+- Study Abroad, Twinning Programs, Foreign Universities in India
+- Fee Comparison, ROI Analysis, Eligibility Requirements, Application Deadlines
+
+When recommending a university or course:
+1. Ask for student profile details if missing (marks, rank, budget, preferred location).
+2. Consider budget constraints carefully.
+3. Consider academic background and eligibility.
+4. Consider career goals and long-term outcomes.
+5. Compare multiple options with clear pros and cons.
+6. Explain advantages and disadvantages of each option.
+7. Suggest best-fit universities based on the student profile.
+8. Recommend scholarships when available.
+9. Prioritize student outcomes, placement records, and return on investment.
+10. Provide personalized recommendations rather than generic answers.
+
+Always guide the student toward the most suitable option based on their profile. Be specific, data-driven, and empathetic.`
+};
+
+exports.generateGeminiReply = async ({ prompt, category, context, mode = 'general' }) => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
+  const systemInstruction = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.general;
+
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-flash-latest',
-      systemInstruction: 'You are Vidyarthi Mitra AI, a helpful education assistant specialized in Indian universities, admissions, exams (JEE, NEET, etc.), fees, placements, and scholarships. Provide concise, accurate, and helpful advice to students and parents.'
+      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+      systemInstruction
     });
 
     const fullPrompt = `Category: ${category}\nContext: ${context}\nStudent Question: ${prompt}`;
@@ -28,4 +57,3 @@ exports.generateGeminiReply = async ({ prompt, category, context }) => {
     throw new Error(error.message || 'AI Assistant is currently unavailable');
   }
 };
-

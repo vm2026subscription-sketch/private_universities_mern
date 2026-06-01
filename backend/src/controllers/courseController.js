@@ -143,11 +143,11 @@ exports.getGroupedCourses = async (req, res) => {
       pipeline.push({ $match: { 'university.state': { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') } } });
     }
 
-    // Group by normalized base course
+    // Group by normalized base course (fall back to course name if baseCourse is missing)
     pipeline.push({
       $group: {
-        _id: '$baseCourse',
-        name: { $first: '$baseCourse' },
+        _id: { $ifNull: ['$baseCourse', '$name'] },
+        name: { $first: { $ifNull: ['$baseCourse', '$name'] } },
         category: { $first: '$category' },
         stream: { $first: '$stream' },
         duration: { $first: '$duration' },
@@ -156,6 +156,13 @@ exports.getGroupedCourses = async (req, res) => {
         universityIds: { $addToSet: '$universityId' },
         specializations: { $addToSet: '$specializationName' },
         entranceExams: { $addToSet: '$entranceExams' }
+      }
+    });
+
+    // Exclude groups where name is null, empty, or whitespace-only
+    pipeline.push({
+      $match: {
+        name: { $exists: true, $ne: null, $not: /^\s*$/ }
       }
     });
 
@@ -176,7 +183,7 @@ exports.getGroupedCourses = async (req, res) => {
           $filter: {
             input: '$specializations',
             as: 'spec',
-            cond: { $ne: ['$$spec', 'General'] }
+            cond: { $and: [{ $ne: ['$$spec', null] }, { $ne: ['$$spec', 'General'] }] }
           }
         },
         entranceExams: {

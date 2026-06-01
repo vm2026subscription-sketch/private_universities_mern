@@ -117,7 +117,8 @@ exports.markBestAnswer = async (req, res) => {
 
 exports.generateQuestionHelp = async (req, res) => {
   try {
-    const { title, content, category } = req.body;
+    const { title, content, category, mode } = req.body;
+    // mode: 'general' (default Gemini) | 'expert' (University Expert counselor)
     const promptText = [title, content].filter(Boolean).join('\n');
     if (!promptText.trim()) {
       return res.status(400).json({ success: false, message: 'Question is required' });
@@ -182,6 +183,7 @@ exports.generateQuestionHelp = async (req, res) => {
       prompt: promptText,
       category,
       context: siteContext || 'Focus on Indian universities, admissions, exams, fees, placements, scholarships, and application strategy.',
+      mode: mode || 'general',
     });
 
     res.json({ success: true, data: { suggestion } });

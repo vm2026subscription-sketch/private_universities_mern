@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Bot, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2 } from 'lucide-react';
+import { Bot, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -8,8 +8,12 @@ import { useAiChat } from '../../context/AiChatContext';
 
 const QUICK_PROMPTS = [
   'Best private university for B.Tech CSE?',
-  'Top MBA options under 15 lakh?',
+  'Top MBA options under ₹15 lakh?',
   'Which colleges should I target based on my JEE rank?',
+  'Compare Amity vs UPES vs Chandigarh University',
+  'Which AI/ML course has the best placement?',
+  'Best study abroad options under ₹25 lakh?',
+  'Which twinning programs offer the highest ROI?',
 ];
 
 const DEFAULT_CHAT_WIDTH = 384;
@@ -121,6 +125,7 @@ export default function AiChatWidget() {
   const { user } = useAuth();
   const savedLayout = loadSavedLayout();
   const [input, setInput] = useState('');
+  const [aiMode, setAiMode] = useState('general'); // 'general' | 'expert'
   const [minimized, setMinimized] = useState(false);
   const [size, setSize] = useState(savedLayout.size);
   const [position, setPosition] = useState(savedLayout.position);
@@ -294,6 +299,7 @@ export default function AiChatWidget() {
         title: trimmed,
         content: trimmed,
         category: 'admissions',
+        mode: aiMode,
       });
       setMessages((current) => [
         ...current,
@@ -434,7 +440,9 @@ export default function AiChatWidget() {
               <p className="font-bold text-sm tracking-tight">Vidyarthi Mitra AI</p>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-pulse" />
-                <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider">Online</p>
+                <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider">
+                  {aiMode === 'expert' ? 'Education Specialist' : 'Online'}
+                </p>
               </div>
             </div>
           </div>
@@ -494,13 +502,14 @@ export default function AiChatWidget() {
         </div>
 
         <div className="border-t border-light-border dark:border-dark-border p-5 bg-white dark:bg-dark-card shrink-0">
-          <div className="flex flex-wrap gap-2 mb-4">
+          {/* Horizontally scrollable prompt strip — never wraps, never pushes input up */}
+          <div className="flex gap-2 mb-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {QUICK_PROMPTS.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 onClick={() => askGemini(prompt)}
-                className="rounded-full bg-accent/5 hover:bg-accent/10 border border-accent/10 px-3.5 py-1.5 text-xs text-primary font-bold transition-all hover:scale-105 active:scale-95"
+                className="shrink-0 rounded-full bg-accent/5 hover:bg-accent/10 border border-accent/10 px-3.5 py-1.5 text-xs text-primary font-bold transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
               >
                 {prompt}
               </button>
@@ -528,43 +537,53 @@ export default function AiChatWidget() {
               <Send className="w-4 h-4" />
             </button>
           </form>
-          {/* AI Tool Quick Links */}
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0">Ask on:</span>
-            <a
-              href="https://gemini.google.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-200/60 dark:border-blue-500/20 hover:from-blue-500/20 hover:to-indigo-500/20 transition-all group"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="url(#gemini-grad)"/>
-                <defs>
-                  <linearGradient id="gemini-grad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#4285F4"/>
-                    <stop offset="100%" stopColor="#34A853"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-              <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-wide group-hover:text-blue-700">Gemini</span>
-            </a>
-            <a
-              href="https://grok.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800/60 dark:to-slate-700/60 border border-slate-200/80 dark:border-slate-600/30 hover:from-slate-200 hover:to-slate-100 dark:hover:from-slate-700/80 transition-all group"
-            >
-              <svg className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 3h8v8H3zm0 10h8v8H3zM13 3h8v8h-8zm5 10l-5 8h10z"/>
-              </svg>
-              <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 tracking-wide group-hover:text-slate-800">Grok</span>
-            </a>
+          {/* AI Mode Selector — stays on-site, switches Gemini system prompt */}
+          <div className="mt-3">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">AI Mode</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAiMode('general')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                  aiMode === 'general'
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-blue-500 shadow-lg shadow-blue-500/20'
+                    : 'bg-slate-50 dark:bg-white/5 text-slate-500 border-slate-100 dark:border-white/10 hover:border-blue-300'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17 5.8 21.3l2.4-7.4L2 9.4h7.6z" fill="currentColor" opacity="0.9"/>
+                </svg>
+                Gemini AI
+              </button>
+              <button
+                type="button"
+                onClick={() => setAiMode('expert')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                  aiMode === 'expert'
+                    ? 'bg-gradient-to-r from-primary to-accent-light text-white border-primary shadow-lg shadow-primary/20'
+                    : 'bg-slate-50 dark:bg-white/5 text-slate-500 border-slate-100 dark:border-white/10 hover:border-primary/40'
+                }`}
+              >
+                <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+                University Expert
+              </button>
+            </div>
+            {aiMode === 'expert' && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 flex items-center gap-1.5 bg-primary/8 border border-primary/20 rounded-xl px-3 py-2"
+              >
+                <GraduationCap className="w-3 h-3 text-primary shrink-0" />
+                <span className="text-[9px] font-black text-primary uppercase tracking-widest">Education Specialist AI — Personalized counseling active</span>
+              </motion.div>
+            )}
           </div>
 
           <button
             type="button"
             onClick={postLastQuestion}
-            className="mt-2 w-full rounded-xl border border-light-border dark:border-dark-border py-2.5 text-xs font-bold text-muted-foreground hover:bg-light-card dark:hover:bg-dark-bg transition-all flex items-center justify-center gap-2 border-dashed"
+            className="mt-3 w-full rounded-xl border border-light-border dark:border-dark-border py-2.5 text-xs font-bold text-muted-foreground hover:bg-light-card dark:hover:bg-dark-bg transition-all flex items-center justify-center gap-2 border-dashed"
           >
             <MessageSquare className="w-3.5 h-3.5" />
             Post to community for student discussion
