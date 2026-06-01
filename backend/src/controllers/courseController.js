@@ -52,6 +52,31 @@ exports.getCourses = async (req, res) => {
     pipeline.push({ $skip: skip });
     pipeline.push({ $limit: normalizedLimit });
 
+    pipeline.push({
+      $project: {
+        _id: 1,
+        name: 1,
+        slug: 1,
+        category: 1,
+        stream: 1,
+        baseCourse: 1,
+        specializationName: 1,
+        duration: 1,
+        specializations: 1,
+        totalSeats: 1,
+        feesPerYear: 1,
+        entranceExams: 1,
+        eligibility: 1,
+        'universityId._id': 1,
+        'universityId.name': 1,
+        'universityId.slug': 1,
+        'universityId.logoUrl': 1,
+        'universityId.city': 1,
+        'universityId.state': 1,
+        'universityId.type': 1,
+      }
+    });
+
     const courses = await Course.aggregate(pipeline);
 
     res.json({ 
@@ -72,6 +97,7 @@ exports.getCourses = async (req, res) => {
 exports.getCategories = async (req, res) => {
   try {
     const categories = await Course.distinct('category');
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, data: categories });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -173,6 +199,7 @@ exports.getGroupedCourses = async (req, res) => {
 
     const grouped = await Course.aggregate(pipeline);
 
+    res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({ success: true, data: grouped });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -197,6 +224,7 @@ exports.getStreamStats = async (req, res) => {
       },
       { $sort: { collegeCount: -1 } }
     ]);
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, data: stats });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -14,6 +14,7 @@ exports.getExams = async (req, res) => {
       filter.state = state;
     }
     const exams = await Exam.find(filter).sort({ examDate: 1 });
+    res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({ success: true, data: exams });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -23,6 +24,7 @@ exports.getExams = async (req, res) => {
 exports.getUpcoming = async (req, res) => {
   try {
     const exams = await Exam.find({ examDate: { $gte: new Date() } }).sort({ examDate: 1 }).limit(10);
+    res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({ success: true, data: exams });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

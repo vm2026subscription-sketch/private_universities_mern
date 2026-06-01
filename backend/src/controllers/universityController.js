@@ -207,11 +207,16 @@ exports.getUniversities = async (req, res) => {
     else if (sort === 'name') sortObj = { name: 1 };
     else if (sort === 'established') sortObj = { establishedYear: 1 };
 
+    const LIST_FIELDS = 'name slug state city type establishedYear naacGrade nirfRank logoUrl links.brochureLink description stats views approvals';
+
     let universities;
     let total;
 
     if (sort === 'fees_asc' || sort === 'fees_desc') {
-      const allUniversities = await University.find(filter).populate('courses');
+      const allUniversities = await University.find(filter, LIST_FIELDS).populate({
+        path: 'courses',
+        select: 'feesPerYear specializations.feesPerYear'
+      });
       const sortedUniversities = allUniversities.sort((a, b) => {
         const aMinFees = collectCourseFees(a.courses)?.min ?? Number.MAX_SAFE_INTEGER;
         const bMinFees = collectCourseFees(b.courses)?.min ?? Number.MAX_SAFE_INTEGER;
@@ -221,8 +226,17 @@ exports.getUniversities = async (req, res) => {
       total = sortedUniversities.length;
       universities = sortedUniversities.slice(skip, skip + normalizedLimit);
     } else {
+      let query = University.find(filter, LIST_FIELDS).sort(sortObj).skip(skip).limit(normalizedLimit);
+
+      if (filter.type === 'foreign' || type === 'foreign') {
+        query = query.populate({
+          path: 'courses',
+          select: 'name duration feesPerYear'
+        });
+      }
+
       [universities, total] = await Promise.all([
-        University.find(filter).sort(sortObj).skip(skip).limit(normalizedLimit).populate('courses'),
+        query,
         University.countDocuments(filter)
       ]);
     }
@@ -389,6 +403,7 @@ exports.getTrends = async (req, res) => {
       { $sort: { count: -1 } },
       { $limit: 8 }
     ]);
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, popularUniversities, trendingCourses });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

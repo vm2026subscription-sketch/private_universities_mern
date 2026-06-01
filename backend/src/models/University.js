@@ -98,5 +98,9 @@ universitySchema.pre('save', function(next) {
 
 universitySchema.index({ name: 'text', state: 'text', city: 'text' });
 universitySchema.index({ state: 1, type: 1, naacGrade: 1 });
+universitySchema.index({ slug: 1 });
+universitySchema.index({ type: 1, nirfRank: 1 });
+universitySchema.index({ state: 1, nirfRank: 1 });
+universitySchema.index({ state: 1, 'stats.avgPackageLPA': -1 });
 
 module.exports = mongoose.model('University', universitySchema);

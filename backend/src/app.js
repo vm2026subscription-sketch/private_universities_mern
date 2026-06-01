@@ -22,7 +22,11 @@ const bhashiniRoutes = require('./routes/bhashini');
 
 const errorHandler = require('./middleware/errorHandler');
 
+const compression = require('compression');
+
 const app = express();
+
+app.use(compression());
 
 const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').trim();
 const googleAuthConfigured = Boolean(
