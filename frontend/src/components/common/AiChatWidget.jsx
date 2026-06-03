@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bot, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2 } from 'lucide-react';
+import { Bot, Grip, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -22,6 +22,47 @@ const INITIAL_MESSAGE = {
   timestamp: new Date(),
 };
 
+const DESKTOP_BREAKPOINT = 768;
+const DESKTOP_MARGIN = 24;
+const MOBILE_MARGIN = 16;
+const MIN_WIDTH = 340;
+const MIN_HEIGHT = 420;
+
+const isDesktopViewport = () => typeof window !== 'undefined' && window.innerWidth >= DESKTOP_BREAKPOINT;
+
+const getDesktopBounds = () => {
+  const width = Math.min(420, Math.max(MIN_WIDTH, window.innerWidth - DESKTOP_MARGIN * 2));
+  const maxHeight = Math.min(680, Math.floor(window.innerHeight * 0.78));
+  const height = Math.max(MIN_HEIGHT, maxHeight);
+
+  return {
+    width,
+    height,
+    x: Math.max(DESKTOP_MARGIN, window.innerWidth - width - DESKTOP_MARGIN),
+    y: Math.max(DESKTOP_MARGIN, window.innerHeight - height - DESKTOP_MARGIN),
+  };
+};
+
+const clampRectToViewport = (rect) => {
+  if (!isDesktopViewport()) {
+    return rect;
+  }
+
+  const maxWidth = Math.max(MIN_WIDTH, window.innerWidth - DESKTOP_MARGIN * 2);
+  const maxHeight = Math.max(MIN_HEIGHT, window.innerHeight - DESKTOP_MARGIN * 2);
+  const width = Math.min(Math.max(rect.width, MIN_WIDTH), maxWidth);
+  const height = Math.min(Math.max(rect.height, MIN_HEIGHT), maxHeight);
+  const maxX = Math.max(DESKTOP_MARGIN, window.innerWidth - width - DESKTOP_MARGIN);
+  const maxY = Math.max(DESKTOP_MARGIN, window.innerHeight - height - DESKTOP_MARGIN);
+
+  return {
+    width,
+    height,
+    x: Math.min(Math.max(rect.x, DESKTOP_MARGIN), maxX),
+    y: Math.min(Math.max(rect.y, DESKTOP_MARGIN), maxY),
+  };
+};
+
 export default function AiChatWidget() {
   const { isOpen, openChat, closeChat } = useAiChat();
   const { user } = useAuth();
@@ -29,13 +70,101 @@ export default function AiChatWidget() {
   const [loading, setLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+  const [panelRect, setPanelRect] = useState(() =>
+    typeof window === 'undefined' ? { width: 420, height: 620, x: 0, y: 0 } : getDesktopBounds()
+  );
   const scrollRef = useRef(null);
+  const dragStateRef = useRef(null);
+  const resizeStateRef = useRef(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, loading]);
+
+  useEffect(() => {
+    const handleViewportChange = () => {
+      if (!isDesktopViewport()) {
+        return;
+      }
+
+      setPanelRect((current) => clampRectToViewport(current));
+    };
+
+    handleViewportChange();
+    window.addEventListener('resize', handleViewportChange);
+    return () => window.removeEventListener('resize', handleViewportChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || minimized || !isDesktopViewport()) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event) => {
+      if (dragStateRef.current) {
+        const { startX, startY, originX, originY } = dragStateRef.current;
+        setPanelRect((current) =>
+          clampRectToViewport({
+            ...current,
+            x: originX + (event.clientX - startX),
+            y: originY + (event.clientY - startY),
+          })
+        );
+      } else if (resizeStateRef.current) {
+        const { startX, startY, originWidth, originHeight } = resizeStateRef.current;
+        setPanelRect((current) =>
+          clampRectToViewport({
+            ...current,
+            width: originWidth + (event.clientX - startX),
+            height: originHeight + (event.clientY - startY),
+          })
+        );
+      }
+    };
+
+    const stopInteractions = () => {
+      dragStateRef.current = null;
+      resizeStateRef.current = null;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', stopInteractions);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', stopInteractions);
+    };
+  }, [isOpen, minimized]);
+
+  const startDrag = (event) => {
+    if (!isDesktopViewport() || event.target.closest('button')) {
+      return;
+    }
+
+    dragStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: panelRect.x,
+      originY: panelRect.y,
+    };
+  };
+
+  const startResize = (event) => {
+    if (!isDesktopViewport()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    resizeStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originWidth: panelRect.width,
+      originHeight: panelRect.height,
+    };
+  };
 
   const askAssistant = async (question) => {
     const trimmed = question.trim();
@@ -159,12 +288,31 @@ export default function AiChatWidget() {
 
   return (
     <motion.div
-      className="fixed bottom-6 right-6 z-[90] w-[calc(100vw-2rem)] max-w-[420px] h-[min(78vh,680px)] overflow-hidden rounded-[32px] border border-light-border dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+      className="fixed z-[90] overflow-hidden rounded-[32px] border border-light-border dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
+      style={
+        isDesktopViewport()
+          ? {
+              left: panelRect.x,
+              top: panelRect.y,
+              width: panelRect.width,
+              height: panelRect.height,
+            }
+          : {
+              left: MOBILE_MARGIN,
+              right: MOBILE_MARGIN,
+              bottom: MOBILE_MARGIN,
+              width: `calc(100vw - ${MOBILE_MARGIN * 2}px)`,
+              height: 'min(78vh, 680px)',
+            }
+      }
     >
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between bg-gradient-to-r from-primary to-primary-light px-5 py-4 text-white border-b border-accent/20 shrink-0">
+        <div
+          className={`flex items-center justify-between bg-gradient-to-r from-primary to-primary-light px-5 py-4 text-white border-b border-accent/20 shrink-0 ${isDesktopViewport() ? 'cursor-move select-none' : ''}`}
+          onPointerDown={startDrag}
+        >
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="rounded-2xl bg-white/10 p-2.5 backdrop-blur-md border border-accent/30">
@@ -179,6 +327,7 @@ export default function AiChatWidget() {
                 <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider">Ready To Help</p>
               </div>
             </div>
+            {isDesktopViewport() && <Grip className="w-4 h-4 text-white/70" />}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -284,6 +433,17 @@ export default function AiChatWidget() {
           </button>
         </div>
       </div>
+
+      {isDesktopViewport() && (
+        <button
+          type="button"
+          aria-label="Resize chat"
+          onPointerDown={startResize}
+          className="absolute bottom-2 right-2 h-6 w-6 cursor-se-resize rounded-full text-slate-400 transition-colors hover:bg-light-card hover:text-primary dark:hover:bg-dark-bg"
+        >
+          <Maximize2 className="mx-auto h-3.5 w-3.5" />
+        </button>
+      )}
     </motion.div>
   );
 }

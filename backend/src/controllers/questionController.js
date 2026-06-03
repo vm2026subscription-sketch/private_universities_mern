@@ -5,9 +5,17 @@ const Exam = require('../models/Exam');
 const { generateGeminiReply } = require('../utils/gemini');
 const AI_TIMEOUT_MS = 12000;
 
+const includesAny = (text, keywords) => keywords.some((keyword) => text.includes(keyword));
+
 const buildFallbackSuggestion = ({ promptText, specificUniversity, topUniversities, recentFAQs, upcomingExams }) => {
   const normalizedPrompt = String(promptText || '').toLowerCase();
   const lines = [];
+  const asksAboutComparison = includesAny(normalizedPrompt, ['compare', 'vs', 'better']);
+  const asksAboutFees = includesAny(normalizedPrompt, ['fee', 'fees', 'budget', 'roi', 'afford']);
+  const asksAboutAdmissions = includesAny(normalizedPrompt, ['admission', 'apply', 'eligibility', 'admissions']);
+  const asksAboutPlacements = includesAny(normalizedPrompt, ['placement', 'placements', 'career', 'package', 'salary']);
+  const asksAboutExams = includesAny(normalizedPrompt, ['exam', 'jee', 'neet', 'cuet', 'cat', 'gate', 'registration', 'deadline']);
+  const asksAboutRecommendations = includesAny(normalizedPrompt, ['best', 'top', 'recommend', 'suggest', 'which college', 'which university']);
 
   if (specificUniversity) {
     lines.push(`${specificUniversity.name} is available on the platform.`);
@@ -22,29 +30,36 @@ const buildFallbackSuggestion = ({ promptText, specificUniversity, topUniversiti
     }
   }
 
-  if (normalizedPrompt.includes('compare')) {
+  if (asksAboutComparison) {
     lines.push('For a strong comparison, check fees, placement trends, campus location, entrance requirements, and course fit side by side.');
-  } else if (normalizedPrompt.includes('fee') || normalizedPrompt.includes('budget') || normalizedPrompt.includes('roi')) {
-    lines.push('Start by shortlisting universities within your budget, then compare annual fees, scholarships, and placement outcomes.');
-  } else if (normalizedPrompt.includes('admission') || normalizedPrompt.includes('apply') || normalizedPrompt.includes('eligibility')) {
-    lines.push('Focus on eligibility, accepted entrance exams, application deadlines, required documents, and total fees before applying.');
-  } else if (normalizedPrompt.includes('placement') || normalizedPrompt.includes('career')) {
-    lines.push('Check average package, highest package, recruiter list, internship access, and program specialization relevance before deciding.');
+  } else if (asksAboutFees) {
+    lines.push('Start by shortlisting universities within your budget, then compare annual fees, scholarships, hostel costs, and placement outcomes.');
+  } else if (asksAboutAdmissions) {
+    lines.push('Focus first on eligibility, accepted entrance exams, application deadlines, required documents, and the total first-year cost before applying.');
+  } else if (asksAboutPlacements) {
+    lines.push('Check average package, highest package, recruiter list, internship access, and whether the specialization matches your target job role.');
+  } else if (asksAboutRecommendations) {
+    if (topUniversities.length > 0) {
+      const names = topUniversities.map((university) => university.name).slice(0, 3).join(', ');
+      lines.push(`A practical shortlist to start with is ${names}. Compare them on fees, placements, location, and course fit.`);
+    } else {
+      lines.push('The university catalogue is still being rebuilt, so I cannot give a reliable shortlist yet. Share your course, budget, state, and exam details and I can still guide your decision criteria.');
+    }
   } else {
-    lines.push('To get the best recommendation, share your course interest, budget, preferred state, and any entrance exam or rank details.');
+    lines.push('Please share your course interest, budget, preferred state, and any entrance exam or rank details so I can answer more precisely.');
   }
 
-  if (topUniversities.length > 0) {
+  if (topUniversities.length > 0 && (asksAboutRecommendations || asksAboutComparison || asksAboutAdmissions || asksAboutPlacements)) {
     const names = topUniversities.map((university) => university.name).slice(0, 3).join(', ');
-    lines.push(`Popular options on the platform right now include ${names}.`);
+    lines.push(`Relevant options on the platform include ${names}.`);
   }
 
-  if (upcomingExams.length > 0) {
+  if (upcomingExams.length > 0 && asksAboutExams) {
     const nextExam = upcomingExams[0];
     lines.push(`Upcoming exam to watch: ${nextExam.name}${nextExam.registrationDeadline ? ` - registration closes on ${nextExam.registrationDeadline.toDateString()}` : ''}.`);
   }
 
-  if (recentFAQs.length > 0) {
+  if (recentFAQs.length > 0 && (asksAboutAdmissions || asksAboutFees || asksAboutRecommendations)) {
     lines.push(`Common student concern: ${recentFAQs[0].question}`);
   }
 
@@ -247,7 +262,7 @@ exports.generateQuestionHelp = async (req, res) => {
           prompt: promptText,
           category,
           context: siteContext || 'Focus on Indian universities, admissions, exams, fees, placements, scholarships, and application strategy.',
-          mode: mode || 'general',
+          mode: 'general',
         }),
         new Promise((_, reject) => {
           setTimeout(() => reject(new Error('AI response timed out')), AI_TIMEOUT_MS);
