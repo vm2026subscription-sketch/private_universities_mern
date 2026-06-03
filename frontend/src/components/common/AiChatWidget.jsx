@@ -180,7 +180,6 @@ export default function AiChatWidget() {
         title: trimmed,
         content: trimmed,
         category: 'admissions',
-        mode: 'general',
       });
 
       setMessages((current) => [
@@ -423,6 +422,7 @@ export default function AiChatWidget() {
           <p className="mt-3 text-[10px] font-medium text-slate-500 dark:text-slate-400">
             Ask about admissions, courses, fees, placements, scholarships, and university shortlisting.
           </p>
+
           <button
             type="button"
             onClick={postLastQuestion}

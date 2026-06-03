@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Moon, Sun, Menu, X, User, Bookmark, Settings, LogOut, 
   ChevronDown, GraduationCap, Building2, Stethoscope, Scale, 
-  Palette, Briefcase, MapPin, Trophy, BookOpen, Globe, Sparkles 
+  Palette, Briefcase, MapPin, Trophy, BookOpen, Globe 
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -36,7 +36,6 @@ export default function Navbar() {
     { to: '/exams', label: 'Exams' },
     { to: '/compare-universities', label: 'Comparison' },
     { to: '/foreign-universities', label: 'Abroad' },
-    { to: '/gemini-chat', label: 'Gemini AI', isAi: true },
   ];
   const visibleNavLinks = user?.role === 'admin' ? [...navLinks, { to: '/admin', label: 'Admin' }] : navLinks;
 
@@ -84,22 +83,6 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-1">
             {visibleNavLinks.map(l => {
               const isActive = location.pathname === l.to || (l.to !== '/' && location.pathname?.startsWith(l.to + '/'));
-              if (l.isAi) {
-                return (
-                  <Link
-                    key={l.to}
-                    to={l.to}
-                    className={`relative ml-1 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black tracking-tight transition-all border ${
-                      isActive
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-blue-500 shadow-lg shadow-blue-500/25'
-                        : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:from-blue-500 hover:to-indigo-600 hover:text-white hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/25'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    {l.label}
-                  </Link>
-                );
-              }
               return (
               <div 
                 key={l.to} 
@@ -237,11 +220,8 @@ export default function Navbar() {
                 <Link 
                   to={l.to} 
                   onClick={() => setMobileOpen(false)} 
-                  className={`flex items-center gap-2 px-6 py-3 text-sm font-black hover:bg-slate-50 dark:hover:bg-dark-card ${
-                    l.isAi ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'
-                  }`}
+                  className="flex items-center justify-between px-6 py-3 text-sm font-black text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-dark-card"
                 >
-                  {l.isAi && <Sparkles className="w-4 h-4" />}
                   {l.label}
                 </Link>
               </div>
