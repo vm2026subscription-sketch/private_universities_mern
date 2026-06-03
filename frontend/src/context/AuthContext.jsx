@@ -50,9 +50,6 @@ export function AuthProvider({ children }) {
       payload.countryCode = countryCode || '+91';
     }
     const { data } = await api.post('/auth/register', payload);
-    if (data.token && data.user) {
-      setAuthSession(data.token, data.user);
-    }
     return data;
   };
 
@@ -64,6 +61,9 @@ export function AuthProvider({ children }) {
 
   const verifyEmail = async (email, code) => {
     const { data } = await api.post('/auth/verify-email', { email, code });
+    if (data.token && data.user) {
+      setAuthSession(data.token, data.user);
+    }
     return data;
   };
 

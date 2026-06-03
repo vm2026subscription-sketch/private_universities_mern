@@ -71,38 +71,82 @@ exports.register = async (req, res) => {
       });
     }
 
-    const exists = await User.findOne({ email: normalizedEmail });
-    if (exists) return res.status(400).json({ success: false, message: 'Email already registered' });
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser?.isEmailVerified) {
+      return res.status(400).json({ success: false, message: 'Email already registered' });
+    }
 
     if (phone) {
-      const phoneExists = await User.findOne({ phone });
+      const phoneExists = await User.findOne({
+        phone,
+        ...(existingUser ? { _id: { $ne: existingUser._id } } : {}),
+      });
       if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
     }
 
     const role = normalizedEmail === getAdminEmail() ? 'admin' : 'user';
-    const userData = { name: normalizedName, email: normalizedEmail, password, role, authProvider: 'local' };
-    if (phone) {
-      userData.phone = phone;
-      userData.countryCode = countryCode || '+91';
+    const userData = {
+      name: normalizedName,
+      email: normalizedEmail,
+      password,
+      role,
+      authProvider: 'local',
+      status: 'active',
+      isEmailVerified: false,
+      phone: phone || undefined,
+      countryCode: phone ? countryCode || '+91' : '+91',
+    };
+
+    let user = existingUser;
+    if (user && user.authProvider !== 'local') {
+      return res.status(400).json({
+        success: false,
+        message: 'This email is already linked to another sign-in method',
+      });
     }
 
-    const user = await User.create({
-      ...userData,
-      isEmailVerified: true,
-      emailVerificationCode: undefined,
-      emailVerificationExpiry: undefined,
-    });
+    if (user) {
+      user.name = userData.name;
+      user.password = userData.password;
+      user.role = userData.role;
+      user.authProvider = 'local';
+      user.status = 'active';
+      user.phone = userData.phone;
+      user.countryCode = userData.countryCode;
+      user.isEmailVerified = false;
+    } else {
+      user = new User(userData);
+    }
 
-    await ensureAdminRole(user);
-    await updateLoginTracking(user);
-    const token = generateToken(user._id);
+    const code = setVerificationCode(user);
+    await user.save();
 
-    res.status(201).json({
-      success: true,
-      message: 'Account created successfully.',
-      token,
-      user: getSafeUser(user),
-    });
+    try {
+      await sendVerificationEmail(user, code);
+      return res.status(existingUser ? 200 : 201).json({
+        success: true,
+        requiresVerification: true,
+        message: 'Account created. Please verify the OTP sent to your email.',
+        email: user.email,
+      });
+    } catch (emailError) {
+      console.error('Signup verification email failed:', emailError.message);
+
+      if (isProduction()) {
+        return res.status(500).json({
+          success: false,
+          message: 'Unable to send verification email. Please try again later.',
+        });
+      }
+
+      return res.status(existingUser ? 200 : 201).json({
+        success: true,
+        requiresVerification: true,
+        message: 'Email delivery failed in local mode, so use the verification code shown below.',
+        email: user.email,
+        devVerificationCode: code,
+      });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -121,6 +165,12 @@ exports.login = async (req, res) => {
     if (!user || !user.password) return res.status(401).json({ success: false, message: 'Invalid credentials' });
     if (user.status === 'banned') return res.status(403).json({ success: false, message: 'Account has been banned' });
     if (user.status === 'suspended') return res.status(403).json({ success: false, message: 'Account is suspended' });
+    if (!user.isEmailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your email before logging in',
+      });
+    }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -268,9 +318,18 @@ exports.verifyEmail = async (req, res) => {
     user.isEmailVerified = true;
     user.emailVerificationCode = undefined;
     user.emailVerificationExpiry = undefined;
+    await ensureAdminRole(user);
+    await updateLoginTracking(user);
     await user.save();
 
-    res.json({ success: true, message: 'Email verified successfully' });
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully',
+      token,
+      user: getSafeUser(user),
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

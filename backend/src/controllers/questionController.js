@@ -3,6 +3,53 @@ const University = require('../models/University');
 const FAQ = require('../models/FAQ');
 const Exam = require('../models/Exam');
 const { generateGeminiReply } = require('../utils/gemini');
+const AI_TIMEOUT_MS = 12000;
+
+const buildFallbackSuggestion = ({ promptText, specificUniversity, topUniversities, recentFAQs, upcomingExams }) => {
+  const normalizedPrompt = String(promptText || '').toLowerCase();
+  const lines = [];
+
+  if (specificUniversity) {
+    lines.push(`${specificUniversity.name} is available on the platform.`);
+    lines.push(`Location: ${specificUniversity.city}, ${specificUniversity.state}.`);
+
+    if (specificUniversity.nirfRank) {
+      lines.push(`NIRF Rank: ${specificUniversity.nirfRank}.`);
+    }
+
+    if (specificUniversity.stats?.avgPackageLPA) {
+      lines.push(`Average package: ${specificUniversity.stats.avgPackageLPA} LPA.`);
+    }
+  }
+
+  if (normalizedPrompt.includes('compare')) {
+    lines.push('For a strong comparison, check fees, placement trends, campus location, entrance requirements, and course fit side by side.');
+  } else if (normalizedPrompt.includes('fee') || normalizedPrompt.includes('budget') || normalizedPrompt.includes('roi')) {
+    lines.push('Start by shortlisting universities within your budget, then compare annual fees, scholarships, and placement outcomes.');
+  } else if (normalizedPrompt.includes('admission') || normalizedPrompt.includes('apply') || normalizedPrompt.includes('eligibility')) {
+    lines.push('Focus on eligibility, accepted entrance exams, application deadlines, required documents, and total fees before applying.');
+  } else if (normalizedPrompt.includes('placement') || normalizedPrompt.includes('career')) {
+    lines.push('Check average package, highest package, recruiter list, internship access, and program specialization relevance before deciding.');
+  } else {
+    lines.push('To get the best recommendation, share your course interest, budget, preferred state, and any entrance exam or rank details.');
+  }
+
+  if (topUniversities.length > 0) {
+    const names = topUniversities.map((university) => university.name).slice(0, 3).join(', ');
+    lines.push(`Popular options on the platform right now include ${names}.`);
+  }
+
+  if (upcomingExams.length > 0) {
+    const nextExam = upcomingExams[0];
+    lines.push(`Upcoming exam to watch: ${nextExam.name}${nextExam.registrationDeadline ? ` - registration closes on ${nextExam.registrationDeadline.toDateString()}` : ''}.`);
+  }
+
+  if (recentFAQs.length > 0) {
+    lines.push(`Common student concern: ${recentFAQs[0].question}`);
+  }
+
+  return lines.filter(Boolean).join(' ');
+};
 
 exports.getQuestions = async (req, res) => {
   try {
@@ -184,16 +231,41 @@ exports.generateQuestionHelp = async (req, res) => {
       ).join('\n');
     }
 
-    const suggestion = await generateGeminiReply({
-      prompt: promptText,
-      category,
-      context: siteContext || 'Focus on Indian universities, admissions, exams, fees, placements, scholarships, and application strategy.',
-      mode: mode || 'general',
-    });
+    try {
+      const suggestion = await Promise.race([
+        generateGeminiReply({
+          prompt: promptText,
+          category,
+          context: siteContext || 'Focus on Indian universities, admissions, exams, fees, placements, scholarships, and application strategy.',
+          mode: mode || 'general',
+        }),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('AI response timed out')), AI_TIMEOUT_MS);
+        }),
+      ]);
 
-    res.json({ success: true, data: { suggestion } });
+      return res.json({ success: true, data: { suggestion, fallbackUsed: false } });
+    } catch (aiError) {
+      console.error('Gemini Error:', aiError);
+
+      const fallbackSuggestion = buildFallbackSuggestion({
+        promptText,
+        specificUniversity,
+        topUniversities,
+        recentFAQs,
+        upcomingExams,
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          suggestion: fallbackSuggestion || 'I can help with admissions, exams, fees, and university shortlisting. Please share your course, budget, preferred state, and exam details for a better answer.',
+          fallbackUsed: true,
+        },
+      });
+    }
   } catch (error) {
-    console.error('Gemini Error:', error);
+    console.error('Question Assist Error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Unable to generate AI help right now',

@@ -21,8 +21,8 @@ export default function VerifyEmail() {
     setLoading(true);
     try {
       await verifyEmail(email, code);
-      toast.success('Email verified. You can log in now.');
-      navigate('/login');
+      toast.success('Email verified successfully');
+      navigate('/');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Verification failed');
     } finally {

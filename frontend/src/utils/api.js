@@ -19,7 +19,18 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const token = localStorage.getItem('vm_token');
       const requestUrl = String(error.config?.url || '');
-      const isAuthRoute = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/signup');
+      const authRoutes = [
+        '/auth/login',
+        '/auth/register',
+        '/auth/login/verify-otp',
+        '/auth/verify-email',
+        '/auth/resend-verification',
+        '/auth/forgot-password',
+        '/auth/reset-password',
+        '/auth/send-otp',
+        '/auth/verify-otp',
+      ];
+      const isAuthRoute = authRoutes.some((route) => requestUrl.includes(route));
 
       if (token && !isAuthRoute && window.location.pathname !== '/login') {
         localStorage.removeItem('vm_token');
