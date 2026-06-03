@@ -189,6 +189,14 @@ exports.login = async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
 
+    // Admin logs in directly without OTP
+    if (user.role === 'admin') {
+      await ensureAdminRole(user);
+      await updateLoginTracking(user);
+      const token = generateToken(user._id);
+      return res.json({ success: true, token, user: getSafeUser(user) });
+    }
+
     const result = await otpService.sendOtp({
       identifier: user.email,
       type: 'email',
