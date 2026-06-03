@@ -4,7 +4,7 @@ const { escapeRegExp } = require('../utils/regex');
 
 exports.getCourses = async (req, res) => {
   try {
-    const { category, universityId, name, baseCourse, state, page = 1, limit = 50 } = req.query;
+    const { category, universityId, name, baseCourse, state, segment = 'normal', page = 1, limit = 50 } = req.query;
     const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
     const normalizedLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
     const skip = (normalizedPage - 1) * normalizedLimit;
@@ -21,7 +21,13 @@ exports.getCourses = async (req, res) => {
       match.universityId = new mongoose.Types.ObjectId(universityId);
     }
     if (name) match.name = { $regex: new RegExp(escapeRegExp(name), 'i') };
-    if (baseCourse) match.baseCourse = { $regex: new RegExp(`^${escapeRegExp(baseCourse)}$`, 'i') };
+    if (baseCourse) {
+      const safeBaseCourse = escapeRegExp(baseCourse);
+      match.$or = [
+        { baseCourse: { $regex: new RegExp(`^${safeBaseCourse}$`, 'i') } },
+        { name: { $regex: new RegExp(`^${safeBaseCourse}$`, 'i') } },
+      ];
+    }
     
     pipeline.push({ $match: match });
 
@@ -39,9 +45,25 @@ exports.getCourses = async (req, res) => {
     });
     pipeline.push({ $unwind: '$universityId' });
 
-    // Filter by university state
+    const universityMatch = {};
     if (state && state !== 'All') {
-      pipeline.push({ $match: { 'universityId.state': { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') } } });
+      universityMatch['universityId.state'] = { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') };
+    }
+    if (segment && segment !== 'all' && !universityId) {
+      if (segment === 'foreign' || segment === 'twinning') {
+        universityMatch.$or = [
+          { 'universityId.segment': segment },
+          { 'universityId.segment': { $exists: false }, 'universityId.type': segment },
+        ];
+      } else {
+        universityMatch.$or = [
+          { 'universityId.segment': 'normal' },
+          { 'universityId.segment': { $exists: false }, 'universityId.type': { $nin: ['foreign', 'twinning'] } },
+        ];
+      }
+    }
+    if (Object.keys(universityMatch).length) {
+      pipeline.push({ $match: universityMatch });
     }
     
     // Get total count before pagination
@@ -74,6 +96,8 @@ exports.getCourses = async (req, res) => {
         'universityId.city': 1,
         'universityId.state': 1,
         'universityId.type': 1,
+        'universityId.segment': 1,
+        'universityId.institutionKind': 1,
       }
     });
 
@@ -106,7 +130,7 @@ exports.getCategories = async (req, res) => {
 
 exports.getGroupedCourses = async (req, res) => {
   try {
-    const { category, state, universityId, stream } = req.query;
+    const { category, state, universityId, stream, segment = 'normal' } = req.query;
     
     const pipeline = [];
 
@@ -139,8 +163,25 @@ exports.getGroupedCourses = async (req, res) => {
     });
     pipeline.push({ $unwind: '$university' });
 
+    const universityMatch = {};
     if (state && state !== 'All') {
-      pipeline.push({ $match: { 'university.state': { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') } } });
+      universityMatch['university.state'] = { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') };
+    }
+    if (segment && segment !== 'all' && !universityId) {
+      if (segment === 'foreign' || segment === 'twinning') {
+        universityMatch.$or = [
+          { 'university.segment': segment },
+          { 'university.segment': { $exists: false }, 'university.type': segment },
+        ];
+      } else {
+        universityMatch.$or = [
+          { 'university.segment': 'normal' },
+          { 'university.segment': { $exists: false }, 'university.type': { $nin: ['foreign', 'twinning'] } },
+        ];
+      }
+    }
+    if (Object.keys(universityMatch).length) {
+      pipeline.push({ $match: universityMatch });
     }
 
     // Group by normalized base course (fall back to course name if baseCourse is missing)
@@ -216,6 +257,23 @@ exports.getGroupedCourses = async (req, res) => {
 exports.getStreamStats = async (req, res) => {
   try {
     const stats = await Course.aggregate([
+      {
+        $lookup: {
+          from: 'universities',
+          localField: 'universityId',
+          foreignField: '_id',
+          as: 'university'
+        }
+      },
+      { $unwind: '$university' },
+      {
+        $match: {
+          $or: [
+            { 'university.segment': 'normal' },
+            { 'university.segment': { $exists: false }, 'university.type': { $nin: ['foreign', 'twinning'] } },
+          ],
+        },
+      },
       {
         $group: {
           _id: '$stream',

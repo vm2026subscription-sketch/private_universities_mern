@@ -1,14 +1,73 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pencil, Trash2, Plus, Upload, RefreshCw, Building2, MapPin, Layers3, ShieldCheck } from 'lucide-react';
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  RefreshCw,
+  Building2,
+  MapPin,
+  Layers3,
+  ShieldCheck,
+  BookOpen,
+  X,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, CheckboxField, FormActions } from './components/FormFields';
 
+const SEGMENT_OPTIONS = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'foreign', label: 'Foreign' },
+  { value: 'twinning', label: 'Twinning' },
+];
+
+const INSTITUTION_KIND_OPTIONS = [
+  { value: 'private', label: 'Private University' },
+  { value: 'deemed', label: 'Deemed University' },
+];
+
+const COURSE_LEVEL_OPTIONS = [
+  { value: 'UG', label: 'Undergraduate' },
+  { value: 'PG', label: 'Postgraduate' },
+  { value: 'Diploma', label: 'Diploma' },
+  { value: 'PhD', label: 'Doctoral / PhD' },
+];
+
+const STREAM_OPTIONS = [
+  'Engineering',
+  'Medical',
+  'Management',
+  'Law',
+  'Design',
+  'Science',
+  'Commerce',
+  'Arts',
+  'Education',
+  'Agriculture',
+  'Hospitality',
+  'IT',
+  'Other',
+];
+
+const emptyCourse = () => ({
+  _id: '',
+  stream: 'Engineering',
+  category: 'UG',
+  baseCourse: '',
+  specializationName: '',
+  duration: '',
+  totalSeats: '',
+  feesPerYear: '',
+  eligibility: '',
+  entranceExamsText: '',
+});
+
 const emptyForm = () => ({
   universityCode: '',
   name: '',
-  type: 'private',
+  segment: 'normal',
+  institutionKind: 'private',
   state: '',
   city: '',
   establishedYear: '',
@@ -34,10 +93,29 @@ const emptyForm = () => ({
     hostelLink: '',
     mapLink: '',
   },
+  courses: [emptyCourse()],
 });
 
 const splitLines = (value) => String(value || '').split('\n').map((item) => item.trim()).filter(Boolean);
 const num = (value) => (value === '' ? undefined : Number(value));
+
+const getSegment = (university) => {
+  if (university.segment) return university.segment;
+  if (university.type === 'foreign' || university.type === 'twinning') return university.type;
+  return 'normal';
+};
+
+const getInstitutionKind = (university) => {
+  if (university.institutionKind) return university.institutionKind;
+  return university.type === 'deemed' ? 'deemed' : 'private';
+};
+
+const getDisplayType = (university) => {
+  const segment = getSegment(university);
+  if (segment === 'twinning') return 'Twinning';
+  if (segment === 'foreign') return 'Foreign';
+  return getInstitutionKind(university) === 'deemed' ? 'Deemed' : 'Private';
+};
 
 const statCards = (items) => [
   {
@@ -46,8 +124,8 @@ const statCards = (items) => [
     icon: Building2,
   },
   {
-    label: 'Private / Deemed',
-    value: `${items.filter((item) => item.type === 'private').length} / ${items.filter((item) => item.type === 'deemed').length}`,
+    label: 'Normal / Foreign / Twinning',
+    value: `${items.filter((item) => getSegment(item) === 'normal').length} / ${items.filter((item) => getSegment(item) === 'foreign').length} / ${items.filter((item) => getSegment(item) === 'twinning').length}`,
     icon: Layers3,
   },
   {
@@ -90,7 +168,10 @@ export default function UniversitiesManager() {
 
   const filteredItems = useMemo(() => {
     if (filterType === 'all') return items;
-    return items.filter((item) => item.type === filterType);
+    if (filterType === 'normal') return items.filter((item) => getSegment(item) === 'normal');
+    if (filterType === 'foreign') return items.filter((item) => getSegment(item) === 'foreign');
+    if (filterType === 'twinning') return items.filter((item) => getSegment(item) === 'twinning');
+    return items.filter((item) => getSegment(item) === 'normal' && getInstitutionKind(item) === filterType);
   }, [items, filterType]);
 
   const selectedCount = selectedIds.length;
@@ -98,6 +179,25 @@ export default function UniversitiesManager() {
 
   const upd = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const updNested = (section, field, value) => setForm((prev) => ({ ...prev, [section]: { ...prev[section], [field]: value } }));
+  const updCourse = (index, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      courses: prev.courses.map((course, courseIndex) => (
+        courseIndex === index ? { ...course, [field]: value } : course
+      )),
+    }));
+  };
+
+  const addCourse = () => {
+    setForm((prev) => ({ ...prev, courses: [...prev.courses, emptyCourse()] }));
+  };
+
+  const removeCourse = (index) => {
+    setForm((prev) => {
+      const nextCourses = prev.courses.filter((_, courseIndex) => courseIndex !== index);
+      return { ...prev, courses: nextCourses.length ? nextCourses : [emptyCourse()] };
+    });
+  };
 
   const resetEditor = () => {
     setForm(emptyForm());
@@ -108,11 +208,13 @@ export default function UniversitiesManager() {
   const save = async (event) => {
     event.preventDefault();
     setSaving(true);
+
     try {
       const payload = {
         universityCode: form.universityCode || undefined,
         name: form.name,
-        type: form.type,
+        segment: form.segment,
+        institutionKind: form.segment === 'normal' ? form.institutionKind : undefined,
         state: form.state,
         city: form.city,
         establishedYear: num(form.establishedYear),
@@ -137,7 +239,27 @@ export default function UniversitiesManager() {
         topRecruiters: splitLines(form.topRecruitersText),
         facilities: splitLines(form.facilitiesText),
         links: { ...form.links },
+        courses: form.courses
+          .map((course) => ({
+            _id: course._id || undefined,
+            stream: course.stream,
+            category: course.category,
+            baseCourse: course.baseCourse,
+            specializationName: course.specializationName || undefined,
+            duration: num(course.duration),
+            totalSeats: num(course.totalSeats),
+            feesPerYear: num(course.feesPerYear),
+            eligibility: course.eligibility || undefined,
+            entranceExams: splitLines(course.entranceExamsText),
+          }))
+          .filter((course) => course.baseCourse),
       };
+
+      if (!payload.courses.length) {
+        toast.error('Add at least one course before saving the university');
+        setSaving(false);
+        return;
+      }
 
       if (editId) {
         await api.put(`/admin/universities/${editId}`, payload);
@@ -160,7 +282,8 @@ export default function UniversitiesManager() {
     setForm({
       universityCode: university.universityCode || '',
       name: university.name || '',
-      type: university.type || 'private',
+      segment: university.segment || (university.type === 'foreign' || university.type === 'twinning' ? university.type : 'normal'),
+      institutionKind: university.institutionKind || (university.type === 'deemed' ? 'deemed' : 'private'),
       state: university.state || '',
       city: university.city || '',
       establishedYear: university.establishedYear || '',
@@ -199,6 +322,18 @@ export default function UniversitiesManager() {
         hostelLink: university.links?.hostelLink || '',
         mapLink: university.links?.mapLink || '',
       },
+      courses: university.courses?.length ? university.courses.map((course) => ({
+        _id: course._id || '',
+        stream: course.stream || 'Engineering',
+        category: course.category || 'UG',
+        baseCourse: course.baseCourse || course.name || '',
+        specializationName: course.specializationName || '',
+        duration: course.duration || '',
+        totalSeats: course.totalSeats || '',
+        feesPerYear: course.feesPerYear || '',
+        eligibility: course.eligibility || '',
+        entranceExamsText: (course.entranceExams || []).join('\n'),
+      })) : [emptyCourse()],
     });
     setEditId(university._id);
     setShowForm(true);
@@ -276,7 +411,7 @@ export default function UniversitiesManager() {
     {
       key: 'type',
       label: 'Type',
-      render: (university) => <span className="badge badge-orange capitalize">{university.type}</span>,
+      render: (university) => <span className="badge badge-orange capitalize">{getDisplayType(university)}</span>,
     },
     {
       key: 'naacGrade',
@@ -305,7 +440,7 @@ export default function UniversitiesManager() {
         <div>
           <h2 className="text-2xl font-black text-light-text dark:text-dark-text">University Management</h2>
           <p className="mt-1 text-sm text-light-muted dark:text-dark-muted">
-            Manage records, clean duplicates faster, and keep your admission catalogue professional.
+            Manual-first catalogue management with inline course creation for normal, foreign, and twinning universities.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -313,10 +448,6 @@ export default function UniversitiesManager() {
             <RefreshCw className="w-4 h-4" />
             Refresh
           </button>
-          <a href="/admin-legacy?tab=Universities" className="btn-outline text-sm flex items-center gap-1.5">
-            <Upload className="w-4 h-4" />
-            Bulk Import
-          </a>
           <button
             onClick={() => {
               setShowForm((prev) => !prev);
@@ -358,7 +489,7 @@ export default function UniversitiesManager() {
             <div>
               <h3 className="text-xl font-black text-light-text dark:text-dark-text">{editId ? 'Edit University' : 'Create University'}</h3>
               <p className="text-sm text-light-muted dark:text-dark-muted">
-                Add trusted institutional information with stronger structure and cleaner presentation.
+                Add the university and its courses together so the team never has to manage separate course uploads.
               </p>
             </div>
             <div className="inline-flex rounded-full bg-primary/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
@@ -366,24 +497,29 @@ export default function UniversitiesManager() {
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-4">
             <FormField label="University Code">
               <TextInput value={form.universityCode} onChange={(event) => upd('universityCode', event.target.value)} placeholder="e.g. AMITY_NDA" />
             </FormField>
-            <FormField label="University Name *">
+            <FormField label="University Name *" className="md:col-span-2">
               <TextInput value={form.name} onChange={(event) => upd('name', event.target.value)} required />
             </FormField>
-            <FormField label="Type">
+            <FormField label="University Segment">
               <SelectInput
-                value={form.type}
-                onChange={(event) => upd('type', event.target.value)}
-                options={[
-                  { value: 'private', label: 'Private' },
-                  { value: 'deemed', label: 'Deemed' },
-                  { value: 'foreign', label: 'Foreign' },
-                ]}
+                value={form.segment}
+                onChange={(event) => upd('segment', event.target.value)}
+                options={SEGMENT_OPTIONS}
               />
             </FormField>
+            {form.segment === 'normal' && (
+              <FormField label="Normal University Type">
+                <SelectInput
+                  value={form.institutionKind}
+                  onChange={(event) => upd('institutionKind', event.target.value)}
+                  options={INSTITUTION_KIND_OPTIONS}
+                />
+              </FormField>
+            )}
             <FormField label="State *">
               <TextInput value={form.state} onChange={(event) => upd('state', event.target.value)} required />
             </FormField>
@@ -481,6 +617,100 @@ export default function UniversitiesManager() {
             ))}
           </div>
 
+          <div className="rounded-[2rem] border border-light-border dark:border-dark-border p-5 md:p-6 space-y-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h4 className="text-lg font-black text-light-text dark:text-dark-text flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  Courses Inside University
+                </h4>
+                <p className="text-sm text-light-muted dark:text-dark-muted">
+                  Build the hierarchy directly here: Stream -&gt; Base Course -&gt; Universities.
+                </p>
+              </div>
+              <button type="button" onClick={addCourse} className="btn-outline text-sm flex items-center gap-1.5">
+                <Plus className="w-4 h-4" />
+                Add Course
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {form.courses.map((course, index) => (
+                <div key={`${course._id || 'new'}-${index}`} className="rounded-[1.5rem] border border-light-border dark:border-dark-border p-4 md:p-5 space-y-4 bg-light-card/30 dark:bg-dark-card/30">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-black text-light-text dark:text-dark-text">Course #{index + 1}</div>
+                    <button
+                      type="button"
+                      onClick={() => removeCourse(index)}
+                      className="rounded-xl p-2 text-light-muted hover:bg-red-50 hover:text-red-500"
+                      aria-label={`Remove course ${index + 1}`}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-4">
+                    <FormField label="Stream">
+                      <SelectInput
+                        value={course.stream}
+                        onChange={(event) => updCourse(index, 'stream', event.target.value)}
+                        options={STREAM_OPTIONS.map((stream) => ({ value: stream, label: stream }))}
+                      />
+                    </FormField>
+                    <FormField label="Course Level">
+                      <SelectInput
+                        value={course.category}
+                        onChange={(event) => updCourse(index, 'category', event.target.value)}
+                        options={COURSE_LEVEL_OPTIONS}
+                      />
+                    </FormField>
+                    <FormField label="Base Course *">
+                      <TextInput
+                        value={course.baseCourse}
+                        onChange={(event) => updCourse(index, 'baseCourse', event.target.value)}
+                        placeholder="e.g. LLB"
+                        required
+                      />
+                    </FormField>
+                    <FormField label="Specialization">
+                      <TextInput
+                        value={course.specializationName}
+                        onChange={(event) => updCourse(index, 'specializationName', event.target.value)}
+                        placeholder="e.g. Corporate Law"
+                      />
+                    </FormField>
+                    <FormField label="Duration (Years)">
+                      <TextInput type="number" value={course.duration} onChange={(event) => updCourse(index, 'duration', event.target.value)} />
+                    </FormField>
+                    <FormField label="Total Seats">
+                      <TextInput type="number" value={course.totalSeats} onChange={(event) => updCourse(index, 'totalSeats', event.target.value)} />
+                    </FormField>
+                    <FormField label="Fees Per Year">
+                      <TextInput type="number" value={course.feesPerYear} onChange={(event) => updCourse(index, 'feesPerYear', event.target.value)} />
+                    </FormField>
+                    <FormField label="Entrance Exams">
+                      <TextArea
+                        value={course.entranceExamsText}
+                        onChange={(event) => updCourse(index, 'entranceExamsText', event.target.value)}
+                        className="min-h-[92px]"
+                        placeholder="One exam per line"
+                      />
+                    </FormField>
+                  </div>
+
+                  <FormField label="Eligibility">
+                    <TextArea
+                      value={course.eligibility}
+                      onChange={(event) => updCourse(index, 'eligibility', event.target.value)}
+                      className="min-h-[92px]"
+                      placeholder="e.g. 10+2 with 50% marks"
+                    />
+                  </FormField>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <FormActions
             onCancel={resetEditor}
             isEditing={!!editId}
@@ -501,9 +731,11 @@ export default function UniversitiesManager() {
           <div className="flex flex-wrap gap-2">
             {[
               { label: 'All', value: 'all' },
+              { label: 'Normal', value: 'normal' },
               { label: 'Private', value: 'private' },
               { label: 'Deemed', value: 'deemed' },
               { label: 'Foreign', value: 'foreign' },
+              { label: 'Twinning', value: 'twinning' },
             ].map((filter) => (
               <button
                 key={filter.value}
@@ -541,7 +773,7 @@ export default function UniversitiesManager() {
         <DataTable
           data={filteredItems}
           columns={columns}
-          searchFields={['name', 'universityCode', 'city', 'state', 'type']}
+          searchFields={['name', 'universityCode', 'city', 'state', 'type', 'segment', 'institutionKind']}
           searchPlaceholder="Search universities by name, code, city or state..."
           pageSize={12}
           rowSelection={{

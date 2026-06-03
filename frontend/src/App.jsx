@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -26,7 +26,6 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Profile = lazy(() => import('./pages/Profile'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const OpenChatRoute = lazy(() => import('./pages/OpenChatRoute'));
 const RankPredictor = lazy(() => import('./pages/RankPredictor'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -129,7 +128,7 @@ export default function App() {
                   <Route path="audit-logs" element={<AuditLogViewer />} />
                 </Route>
 
-                <Route path="/admin-legacy" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/admin-legacy" element={<Navigate to="/admin" replace />} />
                 <Route path="*" element={<PublicLayout />} />
               </Routes>
             </Suspense>

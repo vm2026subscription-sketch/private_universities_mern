@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { calculateFitScore } from '../utils/fitScore';
 import UniversityLogo from '../components/common/UniversityLogo';
+import { getUniversityDisplayType } from '../utils/universityType';
 
 const states = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -219,6 +220,7 @@ export default function Universities() {
                  const isSaved = savedIds.includes(u._id);
                  const userPrefs = user?.profile;
                  const fitScore = calculateFitScore(u, userPrefs);
+                 const displayType = getUniversityDisplayType(u);
                  
                   return (
                     <motion.div 
@@ -233,9 +235,9 @@ export default function Universities() {
                         <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-lg flex flex-col overflow-hidden">
                           {/* Top Badges */}
                           <div className="absolute top-5 left-5 z-20 flex gap-2">
-                            {u.type && (
+                            {displayType && (
                               <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-slate-100">
-                                {u.type}
+                                {displayType}
                               </div>
                             )}
                           </div>

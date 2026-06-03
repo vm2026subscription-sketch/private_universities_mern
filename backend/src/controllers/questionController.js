@@ -141,7 +141,12 @@ exports.generateQuestionHelp = async (req, res) => {
 
     // 2. Fetch general site context
     const [topUniversities, recentFAQs, upcomingExams] = await Promise.all([
-      University.find({ type: { $ne: 'foreign' } }).sort({ nirfRank: 1, 'stats.rating': -1 }).limit(3).select('name state city stats description nirfRank slug'),
+      University.find({
+        $or: [
+          { segment: 'normal' },
+          { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
+        ],
+      }).sort({ nirfRank: 1, 'stats.rating': -1 }).limit(3).select('name state city stats description nirfRank slug'),
       FAQ.find({ isPublished: true }).limit(3).select('question answer'),
       Exam.find({}).limit(3).select('name registrationDeadline examDate officialUrl'),
     ]);

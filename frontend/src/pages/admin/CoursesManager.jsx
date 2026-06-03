@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { Pencil, Trash2, Plus, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, FormActions } from './components/FormFields';
 
-const emptyForm = () => ({ universityId: '', name: '', category: 'Engineering', duration: '', totalSeats: '', feesPerYear: '', eligibility: '', entranceExamsText: '' });
-const num = v => v === '' ? undefined : Number(v);
-const splitLines = v => String(v || '').split('\n').map(s => s.trim()).filter(Boolean);
+const emptyForm = () => ({
+  universityId: '',
+  stream: 'Engineering',
+  category: 'UG',
+  baseCourse: '',
+  specializationName: '',
+  duration: '',
+  totalSeats: '',
+  feesPerYear: '',
+  eligibility: '',
+  entranceExamsText: '',
+});
 
-const CATEGORIES = ['Engineering','Medical','Management','Law','Architecture','Design','Agriculture','Science','Commerce','Pharmacy','Nursing','Arts','Education','Hospitality','IT','Other'];
+const num = (value) => (value === '' ? undefined : Number(value));
+const splitLines = (value) => String(value || '').split('\n').map((item) => item.trim()).filter(Boolean);
+
+const STREAM_OPTIONS = ['Engineering', 'Medical', 'Management', 'Law', 'Design', 'Science', 'Commerce', 'Arts', 'Education', 'Agriculture', 'Hospitality', 'IT', 'Other'];
+const LEVEL_OPTIONS = ['UG', 'PG', 'Diploma', 'PhD'];
 
 export default function CoursesManager() {
   const [items, setItems] = useState([]);
@@ -18,44 +31,90 @@ export default function CoursesManager() {
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
-  const load = () => api.get('/admin/content').then(r => {
-    setItems(r.data.data?.courses || []);
-    setUniversities(r.data.data?.universities || []);
-  }).catch(() => toast.error('Failed'));
-  useEffect(() => { load(); }, []);
-  const upd = (f, v) => setForm(p => ({ ...p, [f]: v }));
+  const load = () => api.get('/admin/content').then((response) => {
+    setItems(response.data.data?.courses || []);
+    setUniversities(response.data.data?.universities || []);
+  }).catch(() => toast.error('Failed to load courses'));
 
-  const save = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    load();
+  }, []);
+
+  const upd = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const save = async (event) => {
+    event.preventDefault();
     try {
       const payload = {
-        universityId: form.universityId, name: form.name, category: form.category,
-        duration: num(form.duration), totalSeats: num(form.totalSeats), feesPerYear: num(form.feesPerYear),
-        eligibility: form.eligibility || undefined, entranceExams: splitLines(form.entranceExamsText),
+        universityId: form.universityId,
+        stream: form.stream,
+        category: form.category,
+        baseCourse: form.baseCourse,
+        specializationName: form.specializationName || undefined,
+        duration: num(form.duration),
+        totalSeats: num(form.totalSeats),
+        feesPerYear: num(form.feesPerYear),
+        eligibility: form.eligibility || undefined,
+        entranceExams: splitLines(form.entranceExamsText),
       };
-      if (editId) { await api.put(`/admin/courses/${editId}`, payload); toast.success('Updated'); }
-      else { await api.post('/admin/courses', payload); toast.success('Created'); }
-      setForm(emptyForm()); setEditId(null); setShowForm(false); load();
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+
+      if (editId) {
+        await api.put(`/admin/courses/${editId}`, payload);
+        toast.success('Course updated');
+      } else {
+        await api.post('/admin/courses', payload);
+        toast.success('Course created');
+      }
+
+      setForm(emptyForm());
+      setEditId(null);
+      setShowForm(false);
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save course');
+    }
   };
 
-  const edit = (c) => {
+  const edit = (course) => {
     setForm({
-      universityId: c.universityId?._id || c.universityId || '', name: c.name || '',
-      category: c.category || 'Engineering', duration: c.duration || '', totalSeats: c.totalSeats || '',
-      feesPerYear: c.feesPerYear || '', eligibility: c.eligibility || '',
-      entranceExamsText: (c.entranceExams || []).join('\n'),
+      universityId: course.universityId?._id || course.universityId || '',
+      stream: course.stream || 'Engineering',
+      category: course.category || 'UG',
+      baseCourse: course.baseCourse || course.name || '',
+      specializationName: course.specializationName || '',
+      duration: course.duration || '',
+      totalSeats: course.totalSeats || '',
+      feesPerYear: course.feesPerYear || '',
+      eligibility: course.eligibility || '',
+      entranceExamsText: (course.entranceExams || []).join('\n'),
     });
-    setEditId(c._id); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' });
+    setEditId(course._id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const del = async (id) => { if (!confirm('Delete?')) return; await api.delete(`/admin/courses/${id}`); toast.success('Deleted'); load(); };
+  const del = async (id) => {
+    if (!confirm('Delete this course?')) return;
+    await api.delete(`/admin/courses/${id}`);
+    toast.success('Course deleted');
+    load();
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Courses ({items.length})</h2>
-        <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm(emptyForm()); }} className="btn-primary text-sm flex items-center gap-1.5"><Plus className="w-4 h-4" /> Add</button>
+        <div>
+          <h2 className="text-xl font-bold">Courses ({items.length})</h2>
+          <p className="text-sm text-light-muted mt-1">Primary workflow is now university-first. Use this screen only for cross-catalog maintenance.</p>
+        </div>
+        <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm(emptyForm()); }} className="btn-primary text-sm flex items-center gap-1.5">
+          <Plus className="w-4 h-4" /> Add
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary flex items-start gap-3">
+        <Info className="w-4 h-4 mt-0.5 shrink-0" />
+        <p>Best practice: create courses inside the university form so hierarchy stays synced. This page is still available for direct edits when needed.</p>
       </div>
 
       {showForm && (
@@ -63,33 +122,64 @@ export default function CoursesManager() {
           <h3 className="font-semibold">{editId ? 'Edit' : 'New'} Course</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <FormField label="University *">
-              <SelectInput value={form.universityId} onChange={e => upd('universityId', e.target.value)} required
-                options={[{value:'',label:'Select University'}, ...universities.map(u => ({value:u._id,label:u.name}))]} />
+              <SelectInput
+                value={form.universityId}
+                onChange={(event) => upd('universityId', event.target.value)}
+                required
+                options={[{ value: '', label: 'Select University' }, ...universities.map((university) => ({ value: university._id, label: university.name }))]}
+              />
             </FormField>
-            <FormField label="Course Name *"><TextInput value={form.name} onChange={e => upd('name', e.target.value)} required placeholder="e.g. B.Tech, MBA" /></FormField>
-            <FormField label="Category"><SelectInput value={form.category} onChange={e => upd('category', e.target.value)} options={CATEGORIES.map(c => ({value:c,label:c}))} /></FormField>
-            <FormField label="Duration (years)"><TextInput type="number" value={form.duration} onChange={e => upd('duration', e.target.value)} /></FormField>
-            <FormField label="Total Seats"><TextInput type="number" value={form.totalSeats} onChange={e => upd('totalSeats', e.target.value)} /></FormField>
-            <FormField label="Fees Per Year (₹)"><TextInput type="number" value={form.feesPerYear} onChange={e => upd('feesPerYear', e.target.value)} /></FormField>
+            <FormField label="Stream">
+              <SelectInput value={form.stream} onChange={(event) => upd('stream', event.target.value)} options={STREAM_OPTIONS.map((stream) => ({ value: stream, label: stream }))} />
+            </FormField>
+            <FormField label="Course Level">
+              <SelectInput value={form.category} onChange={(event) => upd('category', event.target.value)} options={LEVEL_OPTIONS.map((level) => ({ value: level, label: level }))} />
+            </FormField>
+            <FormField label="Base Course *">
+              <TextInput value={form.baseCourse} onChange={(event) => upd('baseCourse', event.target.value)} required placeholder="e.g. LLB, B.Tech, MBA" />
+            </FormField>
+            <FormField label="Specialization">
+              <TextInput value={form.specializationName} onChange={(event) => upd('specializationName', event.target.value)} placeholder="Optional" />
+            </FormField>
+            <FormField label="Duration (years)">
+              <TextInput type="number" value={form.duration} onChange={(event) => upd('duration', event.target.value)} />
+            </FormField>
+            <FormField label="Total Seats">
+              <TextInput type="number" value={form.totalSeats} onChange={(event) => upd('totalSeats', event.target.value)} />
+            </FormField>
+            <FormField label="Fees Per Year">
+              <TextInput type="number" value={form.feesPerYear} onChange={(event) => upd('feesPerYear', event.target.value)} />
+            </FormField>
           </div>
-          <FormField label="Eligibility"><TextInput value={form.eligibility} onChange={e => upd('eligibility', e.target.value)} placeholder="10+2 with 50% in PCM" /></FormField>
-          <FormField label="Entrance Exams (one per line)"><TextArea value={form.entranceExamsText} onChange={e => upd('entranceExamsText', e.target.value)} className="min-h-[80px]" /></FormField>
+          <FormField label="Eligibility">
+            <TextInput value={form.eligibility} onChange={(event) => upd('eligibility', event.target.value)} placeholder="10+2 with 50% in PCM" />
+          </FormField>
+          <FormField label="Entrance Exams (one per line)">
+            <TextArea value={form.entranceExamsText} onChange={(event) => upd('entranceExamsText', event.target.value)} className="min-h-[80px]" />
+          </FormField>
           <FormActions onCancel={() => { setShowForm(false); setEditId(null); }} isEditing={!!editId} />
         </form>
       )}
 
-      <DataTable data={items} columns={[
-        { key: 'name', label: 'Course', render: c => <span className="font-medium">{c.name}</span> },
-        { key: 'universityId', label: 'University', render: c => c.universityId?.name || '—' },
-        { key: 'category', label: 'Category', render: c => <span className="badge badge-blue">{c.category}</span> },
-        { key: 'duration', label: 'Duration', render: c => c.duration ? `${c.duration} yr` : '—' },
-        { key: 'feesPerYear', label: 'Fees/Year', render: c => c.feesPerYear ? `₹${c.feesPerYear.toLocaleString()}` : '—' },
-        { key: 'totalSeats', label: 'Seats', render: c => c.totalSeats || '—' },
-      ]} searchFields={['name', 'category', 'universityId.name']} searchPlaceholder="Search courses..."
-        actions={c => (<>
-          <button onClick={() => edit(c)} className="p-1.5 rounded-lg hover:bg-light-card"><Pencil className="w-4 h-4" /></button>
-          <button onClick={() => del(c._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
-        </>)}
+      <DataTable
+        data={items}
+        columns={[
+          { key: 'baseCourse', label: 'Base Course', render: (course) => <span className="font-medium">{course.baseCourse || course.name}</span> },
+          { key: 'specializationName', label: 'Specialization', render: (course) => course.specializationName || '-' },
+          { key: 'stream', label: 'Stream', render: (course) => <span className="badge badge-blue">{course.stream || 'Other'}</span> },
+          { key: 'category', label: 'Level', render: (course) => <span className="badge badge-orange">{course.category || 'UG'}</span> },
+          { key: 'universityId', label: 'University', render: (course) => course.universityId?.name || '-' },
+          { key: 'duration', label: 'Duration', render: (course) => course.duration ? `${course.duration} yr` : '-' },
+          { key: 'feesPerYear', label: 'Fees/Year', render: (course) => course.feesPerYear ? `INR ${course.feesPerYear.toLocaleString()}` : '-' },
+        ]}
+        searchFields={['name', 'baseCourse', 'specializationName', 'stream', 'category', 'universityId.name']}
+        searchPlaceholder="Search courses..."
+        actions={(course) => (
+          <>
+            <button onClick={() => edit(course)} className="p-1.5 rounded-lg hover:bg-light-card"><Pencil className="w-4 h-4" /></button>
+            <button onClick={() => del(course._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+          </>
+        )}
       />
     </div>
   );

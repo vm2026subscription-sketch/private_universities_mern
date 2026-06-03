@@ -25,6 +25,12 @@ const getHostname = (value) => {
   }
 };
 
+const getDisplayType = (university) => {
+  if (university?.segment === 'twinning' || university?.type === 'twinning') return 'Twinning';
+  if (university?.segment === 'foreign' || university?.type === 'foreign') return 'Foreign';
+  return university?.institutionKind === 'deemed' || university?.type === 'deemed' ? 'Deemed' : 'Private';
+};
+
 export default function UniversityDetail() {
   const { slug } = useParams();
   const location = useLocation();
@@ -48,7 +54,7 @@ export default function UniversityDetail() {
         if (u) {
           const prev = JSON.parse(localStorage.getItem('vm_recent') || '[]');
           const filtered = prev.filter(r => r._id !== u._id);
-          const entry = { _id: u._id, name: u.name, slug: u.slug, state: u.state, city: u.city, type: u.type, naacGrade: u.naacGrade, nirfRank: u.nirfRank };
+          const entry = { _id: u._id, name: u.name, slug: u.slug, state: u.state, city: u.city, type: getDisplayType(u), naacGrade: u.naacGrade, nirfRank: u.nirfRank };
           localStorage.setItem('vm_recent', JSON.stringify([entry, ...filtered].slice(0, 10)));
 
           if (u._id) {
@@ -121,7 +127,7 @@ export default function UniversityDetail() {
               </div>
               <div className="text-center md:text-left">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4">
-                  <span className="bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">{uni.type}</span>
+                  <span className="bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">{getDisplayType(uni)}</span>
                   {uni.naacGrade && <span className="bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">NAAC {uni.naacGrade}</span>}
                   {uni.nirfRank && <span className="bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">#{uni.nirfRank} NIRF</span>}
                 </div>

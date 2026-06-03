@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Bookmark, Lightbulb, ExternalLink, Sparkles } from 'lucide-react';
 import { calculateFitScore } from '../../utils/fitScore';
+import { getUniversityDisplayType, getUniversityTypeValue } from '../../utils/universityType';
 
 export default function Recommendations({ recommendations, onSave, userPrefs }) {
   if (!userPrefs?.preferredStates?.length && !userPrefs?.collegeType) {
@@ -17,22 +18,23 @@ export default function Recommendations({ recommendations, onSave, userPrefs }) 
     return (
       <div className="card p-12 text-center">
         <Lightbulb className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
-        <p className="text-light-muted">No new recommendations — you've already saved all matching colleges!</p>
+        <p className="text-light-muted">No new recommendations - you have already saved all matching colleges.</p>
       </div>
     );
   }
 
-  // Sort recommendations by fit score
   const sortedRecs = [...recommendations].sort((a, b) => {
     return calculateFitScore(b, userPrefs) - calculateFitScore(a, userPrefs);
   });
 
-  const getReason = (uni) => {
+  const getReason = (university) => {
     const reasons = [];
-    if (userPrefs.preferredStates?.includes(uni.state)) reasons.push('Location Match');
-    if (userPrefs.collegeType && userPrefs.collegeType !== 'both' && uni.type === userPrefs.collegeType) reasons.push('Type Match');
-    if (userPrefs.budgetMax && uni.courses?.[0]?.feesPerYear <= userPrefs.budgetMax) reasons.push('Within Budget');
-    return reasons.join(' • ') || 'Based on your profile';
+
+    if (userPrefs.preferredStates?.includes(university.state)) reasons.push('Location Match');
+    if (userPrefs.collegeType && userPrefs.collegeType !== 'both' && getUniversityTypeValue(university) === userPrefs.collegeType) reasons.push('Type Match');
+    if (userPrefs.budgetMax && university.courses?.[0]?.feesPerYear <= userPrefs.budgetMax) reasons.push('Within Budget');
+
+    return reasons.join(' | ') || 'Based on your profile';
   };
 
   return (
@@ -44,53 +46,54 @@ export default function Recommendations({ recommendations, onSave, userPrefs }) 
       </div>
       <p className="text-sm text-light-muted">Handpicked selections based on your preferences, courses, and location.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {sortedRecs.map(u => {
-          const score = calculateFitScore(u, userPrefs);
+        {sortedRecs.map((university) => {
+          const score = calculateFitScore(university, userPrefs);
+          const displayType = getUniversityDisplayType(university);
+
           return (
-          <div key={u._id} className="card p-5 hover:shadow-lg transition-all hover:-translate-y-0.5 relative overflow-hidden">
-            {score > 60 && (
-              <div className="absolute top-0 right-0 bg-yellow-400/10 text-yellow-600 text-[10px] font-black px-3 py-1 rounded-bl-xl border-b border-l border-yellow-400/20 flex items-center gap-1">
-                <Sparkles className="w-3 h-3"/> TOP MATCH
+            <div key={university._id} className="card p-5 hover:shadow-lg transition-all hover:-translate-y-0.5 relative overflow-hidden">
+              {score > 60 && (
+                <div className="absolute top-0 right-0 bg-yellow-400/10 text-yellow-600 text-[10px] font-black px-3 py-1 rounded-bl-xl border-b border-l border-yellow-400/20 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> TOP MATCH
+                </div>
+              )}
+              <div className="flex items-start gap-3 mb-3 mt-2">
+                <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary font-bold shrink-0">
+                  {university.name?.charAt(0)}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm line-clamp-2">{university.name}</p>
+                  <p className="text-xs text-light-muted flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    {university.city}, {university.state}
+                  </p>
+                </div>
               </div>
-            )}
-            <div className="flex items-start gap-3 mb-3 mt-2">
-              <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary font-bold shrink-0">
-                {u.name?.charAt(0)}
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-sm line-clamp-2">{u.name}</p>
-                <p className="text-xs text-light-muted flex items-center gap-1 mt-0.5">
-                  <MapPin className="w-3 h-3" />{u.city}, {u.state}
+
+              <div className="bg-light-bg dark:bg-dark-border/30 rounded-lg p-2 mb-3">
+                <p className="text-[10px] font-medium text-light-muted flex items-center gap-1">
+                  <Lightbulb className="w-3 h-3 text-yellow-500" /> {getReason(university)}
                 </p>
               </div>
-            </div>
-            
-            <div className="bg-light-bg dark:bg-dark-border/30 rounded-lg p-2 mb-3">
-              <p className="text-[10px] font-medium text-light-muted flex items-center gap-1">
-                <Lightbulb className="w-3 h-3 text-yellow-500" /> {getReason(u)}
-              </p>
-            </div>
 
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              <span className="badge badge-orange capitalize text-[10px]">{u.type}</span>
-              {u.naacGrade && <span className="badge badge-green text-[10px]">NAAC {u.naacGrade}</span>}
-              {u.nirfRank && <span className="badge badge-blue text-[10px]">NIRF #{u.nirfRank}</span>}
-              {u.stats?.avgPackageLPA && <span className="badge bg-purple-50 text-purple-700 text-[10px]">₹{u.stats.avgPackageLPA} LPA</span>}
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                <span className="badge badge-orange text-[10px]">{displayType}</span>
+                {university.naacGrade && <span className="badge badge-green text-[10px]">NAAC {university.naacGrade}</span>}
+                {university.nirfRank && <span className="badge badge-blue text-[10px]">NIRF #{university.nirfRank}</span>}
+                {university.stats?.avgPackageLPA && <span className="badge bg-purple-50 text-purple-700 text-[10px]">Rs. {university.stats.avgPackageLPA} LPA</span>}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => onSave(university)} className="btn-primary !py-1.5 !px-3 text-xs flex items-center gap-1 flex-1 justify-center">
+                  <Bookmark className="w-3 h-3" /> Save
+                </button>
+                <Link to={`/universities/${university.slug}`} className="btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1">
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => onSave(u)}
-                className="btn-primary !py-1.5 !px-3 text-xs flex items-center gap-1 flex-1 justify-center">
-                <Bookmark className="w-3 h-3" /> Save
-              </button>
-              <Link to={`/universities/${u.slug}`}
-                className="btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1">
-                <ExternalLink className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-        )})}
+          );
+        })}
       </div>
-
     </div>
   );
 }

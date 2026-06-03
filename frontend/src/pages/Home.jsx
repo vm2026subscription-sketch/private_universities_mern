@@ -56,6 +56,14 @@ const mainStreams = [
   { name: 'Study Abroad', icon: GraduationCap, color: 'text-amber-500', bg: 'bg-amber-50' },
 ];
 
+const getStreamLink = (streamName) => {
+  if (streamName === 'Study Abroad') {
+    return '/foreign-universities';
+  }
+
+  return `/courses?stream=${encodeURIComponent(streamName)}`;
+};
+
 const featuredUniversities = [
   {
     _id: '69f9c6e51a40e83778437bb8',
@@ -416,7 +424,7 @@ export default function Home() {
         >
           {mainStreams.map((stream, i) => (
             <motion.div key={i} variants={itemVariants}>
-              <Link to={`/courses?category=${stream.name}`} className="relative flex flex-col items-center text-center group bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl transition-all overflow-hidden block w-full h-full">
+              <Link to={getStreamLink(stream.name)} className="relative flex flex-col items-center text-center group bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl transition-all overflow-hidden block w-full h-full">
                 {/* Left-to-right animated background (Orange) */}
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-primary origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
 

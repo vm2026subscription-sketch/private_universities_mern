@@ -24,6 +24,7 @@ import {
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getUniversityDisplayType } from '../utils/universityType';
 
 const DashboardOverview = lazy(() => import('../components/profile/DashboardOverview'));
 const SavedColleges = lazy(() => import('../components/profile/SavedColleges'));
@@ -304,7 +305,7 @@ export default function Profile() {
         university.name,
         university.city,
         university.state,
-        university.type,
+        getUniversityDisplayType(university),
         university.nirfRank || 'N/A',
       ]);
       autoTable(doc, {
@@ -326,7 +327,7 @@ export default function Profile() {
         Name: university.name,
         City: university.city,
         State: university.state,
-        Type: university.type,
+        Type: getUniversityDisplayType(university),
         NIRFRank: university.nirfRank || 'N/A',
         Website: university.website || '',
       })));

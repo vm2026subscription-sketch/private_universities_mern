@@ -3,6 +3,7 @@ const University = require('../models/University');
 const Course = require('../models/Course');
 const { buildUniqueSlug } = require('../utils/slug');
 const { escapeRegExp } = require('../utils/regex');
+const { getDisplayUniversityType, normalizeUniversityClassification } = require('../utils/universityClassification');
 
 const uniq = (items) => [...new Set(items.filter(Boolean))];
 
@@ -19,6 +20,7 @@ const collectCourseFees = (courses = []) => {
 
 const buildComparisonProfile = (university) => {
   const courses = university.courses || [];
+  const displayType = getDisplayUniversityType(university);
 
   return {
     _id: university._id,
@@ -26,7 +28,9 @@ const buildComparisonProfile = (university) => {
     slug: university.slug,
     state: university.state,
     city: university.city,
-    type: university.type,
+    type: displayType,
+    segment: university.segment,
+    institutionKind: university.institutionKind,
     establishedYear: university.establishedYear || null,
     naacGrade: university.naacGrade || 'N/A',
     nirfRank: university.nirfRank || null,
@@ -104,6 +108,37 @@ const createComparisonRows = (profiles) => {
   });
 };
 
+const buildSegmentFilter = (requestedType) => {
+  if (requestedType === 'foreign' || requestedType === 'twinning') {
+    return {
+      $or: [
+        { segment: requestedType },
+        { segment: { $exists: false }, type: requestedType },
+      ],
+    };
+  }
+
+  const conditions = [
+    {
+      $or: [
+        { segment: 'normal' },
+        { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
+      ],
+    },
+  ];
+
+  if (requestedType === 'private' || requestedType === 'deemed') {
+    conditions.push({
+      $or: [
+        { institutionKind: requestedType },
+        { segment: { $exists: false }, type: requestedType },
+      ],
+    });
+  }
+
+  return { $and: conditions };
+};
+
 exports.getUniversities = async (req, res) => {
   try {
     const {
@@ -139,12 +174,9 @@ exports.getUniversities = async (req, res) => {
     if (state) filter.state = { $in: state.split(',').map((item) => item.trim()).filter(Boolean) };
     if (city) filter.city = { $regex: escapeRegExp(city.trim()), $options: 'i' };
     
-    // Default: exclude 'foreign' unless explicitly requested
-    if (type && type !== 'both') {
-      filter.type = type;
-    } else {
-      filter.type = { $ne: 'foreign' };
-    }
+    const requestedType = String(type || '').trim().toLowerCase();
+    const segmentFilter = buildSegmentFilter(requestedType);
+    filter.$and = [...(filter.$and || []), segmentFilter];
     
     if (naacGrade) filter.naacGrade = { $in: naacGrade.split(',').map((item) => item.trim()).filter(Boolean) };
     if (nirfRank) {
@@ -207,7 +239,7 @@ exports.getUniversities = async (req, res) => {
     else if (sort === 'name') sortObj = { name: 1 };
     else if (sort === 'established') sortObj = { establishedYear: 1 };
 
-    const LIST_FIELDS = 'name slug state city type establishedYear naacGrade nirfRank logoUrl links.brochureLink description stats views approvals';
+    const LIST_FIELDS = 'name slug state city type segment institutionKind establishedYear naacGrade nirfRank logoUrl links.brochureLink description stats views approvals';
 
     let universities;
     let total;
@@ -228,10 +260,10 @@ exports.getUniversities = async (req, res) => {
     } else {
       let query = University.find(filter, LIST_FIELDS).sort(sortObj).skip(skip).limit(normalizedLimit);
 
-      if (filter.type === 'foreign' || type === 'foreign') {
+      if (requestedType === 'foreign' || requestedType === 'twinning') {
         query = query.populate({
           path: 'courses',
-          select: 'name duration feesPerYear'
+          select: 'name baseCourse stream category duration feesPerYear specializationName'
         });
       }
 
@@ -286,6 +318,7 @@ exports.getUniversity = async (req, res) => {
 exports.createUniversity = async (req, res) => {
   try {
     const payload = { ...req.body };
+    Object.assign(payload, normalizeUniversityClassification(payload));
     if (payload.name) {
       payload.slug = await buildUniqueSlug({
         model: University,
@@ -304,6 +337,7 @@ exports.createUniversity = async (req, res) => {
 exports.updateUniversity = async (req, res) => {
   try {
     const payload = { ...req.body };
+    Object.assign(payload, normalizeUniversityClassification(payload));
     if (payload.name) {
       payload.slug = await buildUniqueSlug({
         model: University,
@@ -397,7 +431,12 @@ exports.compareUniversities = async (req, res) => {
 
 exports.getTrends = async (req, res) => {
   try {
-    const popularUniversities = await University.find().sort({ views: -1 }).limit(6).select('name slug views logoUrl city state');
+    const popularUniversities = await University.find({
+      $or: [
+        { segment: 'normal' },
+        { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
+      ],
+    }).sort({ views: -1 }).limit(6).select('name slug views logoUrl city state segment institutionKind type');
     const trendingCourses = await Course.aggregate([
       { $group: { _id: '$category', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
@@ -417,11 +456,24 @@ exports.getSimilarUniversities = async (req, res) => {
     const { id } = req.params;
     const university = await University.findById(id);
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    const classification = normalizeUniversityClassification(university);
 
     // Fetch pool of potential similar universities
-    let pool = await University.find({ 
+    let pool = await University.find({
       _id: { $ne: university._id },
-      type: university.type
+      ...(classification.segment === 'normal'
+        ? {
+            $or: [
+              { segment: 'normal', institutionKind: classification.institutionKind },
+              { segment: { $exists: false }, type: classification.institutionKind },
+            ],
+          }
+        : {
+            $or: [
+              { segment: classification.segment },
+              { segment: { $exists: false }, type: classification.segment },
+            ],
+          }),
     }).limit(20);
 
     // If same type pool is small, add other universities in same state
@@ -429,7 +481,19 @@ exports.getSimilarUniversities = async (req, res) => {
       const statePool = await University.find({
         _id: { $ne: university._id },
         state: university.state,
-        type: { $ne: university.type }
+        ...(classification.segment === 'normal'
+          ? {
+              $or: [
+                { segment: 'normal', institutionKind: { $ne: classification.institutionKind } },
+                { segment: { $exists: false }, type: { $nin: [classification.institutionKind, 'foreign', 'twinning'] } },
+              ],
+            }
+          : {
+              $or: [
+                { segment: classification.segment },
+                { segment: { $exists: false }, type: classification.segment },
+              ],
+            })
       }).limit(20);
       pool = [...pool, ...statePool];
     }

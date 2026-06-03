@@ -1,3 +1,5 @@
+import { getUniversityTypeValue } from './universityType';
+
 export const calculateFitScore = (university, userPrefs) => {
   if (!userPrefs || !university) return 0;
 
@@ -8,7 +10,9 @@ export const calculateFitScore = (university, userPrefs) => {
   if (userPrefs.preferredCourse) {
     totalCriteria += 30;
     const hasCourse = university.courses?.some(c => 
-      c.name.toLowerCase().includes(userPrefs.preferredCourse.toLowerCase()) ||
+      c.name?.toLowerCase().includes(userPrefs.preferredCourse.toLowerCase()) ||
+      c.baseCourse?.toLowerCase() === userPrefs.preferredCourse.toLowerCase() ||
+      c.specializationName?.toLowerCase() === userPrefs.preferredCourse.toLowerCase() ||
       c.category?.toLowerCase() === userPrefs.preferredCourse.toLowerCase()
     );
     if (hasCourse) score += 30;
@@ -36,7 +40,8 @@ export const calculateFitScore = (university, userPrefs) => {
   // 4. Type Match (15%)
   if (userPrefs.collegeType && userPrefs.collegeType !== 'both') {
     totalCriteria += 15;
-    if (university.type === userPrefs.collegeType) {
+    const collegeKind = getUniversityTypeValue(university);
+    if (collegeKind === userPrefs.collegeType) {
       score += 15;
     }
   }

@@ -4,105 +4,118 @@ const Course = require('../models/Course');
 const Exam = require('../models/Exam');
 const News = require('../models/News');
 const Question = require('../models/Question');
-const { buildUniqueSlug, normalizeSlug } = require('../utils/slug');
+const { buildUniqueSlug } = require('../utils/slug');
+const { normalizeUniversityClassification } = require('../utils/universityClassification');
 
 const splitPipe = (value) => String(value || '').split('|').map((item) => item.trim()).filter(Boolean);
-const parseBool = (value) => ['true', '1', 'yes', 'y'].includes(String(value || '').trim().toLowerCase());
 const parseNumber = (value) => {
   if (value === '' || value === null || value === undefined) return undefined;
   const number = Number(value);
   return Number.isNaN(number) ? undefined : number;
 };
-const parseDate = (value) => value ? new Date(value) : undefined;
+const toArray = (value) => {
+  if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
+  return splitPipe(value);
+};
+const buildCourseName = (baseCourse, specializationName, fallbackName) => {
+  const normalizedBaseCourse = String(baseCourse || '').trim();
+  const normalizedSpecialization = String(specializationName || '').trim();
+  const normalizedFallback = String(fallbackName || '').trim();
 
-const buildUniversityImportPayload = (row) => ({
-  universityCode: row.universityCode || undefined,
-  name: row.name,
-  type: row.type || 'private',
-  state: row.state,
-  city: row.city,
-  establishedYear: parseNumber(row.establishedYear),
-  naacGrade: row.naacGrade || undefined,
-  nirfRank: parseNumber(row.nirfRank),
-  description: row.description || undefined,
-  logoUrl: row.logoUrl || undefined,
-  bannerImageUrl: row.bannerImageUrl || undefined,
-  website: row.website || undefined,
-  address: row.address || undefined,
-  phone: row.phone || undefined,
-  email: row.email || undefined,
-  approvals: {
-    ugc: parseBool(row.ugcApproved),
-    aicte: parseBool(row.aicteApproved),
-    nmc: parseBool(row.nmcApproved),
-    bci: parseBool(row.bciApproved),
-    coa: parseBool(row.coaApproved),
-    pci: parseBool(row.pciApproved),
-  },
-  stats: {
-    totalStudents: parseNumber(row.totalStudents),
-    campusSizeAcres: parseNumber(row.campusSizeAcres),
-    avgPackageLPA: parseNumber(row.avgPackageLPA),
-    highestPackageLPA: parseNumber(row.highestPackageLPA),
-    placementPercentage: parseNumber(row.placementPercentage),
-  },
-  highlights: splitPipe(row.highlights),
-  topRecruiters: splitPipe(row.topRecruiters),
-  facilities: splitPipe(row.facilities),
-  links: {
-    admissionLink: row.admissionLink || undefined,
-    brochureLink: row.brochureLink || undefined,
-    placementReportLink: row.placementReportLink || undefined,
-    scholarshipLink: row.scholarshipLink || undefined,
-    hostelLink: row.hostelLink || undefined,
-    mapLink: row.mapLink || undefined,
-  },
-  admissions: {
-    overview: row.admissionsOverview || undefined,
-    process: splitPipe(row.admissionProcess),
-    applicationStartDate: parseDate(row.applicationStartDate),
-    applicationEndDate: parseDate(row.applicationEndDate),
-    counsellingInfo: row.counsellingInfo || undefined,
-    acceptedExams: splitPipe(row.acceptedExams),
-    documentsRequired: splitPipe(row.documentsRequired),
-    applicationFee: parseNumber(row.applicationFee),
-    contactEmail: row.admissionsContactEmail || undefined,
-    contactPhone: row.admissionsContactPhone || undefined,
-  },
-  campus: {
-    overview: row.campusOverview || undefined,
-    hostelDetails: row.hostelDetails || undefined,
-    libraryDetails: row.libraryDetails || undefined,
-    labDetails: row.labDetails || undefined,
-    sportsDetails: row.sportsDetails || undefined,
-    transportDetails: row.transportDetails || undefined,
-    medicalSupport: row.medicalSupport || undefined,
-    wifiAvailable: parseBool(row.wifiAvailable),
-    virtualTourLink: row.virtualTourLink || undefined,
-    galleryImages: splitPipe(row.galleryImages),
-  },
-});
+  if (normalizedFallback) return normalizedFallback;
+  if (normalizedBaseCourse && normalizedSpecialization && normalizedSpecialization.toLowerCase() !== 'general') {
+    return `${normalizedBaseCourse} - ${normalizedSpecialization}`;
+  }
+  return normalizedBaseCourse;
+};
 
-const buildCourseImportPayload = (row, universityId) => {
-  const specializationNames = splitPipe(row.specializations);
-  const specializationSeats = splitPipe(row.specializationSeats);
-  const specializationFees = splitPipe(row.specializationFeesPerYear);
+const sanitizeCoursePayload = (course = {}, universityId) => {
+  const baseCourse = String(course.baseCourse || course.name || '').trim();
+  const specializationName = String(course.specializationName || '').trim();
+  const payload = {
+    _id: course._id,
+    universityId,
+    name: buildCourseName(baseCourse, specializationName, course.name),
+    category: String(course.category || 'UG').trim() || 'UG',
+    stream: String(course.stream || 'Others').trim() || 'Others',
+    baseCourse,
+    specializationName: specializationName || undefined,
+    duration: parseNumber(course.duration),
+    totalSeats: parseNumber(course.totalSeats),
+    feesPerYear: parseNumber(course.feesPerYear),
+    eligibility: course.eligibility ? String(course.eligibility).trim() : undefined,
+    entranceExams: toArray(course.entranceExams || course.entranceExamsText),
+  };
+
+  if (!payload.baseCourse || !payload.name) return null;
+  return payload;
+};
+
+const sanitizeUniversityPayload = (input = {}) => {
+  const payload = { ...input };
+  const hasCoursesField = Array.isArray(payload.courses);
+  const courses = hasCoursesField ? payload.courses : [];
+  delete payload.courses;
+
+  const classification = normalizeUniversityClassification(payload);
 
   return {
-    universityId,
-    name: row.courseName || row.name,
-    category: row.category,
-    duration: parseNumber(row.durationYears || row.duration),
-    totalSeats: parseNumber(row.totalSeats),
-    feesPerYear: parseNumber(row.feesPerYear),
-    eligibility: row.eligibility || undefined,
-    entranceExams: splitPipe(row.entranceExams),
-    specializations: specializationNames.map((name, index) => ({
-      name,
-      seats: parseNumber(specializationSeats[index]),
-      feesPerYear: parseNumber(specializationFees[index]),
-    })),
+    payload: {
+      ...payload,
+      ...classification,
+    },
+    courses,
+    hasCoursesField,
   };
+};
+
+const syncUniversityCourses = async (university, courses = []) => {
+  const existingCourses = await Course.find({ universityId: university._id });
+  const existingById = new Map(existingCourses.map((course) => [course._id.toString(), course]));
+  const syncedCourseIds = [];
+
+  for (const courseInput of courses) {
+    const normalizedCourse = sanitizeCoursePayload(courseInput, university._id);
+    if (!normalizedCourse) continue;
+
+    if (normalizedCourse._id && existingById.has(String(normalizedCourse._id))) {
+      const currentCourse = existingById.get(String(normalizedCourse._id));
+      normalizedCourse.slug = await buildUniqueSlug({
+        model: Course,
+        value: normalizedCourse.name,
+        currentId: currentCourse._id,
+        fallback: 'course',
+      });
+
+      const updatedCourse = await Course.findByIdAndUpdate(currentCourse._id, normalizedCourse, {
+        new: true,
+        runValidators: true,
+      });
+      syncedCourseIds.push(updatedCourse._id);
+      continue;
+    }
+
+    normalizedCourse.slug = await buildUniqueSlug({
+      model: Course,
+      value: normalizedCourse.name,
+      fallback: 'course',
+    });
+
+    const createdCourse = await Course.create(normalizedCourse);
+    syncedCourseIds.push(createdCourse._id);
+  }
+
+  await Course.deleteMany({
+    universityId: university._id,
+    _id: { $nin: syncedCourseIds },
+  });
+
+  university.courses = syncedCourseIds;
+  university.stats = {
+    ...(university.stats || {}),
+    totalCoursesCount: syncedCourseIds.length,
+  };
+  await university.save();
 };
 
 exports.getDashboard = async (req, res) => {
@@ -219,7 +232,7 @@ exports.deleteQuestion = async (req, res) => {
 
 exports.createUniversity = async (req, res) => {
   try {
-    const payload = { ...req.body };
+    const { payload, courses, hasCoursesField } = sanitizeUniversityPayload(req.body);
     if (payload.name) {
       payload.slug = await buildUniqueSlug({
         model: University,
@@ -229,6 +242,9 @@ exports.createUniversity = async (req, res) => {
     }
 
     const university = await University.create(payload);
+    if (hasCoursesField) {
+      await syncUniversityCourses(university, courses);
+    }
     const populatedUniversity = await University.findById(university._id).populate('courses');
     res.status(201).json({ success: true, data: populatedUniversity });
   } catch (error) {
@@ -238,7 +254,7 @@ exports.createUniversity = async (req, res) => {
 
 exports.updateUniversity = async (req, res) => {
   try {
-    const payload = { ...req.body };
+    const { payload, courses, hasCoursesField } = sanitizeUniversityPayload(req.body);
     if (payload.name) {
       payload.slug = await buildUniqueSlug({
         model: University,
@@ -248,12 +264,17 @@ exports.updateUniversity = async (req, res) => {
       });
     }
 
-    const university = await University.findByIdAndUpdate(req.params.id, payload, {
+    let university = await University.findByIdAndUpdate(req.params.id, payload, {
       new: true,
       runValidators: true,
-    }).populate('courses');
+    });
 
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    if (hasCoursesField) {
+      await syncUniversityCourses(university, courses);
+      university = await University.findById(university._id);
+    }
+    university = await University.findById(university._id).populate('courses');
     res.json({ success: true, data: university });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -275,7 +296,10 @@ exports.deleteUniversity = async (req, res) => {
 
 exports.createCourse = async (req, res) => {
   try {
-    const payload = { ...req.body };
+    const payload = sanitizeCoursePayload(req.body, req.body.universityId);
+    if (!payload) {
+      return res.status(400).json({ success: false, message: 'Course base name is required' });
+    }
     if (payload.name) {
       payload.slug = await buildUniqueSlug({
         model: Course,
@@ -285,7 +309,14 @@ exports.createCourse = async (req, res) => {
     }
 
     const course = await Course.create(payload);
-    await University.findByIdAndUpdate(course.universityId, { $addToSet: { courses: course._id } });
+    const university = await University.findByIdAndUpdate(course.universityId, { $addToSet: { courses: course._id } }, { new: true });
+    if (university) {
+      university.stats = {
+        ...(university.stats || {}),
+        totalCoursesCount: (university.courses || []).length,
+      };
+      await university.save();
+    }
     const populatedCourse = await Course.findById(course._id).populate('universityId', 'name slug city state');
     res.status(201).json({ success: true, data: populatedCourse });
   } catch (error) {
@@ -299,7 +330,10 @@ exports.updateCourse = async (req, res) => {
     if (!existingCourse) return res.status(404).json({ success: false, message: 'Course not found' });
 
     const oldUniversityId = existingCourse.universityId?.toString();
-    const payload = { ...req.body };
+    const payload = sanitizeCoursePayload(req.body, req.body.universityId || existingCourse.universityId);
+    if (!payload) {
+      return res.status(400).json({ success: false, message: 'Course base name is required' });
+    }
     if (payload.name) {
       payload.slug = await buildUniqueSlug({
         model: Course,
@@ -317,10 +351,24 @@ exports.updateCourse = async (req, res) => {
     const newUniversityId = course.universityId?._id?.toString() || course.universityId?.toString();
 
     if (oldUniversityId && oldUniversityId !== newUniversityId) {
-      await University.findByIdAndUpdate(oldUniversityId, { $pull: { courses: course._id } });
+      const oldUniversity = await University.findByIdAndUpdate(oldUniversityId, { $pull: { courses: course._id } }, { new: true });
+      if (oldUniversity) {
+        oldUniversity.stats = {
+          ...(oldUniversity.stats || {}),
+          totalCoursesCount: (oldUniversity.courses || []).length,
+        };
+        await oldUniversity.save();
+      }
     }
     if (newUniversityId) {
-      await University.findByIdAndUpdate(newUniversityId, { $addToSet: { courses: course._id } });
+      const newUniversity = await University.findByIdAndUpdate(newUniversityId, { $addToSet: { courses: course._id } }, { new: true });
+      if (newUniversity) {
+        newUniversity.stats = {
+          ...(newUniversity.stats || {}),
+          totalCoursesCount: (newUniversity.courses || []).length,
+        };
+        await newUniversity.save();
+      }
     }
 
     res.json({ success: true, data: course });
@@ -334,7 +382,14 @@ exports.deleteCourse = async (req, res) => {
     const course = await Course.findByIdAndDelete(req.params.id);
     if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
 
-    await University.findByIdAndUpdate(course.universityId, { $pull: { courses: course._id } });
+    const university = await University.findByIdAndUpdate(course.universityId, { $pull: { courses: course._id } }, { new: true });
+    if (university) {
+      university.stats = {
+        ...(university.stats || {}),
+        totalCoursesCount: (university.courses || []).length,
+      };
+      await university.save();
+    }
 
     res.json({ success: true, message: 'Course deleted' });
   } catch (error) {
@@ -400,117 +455,3 @@ exports.deleteNews = async (req, res) => {
   }
 };
 
-exports.bulkImportUniversities = async (req, res) => {
-  try {
-    const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
-    let created = 0;
-    let updated = 0;
-    let skipped = 0;
-
-    for (const row of rows) {
-      if (!row?.name || !row?.state || !row?.city) {
-        skipped += 1;
-        continue;
-      }
-
-      const query = row.universityCode
-        ? { universityCode: String(row.universityCode).trim().toUpperCase() }
-        : { slug: normalizeSlug(row.slug || row.name, 'university') };
-
-      const payload = buildUniversityImportPayload(row);
-      const existing = await University.findOne(query);
-
-      if (payload.universityCode) payload.universityCode = payload.universityCode.toUpperCase();
-      if (payload.name) {
-        payload.slug = await buildUniqueSlug({
-          model: University,
-          value: payload.name,
-          currentId: existing?._id,
-          fallback: 'university',
-        });
-      }
-
-      if (existing) {
-        await University.findByIdAndUpdate(existing._id, payload, { new: true, runValidators: true });
-        updated += 1;
-      } else {
-        await University.create(payload);
-        created += 1;
-      }
-    }
-
-    res.json({ success: true, data: { created, updated, skipped } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-exports.bulkImportCourses = async (req, res) => {
-  try {
-    const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
-    let created = 0;
-    let updated = 0;
-    let skipped = 0;
-
-    for (const row of rows) {
-      if (!(row?.universityCode || row?.universityName) || !(row?.courseName || row?.name) || !row?.category) {
-        skipped += 1;
-        continue;
-      }
-
-      const university = row.universityCode
-        ? await University.findOne({ universityCode: String(row.universityCode).trim().toUpperCase() })
-        : await University.findOne({ name: row.universityName });
-
-      if (!university) {
-        skipped += 1;
-        continue;
-      }
-
-      const payload = buildCourseImportPayload(row, university._id);
-      if (payload.name) {
-        const existing = await Course.findOne({
-          universityId: university._id,
-          name: payload.name,
-          category: payload.category,
-        });
-
-        payload.slug = await buildUniqueSlug({
-          model: Course,
-          value: payload.name,
-          currentId: existing?._id,
-          fallback: 'course',
-        });
-
-        if (existing) {
-          await Course.findByIdAndUpdate(existing._id, payload, { new: true, runValidators: true });
-          updated += 1;
-        } else {
-          const course = await Course.create(payload);
-          await University.findByIdAndUpdate(university._id, { $addToSet: { courses: course._id } });
-          created += 1;
-        }
-        continue;
-      }
-
-      const existing = await Course.findOne({
-        universityId: university._id,
-        name: payload.name,
-        category: payload.category,
-      });
-
-      if (existing) {
-        await Course.findByIdAndUpdate(existing._id, payload, { new: true, runValidators: true });
-        updated += 1;
-      } else {
-        const course = await Course.create(payload);
-        await University.findByIdAndUpdate(university._id, { $addToSet: { courses: course._id } });
-        created += 1;
-      }
-    }
-
-    res.json({ success: true, data: { created, updated, skipped } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};

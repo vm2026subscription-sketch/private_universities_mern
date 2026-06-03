@@ -1,9 +1,11 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { getUniversityDisplayType } from './universityType';
 
 export const generateBrochure = (university) => {
   const doc = new jsPDF();
   const primaryColor = [13, 148, 136]; // #0d9488 (Teal/Primary)
+  const displayType = getUniversityDisplayType(university);
 
   // Header Background
   doc.setFillColor(...primaryColor);
@@ -28,7 +30,7 @@ export const generateBrochure = (university) => {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const details = [
-    ["Type", university.type || 'Private'],
+    ["Type", displayType],
     ["NIRF Rank", university.nirfRank || 'N/A'],
     ["NAAC Grade", university.naacGrade || 'N/A'],
     ["Website", university.website || 'N/A'],
@@ -71,7 +73,7 @@ export const generateBrochure = (university) => {
     doc.setFont('helvetica', 'bold');
     doc.text("Programs Offered", 14, currentY);
 
-    const courses = university.courses.map(c => [c.name, c.category, `${c.duration} Years`, c.feesPerYear ? `Rs. ${c.feesPerYear}` : 'Contact University']);
+    const courses = university.courses.map(c => [c.baseCourse || c.name, c.category, `${c.duration} Years`, c.feesPerYear ? `Rs. ${c.feesPerYear}` : 'Contact University']);
     doc.autoTable({
       startY: currentY + 5,
       head: [['Course Name', 'Level', 'Duration', 'Fees (Annual)']],

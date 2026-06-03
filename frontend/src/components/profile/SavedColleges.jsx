@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Trash2, Star, MessageSquare, Share2, GitCompare, Download, FileText, ExternalLink, Heart } from 'lucide-react';
+import { calculateFitScore } from '../../utils/fitScore';
+import { getUniversityDisplayType } from '../../utils/universityType';
 
 function StarRating({ value = 0, onChange }) {
   const [hover, setHover] = useState(0);
@@ -16,8 +18,6 @@ function StarRating({ value = 0, onChange }) {
     </div>
   );
 }
-
-import { calculateFitScore } from '../../utils/fitScore';
 
 export default function SavedColleges({ savedUnis, ratings, notes, compareList, onRemove, onRating, onNoteSave, onShare, onShareWA, onToggleCompare, onExportPDF, onExportExcel, userPrefs }) {
   const [activeNote, setActiveNote] = useState(null);
@@ -54,7 +54,7 @@ export default function SavedColleges({ savedUnis, ratings, notes, compareList, 
 
     if (sortBy === 'fitScore') return calculateFitScore(b, userPrefs) - calculateFitScore(a, userPrefs);
     if (sortBy === 'state') return a.state.localeCompare(b.state);
-    if (sortBy === 'type') return (a.type || '').localeCompare(b.type || '');
+    if (sortBy === 'type') return getUniversityDisplayType(a).localeCompare(getUniversityDisplayType(b));
     return a.name.localeCompare(b.name);
   });
 
@@ -83,6 +83,7 @@ export default function SavedColleges({ savedUnis, ratings, notes, compareList, 
       {sortedUnis.map(u => {
         const isFav = favorites.includes(u._id);
         const fitScore = calculateFitScore(u, userPrefs);
+        const displayType = getUniversityDisplayType(u);
         return (
         <div key={u._id} className={`card p-5 space-y-4 transition-all relative ${isFav ? 'border-primary/30 shadow-lg' : 'hover:shadow-lg'}`}>
           {/* Favorite Pin */}
@@ -118,7 +119,7 @@ export default function SavedColleges({ savedUnis, ratings, notes, compareList, 
                   <div className="flex items-center gap-1 bg-primary text-white px-3 py-1 rounded-full text-xs font-black shadow-lg shadow-primary/20">
                     {calculateFitScore(u, userPrefs)}% Match
                   </div>
-                  <span className="badge badge-orange capitalize">{u.type}</span>
+                  <span className="badge badge-orange">{displayType}</span>
                   {u.naacGrade && <span className="badge badge-green">NAAC {u.naacGrade}</span>}
                   {u.nirfRank && <span className="badge badge-blue">NIRF #{u.nirfRank}</span>}
                 </div>

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node scripts/seedData.js"
+    "seed": "node scripts/seedData.js",
+    "reset:catalog": "node scripts/resetUniversityCatalog.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -30,8 +31,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "resend": "^6.12.3",
-    "slugify": "^1.6.6",
-    "xlsx": "^0.18.5"
+    "slugify": "^1.6.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

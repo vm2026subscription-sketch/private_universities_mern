@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const { normalizeUniversityClassification } = require('../utils/universityClassification');
 
 const universitySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
@@ -7,7 +8,9 @@ const universitySchema = new mongoose.Schema({
   slug: { type: String, unique: true },
   state: { type: String, required: true },
   city: { type: String, required: true },
-  type: { type: String, enum: ['private', 'deemed', 'foreign'], required: true },
+  segment: { type: String, enum: ['normal', 'foreign', 'twinning'], default: 'normal' },
+  institutionKind: { type: String, enum: ['private', 'deemed'] },
+  type: { type: String, enum: ['private', 'deemed', 'foreign', 'twinning'], required: true },
   establishedYear: Number,
   naacGrade: String,
   nirfRank: Number,
@@ -89,6 +92,15 @@ const universitySchema = new mongoose.Schema({
   email: String
 }, { timestamps: true });
 
+universitySchema.pre('validate', function(next) {
+  const classification = normalizeUniversityClassification(this);
+  this.segment = classification.segment;
+  this.institutionKind = classification.institutionKind;
+  this.type = classification.type;
+
+  next();
+});
+
 universitySchema.pre('save', function(next) {
   if (this.isModified('name')) {
     this.slug = slugify(this.name, { lower: true, strict: true });
@@ -98,7 +110,7 @@ universitySchema.pre('save', function(next) {
 
 universitySchema.index({ name: 'text', state: 'text', city: 'text' });
 universitySchema.index({ state: 1, type: 1, naacGrade: 1 });
-universitySchema.index({ slug: 1 });
+universitySchema.index({ segment: 1, institutionKind: 1 });
 universitySchema.index({ type: 1, nirfRank: 1 });
 universitySchema.index({ state: 1, nirfRank: 1 });
 universitySchema.index({ state: 1, 'stats.avgPackageLPA': -1 });
