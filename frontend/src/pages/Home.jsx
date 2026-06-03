@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState } from 'react';
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -160,6 +160,7 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const featuredUniversity = featuredUniversities[currentSlide % featuredUniversities.length];
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
   const getUniversityPath = (university) => {
     const routeParam = university?.slug || university?._id;
@@ -251,6 +252,46 @@ export default function Home() {
     navigate(`/universities?search=${encodeURIComponent(searchTerm)}`);
   };
 
+  const quickSearchSuggestions = useMemo(() => {
+    const query = deferredSearchTerm.trim().toLowerCase();
+    if (query.length < 2) return [];
+
+    const suggestionMap = new Map();
+
+    [...universities, ...featuredUniversities].forEach((university) => {
+      if (!university?.name || suggestionMap.has(university.name.toLowerCase())) return;
+
+      const searchableText = [
+        university.name,
+        university.city,
+        university.state,
+        university.location,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      if (searchableText.includes(query)) {
+        suggestionMap.set(university.name.toLowerCase(), {
+          label: university.name,
+          sublabel: university.location || [university.city, university.state].filter(Boolean).join(', '),
+          action: () => navigate(getUniversityPath(university)),
+        });
+      }
+    });
+
+    popularCities.forEach((city) => {
+      if (!city.toLowerCase().includes(query) || suggestionMap.has(city.toLowerCase())) return;
+      suggestionMap.set(city.toLowerCase(), {
+        label: city,
+        sublabel: 'Search universities by city',
+        action: () => navigate(`/universities?search=${encodeURIComponent(city)}`),
+      });
+    });
+
+    return Array.from(suggestionMap.values()).slice(0, 6);
+  }, [deferredSearchTerm, navigate, universities]);
+
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 overflow-x-hidden">
       {/* Hero Section - Shiksha-style rotating campus background */}
@@ -340,6 +381,25 @@ export default function Home() {
                   Search
                 </button>
               </div>
+
+              {quickSearchSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-[calc(100%+12px)] z-30 overflow-hidden rounded-3xl border border-white/20 bg-white/95 p-2 text-left shadow-[0_24px_60px_rgba(15,23,42,0.28)] backdrop-blur">
+                  {quickSearchSuggestions.map((suggestion) => (
+                    <button
+                      key={`${suggestion.label}-${suggestion.sublabel}`}
+                      type="button"
+                      onClick={suggestion.action}
+                      className="flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-3 transition-colors hover:bg-slate-100"
+                    >
+                      <div>
+                        <p className="text-sm font-black text-slate-900">{suggestion.label}</p>
+                        <p className="text-xs font-bold text-slate-400">{suggestion.sublabel}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </form>
           </motion.div>
         </div>

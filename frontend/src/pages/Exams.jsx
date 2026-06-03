@@ -1,28 +1,38 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ExternalLink, FileCheck2, Landmark, Search, Globe, MapPin, CheckCircle2 } from 'lucide-react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { CalendarDays, ExternalLink, FileCheck2, Landmark, Search, Globe, MapPin, CheckCircle2, X } from 'lucide-react';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
+import { readSessionCache, writeSessionCache } from '../utils/pageCache';
 
 const CATEGORY_LABELS = ['all', 'engineering', 'medical', 'management', 'law', 'others'];
+const EXAMS_CACHE_KEY = 'vm_exams_catalog_v1';
+const EXAMS_CACHE_TTL_MS = 10 * 60 * 1000;
 
 export default function Exams() {
+  const cachedExams = readSessionCache(EXAMS_CACHE_KEY, EXAMS_CACHE_TTL_MS) || [];
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedScope, setSelectedScope] = useState('all');
   const [selectedState, setSelectedState] = useState('all');
   const [search, setSearch] = useState('');
-  const [exams, setExams] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [exams, setExams] = useState(cachedExams);
+  const [loading, setLoading] = useState(cachedExams.length === 0);
+  const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     let active = true;
 
     const loadExams = async () => {
-      setLoading(true);
+      if (cachedExams.length === 0) {
+        setLoading(true);
+      }
       try {
         const { data } = await api.get('/exams');
-        if (active) setExams(data.data || []);
+        if (!active) return;
+        const nextExams = Array.isArray(data.data) ? data.data : [];
+        setExams(nextExams);
+        writeSessionCache(EXAMS_CACHE_KEY, nextExams);
       } catch {
-        if (active) setExams([]);
+        if (active && cachedExams.length === 0) setExams([]);
       } finally {
         if (active) setLoading(false);
       }
@@ -34,18 +44,37 @@ export default function Exams() {
     };
   }, []);
 
+  const indexedExams = useMemo(() => {
+    return exams.map((exam) => ({
+      ...exam,
+      searchIndex: [
+        exam.name,
+        exam.shortName,
+        exam.conductingBody,
+        exam.category,
+        exam.eligibility,
+        exam.state,
+        ...(Array.isArray(exam.courses) ? exam.courses : []),
+        ...(Array.isArray(exam.highlights) ? exam.highlights : []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase(),
+    }));
+  }, [exams]);
+
   const statesList = useMemo(() => {
     const statesSet = new Set();
-    exams.forEach((exam) => {
+    indexedExams.forEach((exam) => {
       if (exam.scope === 'state' && exam.state) {
         statesSet.add(exam.state);
       }
     });
     return ['All States', ...Array.from(statesSet).sort()];
-  }, [exams]);
+  }, [indexedExams]);
 
   const filteredExams = useMemo(() => {
-    let list = exams;
+    let list = indexedExams;
 
     if (selectedCategory !== 'all') {
       list = list.filter((exam) => exam.category === selectedCategory);
@@ -59,22 +88,13 @@ export default function Exams() {
       list = list.filter((exam) => exam.state === selectedState);
     }
 
-    const query = search.trim().toLowerCase();
+    const query = deferredSearch.trim().toLowerCase();
     if (query) {
-      list = list.filter((exam) => (
-        [
-          exam.name,
-          exam.shortName,
-          exam.conductingBody,
-          exam.category,
-          exam.eligibility,
-          exam.state,
-        ].join(' ').toLowerCase().includes(query)
-      ));
+      list = list.filter((exam) => exam.searchIndex.includes(query));
     }
 
     return list;
-  }, [exams, selectedCategory, selectedScope, selectedState, search]);
+  }, [indexedExams, selectedCategory, selectedScope, selectedState, deferredSearch]);
 
   const handleScopeChange = (scope) => {
     setSelectedScope(scope);
@@ -101,9 +121,23 @@ export default function Exams() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search exam, state, body..."
-            className="w-full rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-2xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card pl-11 pr-11 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-light-muted dark:text-dark-muted hover:bg-white/80 dark:hover:bg-dark-border"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
+      </div>
+
+      <div className="mb-6 flex items-center justify-between gap-4 text-xs font-bold uppercase tracking-widest text-light-muted dark:text-dark-muted">
+        <span>{filteredExams.length} exams match your filters</span>
+        {search ? <span>Searching for "{deferredSearch.trim() || search}"</span> : null}
       </div>
 
       {/* Primary Category Filters */}

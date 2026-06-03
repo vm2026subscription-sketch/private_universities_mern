@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
+import { readSessionCache, writeSessionCache } from '../utils/pageCache';
 
 const ALL_STATES = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -18,6 +19,11 @@ const ALL_STATES = [
   'Uttarakhand', 'West Bengal'
 ];
 
+const STREAMS_CACHE_KEY = 'vm_course_streams_v1';
+const STREAMS_CACHE_TTL_MS = 10 * 60 * 1000;
+const COURSE_RESULTS_CACHE_TTL_MS = 10 * 60 * 1000;
+const getCourseResultsCacheKey = (suffix) => `vm_course_results_${suffix}`;
+
 export default function Courses() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,15 +34,18 @@ export default function Courses() {
   const selectedSpec = searchParams.get('specialization') || 'All';
   const universityId = searchParams.get('universityId');
   const universityName = searchParams.get('universityName');
+  const cachedStreams = readSessionCache(STREAMS_CACHE_KEY, STREAMS_CACHE_TTL_MS) || [];
   
   const [courses, setCourses] = useState([]);
-  const [streams, setStreams] = useState([]);
+  const [streams, setStreams] = useState(cachedStreams);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [stateSearch, setStateSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [visibleCount, setVisibleCount] = useState(24);
+  const deferredSearch = useDeferredValue(search);
+  const deferredStateSearch = useDeferredValue(stateSearch);
 
   const normalizeText = (...values) =>
     values
@@ -52,7 +61,10 @@ export default function Courses() {
     const fetchStreams = async () => {
       try {
         const { data } = await api.get('/courses/streams');
-        if (data.success) setStreams(data.data);
+        if (data.success) {
+          setStreams(data.data);
+          writeSessionCache(STREAMS_CACHE_KEY, data.data);
+        }
       } catch (error) {
         console.error('Failed to fetch streams:', error);
       }
@@ -63,13 +75,25 @@ export default function Courses() {
   useEffect(() => {
     let active = true;
     const loadData = async () => {
-      setLoading(true);
       try {
         let queryParams = new URLSearchParams();
         if (selectedCategory !== 'All') queryParams.append('category', selectedCategory);
         if (selectedState !== 'All') queryParams.append('state', selectedState);
         if (selectedStream !== 'All') queryParams.append('stream', selectedStream);
         if (universityId) queryParams.append('universityId', universityId);
+        const queryStringBase = queryParams.toString();
+        const requestKey = selectedCourse
+          ? getCourseResultsCacheKey(`list_${queryStringBase}&baseCourse=${encodeURIComponent(selectedCourse)}`)
+          : getCourseResultsCacheKey(`grouped_${queryStringBase}`);
+        const cachedData = readSessionCache(requestKey, COURSE_RESULTS_CACHE_TTL_MS);
+
+        if (cachedData && active) {
+          setCourses(cachedData.data || []);
+          setTotalCount(cachedData.total || cachedData.data?.length || 0);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
 
         if (selectedCourse) {
           // Fetch specific colleges for the selected base course
@@ -77,16 +101,21 @@ export default function Courses() {
           queryParams.append('limit', '100');
           const { data } = await api.get(`/courses?${queryParams.toString()}`);
           if (active) {
-            setCourses(data.data || []);
-            setTotalCount(data.pagination?.total || data.data.length);
+            const nextCourses = data.data || [];
+            const nextTotal = data.pagination?.total || nextCourses.length;
+            setCourses(nextCourses);
+            setTotalCount(nextTotal);
+            writeSessionCache(requestKey, { data: nextCourses, total: nextTotal });
           }
         } else {
           // Fetch high-performance grouped courses
           const { data } = await api.get(`/courses/grouped?${queryParams.toString()}`);
           if (active) {
-            setCourses(data.data || []);
-            // Set totalCount to the number of unique programs (groups)
-            setTotalCount(data.data?.length || 0);
+            const nextCourses = data.data || [];
+            const nextTotal = nextCourses.length || 0;
+            setCourses(nextCourses);
+            setTotalCount(nextTotal);
+            writeSessionCache(requestKey, { data: nextCourses, total: nextTotal });
           }
         }
       } catch {
@@ -116,6 +145,7 @@ export default function Courses() {
         category: course.category || 'Others',
         stream: course.stream || 'Others',
         normName: normalizeText(course.name),
+        searchIndex: normalizeText(course.name, course.category, course.stream, course.specializations),
       }));
   }, [courses, selectedCourse]);
 
@@ -130,12 +160,10 @@ export default function Courses() {
       );
     }
 
-    const query = search.trim().toLowerCase();
+    const query = normalizeText(deferredSearch);
     if (!query) return filtered;
-    return filtered.filter((group) => (
-      normalizeText(group.name, group.category, group.stream, group.specializations).includes(query)
-    ));
-  }, [courseGroups, search, selectedSpec]);
+    return filtered.filter((group) => group.searchIndex.includes(query));
+  }, [courseGroups, deferredSearch, selectedSpec]);
 
   const visibleCourseGroups = useMemo(() => {
     return filteredCourseGroups.slice(0, visibleCount);
@@ -192,26 +220,27 @@ export default function Courses() {
       filtered = filtered.filter(c => c.specializationName === selectedSpec);
     }
 
-    const query = search.trim().toLowerCase();
+    const query = normalizeText(deferredSearch);
     if (!query) return filtered;
     return filtered.filter((course) => {
-      return normalizeText(
+      const searchIndex = normalizeText(
         course.universityId?.name,
         course.universityId?.city,
         course.universityId?.state,
         course.specializationName,
         course.name
-      ).includes(query);
+      );
+      return searchIndex.includes(query);
     });
-  }, [courses, selectedCourse, search, selectedSpec]);
+  }, [courses, selectedCourse, deferredSearch, selectedSpec]);
 
   const visibleColleges = useMemo(() => filteredColleges.slice(0, visibleCount), [filteredColleges, visibleCount]);
 
   const filteredStates = useMemo(() => {
-    const query = stateSearch.trim().toLowerCase();
+    const query = deferredStateSearch.trim().toLowerCase();
     if (!query) return ALL_STATES;
     return ALL_STATES.filter((state) => state.toLowerCase().includes(query));
-  }, [stateSearch]);
+  }, [deferredStateSearch]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
@@ -261,8 +290,17 @@ export default function Courses() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by degree, stream or keyword..."
-                  className="w-full pl-5 pr-8 py-7 bg-transparent border-none outline-none text-xl text-white font-bold placeholder:text-white/20"
+                  className="w-full pl-5 pr-14 py-7 bg-transparent border-none outline-none text-xl text-white font-bold placeholder:text-white/20"
                 />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="mr-4 rounded-full bg-white/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
             {(universityName || selectedStream !== 'All' || selectedCourse) && (
@@ -479,8 +517,8 @@ export default function Courses() {
               )}
             </motion.div>
           ) : (
-            <div className="flex items-center justify-between gap-6 mb-10">
-              <div className="flex items-center gap-6">
+            <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-4 lg:gap-6">
                 <h2 className="text-2xl font-serif font-black text-slate-800 dark:text-white">
                   {selectedStream !== 'All' ? selectedStream : 'Academic Programs'}
                 </h2>
@@ -489,6 +527,11 @@ export default function Courses() {
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   {totalCount} RESULTS
                 </div>
+                {search ? (
+                  <div className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                    Searching for "{deferredSearch || search}"
+                  </div>
+                ) : null}
               </div>
               
               <button 
