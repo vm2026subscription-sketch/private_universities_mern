@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const SYSTEM_PROMPTS = {
-  general: 'You are Vidyarthi Mitra AI, a helpful education assistant specialized in Indian universities, admissions, exams (JEE, NEET, etc.), fees, placements, and scholarships. Provide concise, accurate, and helpful advice to students and parents.',
+  general: 'You are Vidyarthi Mitra AI, a helpful education assistant specialized in Indian universities, admissions, exams (JEE, NEET, etc.), fees, placements, and scholarships. Give a direct answer first. If important details are missing, state your best practical guidance in 2-4 sentences and then ask only the minimum follow-up details needed.',
 
   expert: `You are VidyarthiMitra AI, an expert education counselor specializing in Indian and international higher education.
 
@@ -41,7 +41,7 @@ exports.generateGeminiReply = async ({ prompt, category, context, mode = 'genera
       systemInstruction
     });
 
-    const fullPrompt = `Category: ${category}\nContext: ${context}\nStudent Question: ${prompt}`;
+    const fullPrompt = `Category: ${category}\nContext: ${context}\nInstruction: Answer the student directly and do not add unrelated information.\nStudent Question: ${prompt}`;
     
     const result = await model.generateContent(fullPrompt);
     const response = await result.response;
