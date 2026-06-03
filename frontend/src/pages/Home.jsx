@@ -154,7 +154,7 @@ export default function Home() {
   const [cachedHomeData] = useState(() => getCachedHomeData());
   const [searchTerm, setSearchTerm] = useState('');
   const [exams, setExams] = useState(() => cachedHomeData?.exams || mockExams);
-  const [universities, setUniversities] = useState(() => cachedHomeData?.universities || mockUniversities.slice(0, 6));
+  const [universities, setUniversities] = useState(() => cachedHomeData?.universities || []);
   const [questions, setQuestions] = useState(() => cachedHomeData?.questions || mockQuestions);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -204,7 +204,7 @@ export default function Home() {
         if (!isMounted) return;
 
         const nextHomeData = {
-          universities: sortedUniversities.length > 0 ? sortedUniversities.slice(0, 6) : mockUniversities.slice(0, 6),
+          universities: sortedUniversities.slice(0, 6),
           exams: fetchedExams.length > 0 ? fetchedExams : mockExams,
           questions: fetchedQuestions.length > 0 ? fetchedQuestions : mockQuestions,
         };
@@ -553,8 +553,9 @@ export default function Home() {
                 Explore All <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {(universities.length > 0 ? universities : mockUniversities).map((u, i) => (
+            {universities.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {universities.map((u, i) => (
                 <motion.div key={i} whileHover={{ y: -5 }}>
                   <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-transparent hover:shadow-2xl hover:shadow-primary/20 transition-all overflow-hidden block">
                     {/* Left-to-right animated background (Gradient matching SS1) */}
@@ -598,14 +599,24 @@ export default function Home() {
                     </div>
                   </Link>
                 </motion.div>
-              ))}
-            </div>
-            <div className="mt-12 text-center">
-              <Link to="/universities" className="inline-flex items-center gap-3 bg-white dark:bg-dark-card border-2 border-primary text-primary hover:bg-primary hover:text-white px-10 py-4 rounded-2xl font-black transition-all group">
-                EXPLORE ALL 500+ UNIVERSITIES
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-              </Link>
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10 bg-white/70 dark:bg-dark-card/70 p-10 text-center shadow-sm">
+                <p className="text-sm font-black uppercase tracking-[0.24em] text-primary">No Recommendations Yet</p>
+                <p className="mt-4 text-base text-slate-600 dark:text-slate-300">
+                  No universities are available right now. Once your team uploads universities from the admin panel, recommendations will appear here.
+                </p>
+              </div>
+            )}
+            {universities.length > 0 ? (
+              <div className="mt-12 text-center">
+                <Link to="/universities" className="inline-flex items-center gap-3 bg-white dark:bg-dark-card border-2 border-primary text-primary hover:bg-primary hover:text-white px-10 py-4 rounded-2xl font-black transition-all group">
+                  EXPLORE ALL UNIVERSITIES
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                </Link>
+              </div>
+            ) : null}
           </section>
 
           <section className="bg-slate-900 rounded-[3rem] p-10 md:p-16 text-white overflow-hidden relative group">
