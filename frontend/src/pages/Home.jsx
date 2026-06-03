@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../utils/api';
 import { useAiChat } from '../context/AiChatContext';
+import UniversityLogo from '../components/common/UniversityLogo';
 import { toast } from 'react-hot-toast';
 
 const mockUniversities = [
