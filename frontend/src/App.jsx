@@ -27,6 +27,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const OpenChatRoute = lazy(() => import('./pages/OpenChatRoute'));
 const RankPredictor = lazy(() => import('./pages/RankPredictor'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const GeminiChat = lazy(() => import('./pages/GeminiChat'));
 const Contact = lazy(() => import('./pages/Contact'));
 const About = lazy(() => import('./pages/About'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
@@ -104,6 +105,7 @@ function PublicLayout() {
         <Route path="/compare-universities" element={<UniversityComparison />} />
         <Route path="/rank-predictor" element={<RankPredictor />} />
         <Route path="/ask" element={<OpenChatRoute />} />
+        <Route path="/gemini-chat" element={<GeminiChat />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/auth/callback" element={<AuthCallback />} />

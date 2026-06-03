@@ -36,8 +36,11 @@ exports.generateGeminiReply = async ({ prompt, category, context, mode = 'genera
 
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    // Use gemini-1.5-flash — stable model compatible with current SDK versions.
+    // Avoid gemini-1.5-flash-latest / gemini-2.0-flash which 404 on v1beta.
+    const modelName = (process.env.GEMINI_MODEL || 'gemini-1.5-flash').replace(/-latest$/, '');
     const model = genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+      model: modelName,
       systemInstruction
     });
 
