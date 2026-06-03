@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import api from '../utils/api';
 import { useAiChat } from '../context/AiChatContext';
-import UniversityLogo from '../components/common/UniversityLogo';
 import { toast } from 'react-hot-toast';
 
 const mockUniversities = [
@@ -278,22 +277,6 @@ export default function Home() {
               }}
             />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.14),transparent_30%)]" />
-            <div className="absolute right-[8%] top-1/2 hidden -translate-y-1/2 lg:block">
-              <button
-                type="button"
-                onClick={() => navigate(getUniversityPath(featuredUniversity))}
-                className="group rounded-[2.5rem] border border-white/15 bg-white/10 p-6 backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.25)] transition-transform hover:scale-[1.02]"
-              >
-                <div className="h-44 w-44 overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 p-6">
-                  <UniversityLogo name={featuredUniversity.name} />
-                </div>
-                <div className="mt-5 max-w-[15rem] text-left text-white">
-                  <p className="text-[10px] font-black uppercase tracking-[0.32em] text-white/60">Featured Campus</p>
-                  <p className="mt-2 text-xl font-black leading-tight">{featuredUniversity.name}</p>
-                  <p className="mt-2 text-sm text-white/75">{featuredUniversity.location}</p>
-                </div>
-              </button>
-            </div>
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/75"></div>
           </motion.div>
         </AnimatePresence>
