@@ -10,7 +10,6 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import MobileNav from './components/layout/MobileNav';
-import AccessibilityWidget from './components/layout/AccessibilityWidget';
 
 const Home = lazy(() => import('./pages/Home'));
 const Universities = lazy(() => import('./pages/Universities'));
@@ -95,7 +94,6 @@ function PublicLayout() {
       </Routes>
       <Footer />
       <MobileNav />
-      <AccessibilityWidget />
       <AiChatWidget />
     </div>
   );

@@ -593,12 +593,6 @@ export default function Home() {
                           <p className="font-black text-primary uppercase tracking-widest text-sm">Amol Kulkarni</p>
                           <p className="text-xs text-slate-500 font-bold">Pune, Engineering Aspirant</p>
                         </div>
-                        <button
-                          onClick={() => setShowFeedback(true)}
-                          className="flex items-center gap-2 text-xs font-black bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl transition-all"
-                        >
-                          <MessageSquare className="w-4 h-4 text-primary" /> SHARE YOUR FEEDBACK
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -685,6 +679,45 @@ export default function Home() {
           </section>
         </div>
       </div>
+
+      <section className="max-w-7xl mx-auto px-4 pb-8">
+        <div className="rounded-[2.5rem] border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-dark-card/95 shadow-2xl overflow-hidden">
+          <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-primary mb-3">Contact and Feedback</p>
+              <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 dark:text-white">
+                Need help from our team or want to share your experience?
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm md:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                Reach out through the contact details in the footer or send feedback directly here. This keeps support and suggestions in one place right before the final contact section.
+              </p>
+            </div>
+
+            <div className="rounded-[2rem] bg-slate-900 text-white p-6 md:p-8 shadow-xl">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-5 h-5 text-primary-light" />
+                </div>
+                <div>
+                  <p className="text-lg font-black">Share Feedback</p>
+                  <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+                    Tell us what is working well, what feels confusing, or what you want improved before the next release.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowFeedback(true)}
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-light"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Open Feedback Form
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Advanced Feedback Modal */}
       <AnimatePresence>
         {showFeedback && (

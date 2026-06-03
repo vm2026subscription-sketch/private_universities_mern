@@ -10,6 +10,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import logo from '../../assets/logo.png';
+import AccessibilityWidget from './AccessibilityWidget';
 
 
 export default function Navbar() {
@@ -153,6 +154,7 @@ export default function Navbar() {
             <button onClick={toggle} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-colors">
               {dark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
             </button>
+            <AccessibilityWidget inline />
 
             {user ? (
               <div className="relative" ref={dropdownRef}>

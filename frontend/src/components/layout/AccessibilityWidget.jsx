@@ -14,15 +14,9 @@ const LANGUAGE_OPTIONS = [
   { value: 'kn', label: 'Kannada' },
 ];
 
-const ACCESSIBILITY_VISIBILITY_STORAGE_KEY = 'vm_accessibility_widget_hidden';
-
-const AccessibilityWidget = () => {
+const AccessibilityWidget = ({ inline = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isHidden, setIsHidden] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(ACCESSIBILITY_VISIBILITY_STORAGE_KEY) === 'true';
-  });
   const [activeFilters, setActiveFilters] = useState({
     color: null,
     textSize: 'medium',
@@ -49,11 +43,6 @@ const AccessibilityWidget = () => {
     if (activeFilters.textSize) html.classList.add(`access-text-${activeFilters.textSize}`);
     if (activeFilters.spacing) html.classList.add(`access-spacing-${activeFilters.spacing}`);
   }, [activeFilters]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(ACCESSIBILITY_VISIBILITY_STORAGE_KEY, String(isHidden));
-  }, [isHidden]);
 
   useEffect(() => {
     const handleGlobalClick = (event) => {
@@ -153,40 +142,31 @@ const AccessibilityWidget = () => {
     );
   };
 
-  const handleHide = () => {
-    setIsOpen(false);
-    setIsSpeaking(false);
-    setIsHidden(true);
-  };
-
-  if (isHidden) {
-    return (
-      <button
-        type="button"
-        onClick={() => setIsHidden(false)}
-        className="fixed left-4 bottom-6 md:bottom-8 z-[80] inline-flex items-center gap-2 rounded-full bg-white dark:bg-dark-card border border-light-border dark:border-dark-border px-4 py-3 text-sm font-bold text-primary shadow-xl hover:scale-105"
-        title="Show accessibility widget"
-      >
-        <Accessibility className="w-4 h-4" />
-        Accessibility
-      </button>
-    );
-  }
-
   return (
-    <div id="accessibility-widget" className="fixed left-4 bottom-6 md:bottom-8 z-[80] flex items-end gap-2">
-      <div className="bg-primary py-4 px-2 rounded-2xl shadow-2xl flex flex-col gap-4 relative z-20 border border-accent/20">
-        <button
-          type="button"
-          onClick={handleHide}
-          className="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-white dark:bg-dark-card text-slate-500 hover:text-primary shadow-lg flex items-center justify-center"
-          title="Hide accessibility widget"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <div
+      id="accessibility-widget"
+      className={inline ? 'relative' : 'fixed left-4 bottom-6 md:bottom-8 z-[80] flex items-end gap-2'}
+    >
+      <button
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`rounded-xl flex items-center justify-center transition-all ${
+          inline
+            ? 'h-10 w-10 border border-light-border dark:border-dark-border hover:bg-slate-50 dark:hover:bg-dark-card text-slate-600 dark:text-slate-300'
+            : `w-12 h-12 ${
+                isOpen ? 'bg-primary-light text-white scale-110' : 'bg-dark-card text-white hover:bg-primary-light'
+              }`
+        }`}
+        title="Accessibility Options"
+        aria-label="Accessibility options"
+        aria-expanded={isOpen}
+      >
+        {isOpen && !inline ? <X className="w-6 h-6" /> : <Accessibility className={inline ? 'w-5 h-5' : 'w-6 h-6'} />}
+      </button>
+
+      {!inline && (
         <button
           onClick={handleSpeak}
-          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+          className={`mt-4 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
             isSpeaking
               ? 'bg-accent text-white scale-110 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
               : 'bg-white/15 text-white hover:bg-white/25'
@@ -195,31 +175,37 @@ const AccessibilityWidget = () => {
         >
           <Volume2 className="w-6 h-6" />
         </button>
-        <button
-          onClick={() => setIsOpen((prev) => !prev)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-            isOpen ? 'bg-primary-light text-white scale-110' : 'bg-dark-card text-white hover:bg-primary-light'
-          }`}
-          title="Accessibility Options"
-        >
-          {isOpen ? <X className="w-6 h-6" /> : <Accessibility className="w-6 h-6" />}
-        </button>
-
-        <div className="flex w-full h-2 rounded-full overflow-hidden mt-2 border border-white/10">
-          <div className="flex-1 bg-primary-light" />
-          <div className="flex-1 bg-accent" />
-          <div className="flex-1 bg-orange-200" />
-        </div>
-      </div>
+      )}
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="bg-white rounded-2xl shadow-2xl p-4 w-56 border border-slate-100 flex flex-col gap-2 relative z-10"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className={`bg-white dark:bg-dark-card rounded-2xl shadow-2xl p-4 w-64 border border-slate-100 dark:border-dark-border flex flex-col gap-2 relative z-10 ${
+              inline ? 'absolute right-0 top-full mt-3' : 'mt-3'
+            }`}
           >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-dark-border pb-3 mb-2">
+              <div>
+                <p className="text-sm font-black text-slate-900 dark:text-white">Accessibility</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Personalize reading and visibility</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSpeak}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                  isSpeaking
+                    ? 'bg-accent text-white shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+                title={isSpeaking ? 'Turn off Click-to-Speak' : 'Turn on Click-to-Speak'}
+              >
+                <Volume2 className="w-4 h-4" />
+              </button>
+            </div>
+
             <div className="flex flex-col gap-2 border-b pb-2 mb-2">
               <span className="text-[10px] uppercase font-bold text-slate-400 px-2 tracking-wider">
                 Color Filters
@@ -319,7 +305,7 @@ const MenuButton = ({ children, active, onClick }) => {
       className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all text-center ${
         active
           ? 'bg-gradient-to-r from-primary to-primary-light text-white shadow-md border-transparent scale-105'
-          : 'bg-gradient-to-r from-primary-dark to-primary text-white hover:from-primary hover:to-primary-light'
+          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700'
       }`}
     >
       {children}
