@@ -53,8 +53,11 @@ const buildFallbackSuggestion = ({ promptText, specificUniversity, topUniversiti
 
 exports.getQuestions = async (req, res) => {
   try {
-    const { category, universityId } = req.query;
+    const { category, universityId, limit } = req.query;
     const filter = {};
+    const normalizedLimit = Number.isFinite(Number(limit))
+      ? Math.min(Math.max(parseInt(limit, 10) || 0, 1), 20)
+      : null;
 
     if (category && category !== 'all') {
       filter.category = category;
@@ -64,10 +67,17 @@ exports.getQuestions = async (req, res) => {
       filter.universityId = universityId;
     }
 
-    const questions = await Question.find(filter)
+    let query = Question.find(filter)
       .populate('userId', 'name avatar')
       .sort({ createdAt: -1 });
 
+    if (normalizedLimit) {
+      query = query.limit(normalizedLimit);
+    }
+
+    const questions = await query;
+
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300');
     res.json({ success: true, data: questions });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

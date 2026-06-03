@@ -273,6 +273,7 @@ exports.getUniversities = async (req, res) => {
       ]);
     }
 
+    res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({
       success: true,
       data: universities,

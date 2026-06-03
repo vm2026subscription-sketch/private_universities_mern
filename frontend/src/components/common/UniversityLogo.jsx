@@ -42,8 +42,16 @@ export default function UniversityLogo({ logoUrl, name, className = "w-full h-fu
   const isInvalid = !logoUrl || logoUrl.includes('placeholder') || error;
 
   if (isInvalid) {
+    const gradient = getGradient(name);
+    const initials = getInitials(name);
+
     return (
-      <div className="w-full h-full bg-white dark:bg-dark-card rounded-xl select-none" />
+      <div
+        className={`w-full h-full rounded-xl select-none bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black tracking-wide`}
+        aria-label={name || 'University logo placeholder'}
+      >
+        <span className="text-lg md:text-xl">{initials}</span>
+      </div>
     );
   }
 
@@ -52,6 +60,8 @@ export default function UniversityLogo({ logoUrl, name, className = "w-full h-fu
       src={logoUrl} 
       alt={name} 
       className={className} 
+      loading="lazy"
+      decoding="async"
       onError={() => setError(true)} 
     />
   );

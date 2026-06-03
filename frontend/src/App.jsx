@@ -1,11 +1,10 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { AiChatProvider } from './context/AiChatContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import AiChatWidget from './components/common/AiChatWidget';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
@@ -49,12 +48,39 @@ const NotificationsManager = lazy(() => import('./pages/admin/NotificationsManag
 const NewsletterManager = lazy(() => import('./pages/admin/NewsletterManager'));
 const SiteSettingsManager = lazy(() => import('./pages/admin/SiteSettingsManager'));
 const AuditLogViewer = lazy(() => import('./pages/admin/AuditLogViewer'));
+const AiChatWidget = lazy(() => import('./components/common/AiChatWidget'));
 
 function PageLoader() {
   return (
     <div className="min-h-[50vh] flex items-center justify-center px-4">
       <div className="card p-6 text-sm text-light-muted dark:text-dark-muted">Loading page...</div>
     </div>
+  );
+}
+
+function DeferredAiChatWidget() {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const enableWidget = () => setEnabled(true);
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(enableWidget, { timeout: 2500 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = window.setTimeout(enableWidget, 1800);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  if (!enabled) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <AiChatWidget />
+    </Suspense>
   );
 }
 
@@ -94,7 +120,7 @@ function PublicLayout() {
       </Routes>
       <Footer />
       <MobileNav />
-      <AiChatWidget />
+      <DeferredAiChatWidget />
     </div>
   );
 }

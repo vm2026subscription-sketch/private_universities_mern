@@ -23,7 +23,8 @@ exports.getExams = async (req, res) => {
 
 exports.getUpcoming = async (req, res) => {
   try {
-    const exams = await Exam.find({ examDate: { $gte: new Date() } }).sort({ examDate: 1 }).limit(10);
+    const requestedLimit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 20);
+    const exams = await Exam.find({ examDate: { $gte: new Date() } }).sort({ examDate: 1 }).limit(requestedLimit);
     res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({ success: true, data: exams });
   } catch (error) {
