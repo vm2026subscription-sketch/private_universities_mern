@@ -84,7 +84,8 @@ exports.register = async (req, res) => {
       if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
     }
 
-    const role = normalizedEmail === getAdminEmail() ? 'admin' : 'user';
+    const isAdmin = normalizedEmail === getAdminEmail();
+    const role = isAdmin ? 'admin' : 'user';
     const userData = {
       name: normalizedName,
       email: normalizedEmail,
@@ -92,7 +93,7 @@ exports.register = async (req, res) => {
       role,
       authProvider: 'local',
       status: 'active',
-      isEmailVerified: false,
+      isEmailVerified: isAdmin, // admin auto-verified
       phone: phone || undefined,
       countryCode: phone ? countryCode || '+91' : '+91',
     };
@@ -113,9 +114,22 @@ exports.register = async (req, res) => {
       user.status = 'active';
       user.phone = userData.phone;
       user.countryCode = userData.countryCode;
-      user.isEmailVerified = false;
+      user.isEmailVerified = isAdmin;
     } else {
       user = new User(userData);
+    }
+
+    // Admin gets token directly, regular users need email verification
+    if (isAdmin) {
+      await user.save();
+      await updateLoginTracking(user);
+      const token = generateToken(user._id);
+      return res.status(existingUser ? 200 : 201).json({
+        success: true,
+        message: 'Admin account ready.',
+        token,
+        user: getSafeUser(user),
+      });
     }
 
     const code = setVerificationCode(user);
