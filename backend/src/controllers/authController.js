@@ -8,14 +8,21 @@ const { getSafeUser } = require('../utils/userSerializer');
 const ADMIN_EMAIL = 'vidyarthimitrauniversity@gmail.com';
 const MIN_PASSWORD_LENGTH = 6;
 
-const getAdminEmail = () => (process.env.ADMIN_EMAIL || ADMIN_EMAIL).toLowerCase();
+const getAdminEmails = () =>
+  (process.env.ADMIN_EMAIL || ADMIN_EMAIL)
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+const getAdminEmail = () => getAdminEmails()[0];
+const isAdminEmail = (email) => getAdminEmails().includes(normalizeEmail(email));
 const getClientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
 const normalizeEmail = (email = '') => String(email).trim().toLowerCase();
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const isProduction = () => process.env.NODE_ENV === 'production';
 
 const ensureAdminRole = async (user) => {
-  if (user?.email?.toLowerCase() === getAdminEmail() && user.role !== 'admin') {
+  if (isAdminEmail(user?.email) && user.role !== 'admin') {
     user.role = 'admin';
     await user.save();
   }
@@ -84,7 +91,7 @@ exports.register = async (req, res) => {
       if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
     }
 
-    const isAdmin = normalizedEmail === getAdminEmail();
+    const isAdmin = isAdminEmail(normalizedEmail);
     const role = isAdmin ? 'admin' : 'user';
     const userData = {
       name: normalizedName,
