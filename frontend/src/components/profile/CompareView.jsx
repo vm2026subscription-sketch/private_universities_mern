@@ -2,6 +2,12 @@ import { GitCompare, X, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getUniversityDisplayType } from '../../utils/universityType';
 
+const formatMetric = (numericValue, labelValue, suffix = '') => {
+  if (labelValue) return suffix ? `${labelValue} ${suffix}` : labelValue;
+  if (!numericValue && numericValue !== 0) return 'N/A';
+  return suffix ? `${numericValue} ${suffix}` : String(numericValue);
+};
+
 export default function CompareView({ compareList, onRemove }) {
   if (compareList.length === 0) {
     return (
@@ -30,21 +36,21 @@ export default function CompareView({ compareList, onRemove }) {
     },
     {
       label: 'Avg Package',
-      formatter: (university) => university.stats?.avgPackageLPA ? `Rs. ${university.stats.avgPackageLPA} LPA` : 'N/A',
+      formatter: (university) => university.stats?.avgPackageLPALabel ? `Rs. ${university.stats.avgPackageLPALabel} LPA` : university.stats?.avgPackageLPA ? `Rs. ${university.stats.avgPackageLPA} LPA` : 'N/A',
       type: 'number',
       getValue: (university) => university.stats?.avgPackageLPA || 0,
       highIsBetter: true,
     },
     {
       label: 'Campus Size',
-      formatter: (university) => university.stats?.campusSizeAcres ? `${university.stats.campusSizeAcres} Acres` : 'N/A',
+      formatter: (university) => formatMetric(university.stats?.campusSizeAcres, university.stats?.campusSizeLabel, 'Acres'),
       type: 'number',
       getValue: (university) => university.stats?.campusSizeAcres || 0,
       highIsBetter: true,
     },
     {
       label: 'Placement',
-      formatter: (university) => university.stats?.placementPercentage ? `${university.stats.placementPercentage}%` : 'N/A',
+      formatter: (university) => formatMetric(university.stats?.placementPercentage, university.stats?.placementPercentageLabel, '%'),
       type: 'number',
       getValue: (university) => university.stats?.placementPercentage || 0,
       highIsBetter: true,

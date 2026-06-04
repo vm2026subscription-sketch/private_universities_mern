@@ -18,8 +18,13 @@ const emptyForm = () => ({
   entranceExamsText: '',
 });
 
-const num = (value) => (value === '' ? undefined : Number(value));
 const splitLines = (value) => String(value || '').split('\n').map((item) => item.trim()).filter(Boolean);
+const toPayloadValue = (value) => {
+  const normalized = String(value || '').trim();
+  return normalized ? normalized : undefined;
+};
+const getDisplayMetricValue = (labelValue, numericValue) => labelValue || (numericValue ?? '');
+const RANGE_FIELD_HELP = 'Single value or range both work. Example: 60, 60-120, 120000-180000';
 
 const STREAM_OPTIONS = ['Engineering', 'Medical', 'Management', 'Law', 'Design', 'Science', 'Commerce', 'Arts', 'Education', 'Agriculture', 'Hospitality', 'IT', 'Other'];
 const LEVEL_OPTIONS = ['UG', 'PG', 'Diploma', 'PhD'];
@@ -51,9 +56,9 @@ export default function CoursesManager() {
         category: form.category,
         baseCourse: form.baseCourse,
         specializationName: form.specializationName || undefined,
-        duration: num(form.duration),
-        totalSeats: num(form.totalSeats),
-        feesPerYear: num(form.feesPerYear),
+        duration: toPayloadValue(form.duration),
+        totalSeats: toPayloadValue(form.totalSeats),
+        feesPerYear: toPayloadValue(form.feesPerYear),
         eligibility: form.eligibility || undefined,
         entranceExams: splitLines(form.entranceExamsText),
       };
@@ -83,8 +88,8 @@ export default function CoursesManager() {
       baseCourse: course.baseCourse || course.name || '',
       specializationName: course.specializationName || '',
       duration: course.duration || '',
-      totalSeats: course.totalSeats || '',
-      feesPerYear: course.feesPerYear || '',
+      totalSeats: getDisplayMetricValue(course.totalSeatsLabel, course.totalSeats),
+      feesPerYear: getDisplayMetricValue(course.feesPerYearLabel, course.feesPerYear),
       eligibility: course.eligibility || '',
       entranceExamsText: (course.entranceExams || []).join('\n'),
     });
@@ -142,13 +147,19 @@ export default function CoursesManager() {
               <TextInput value={form.specializationName} onChange={(event) => upd('specializationName', event.target.value)} placeholder="Optional" />
             </FormField>
             <FormField label="Duration (years)">
-              <TextInput type="number" value={form.duration} onChange={(event) => upd('duration', event.target.value)} />
+              <TextInput value={form.duration} onChange={(event) => upd('duration', event.target.value)} placeholder="e.g. 3" />
             </FormField>
             <FormField label="Total Seats">
-              <TextInput type="number" value={form.totalSeats} onChange={(event) => upd('totalSeats', event.target.value)} />
+              <div className="space-y-2">
+                <TextInput value={form.totalSeats} onChange={(event) => upd('totalSeats', event.target.value)} placeholder="e.g. 60 or 60-120" />
+                <p className="text-xs text-light-muted dark:text-dark-muted">{RANGE_FIELD_HELP}</p>
+              </div>
             </FormField>
             <FormField label="Fees Per Year">
-              <TextInput type="number" value={form.feesPerYear} onChange={(event) => upd('feesPerYear', event.target.value)} />
+              <div className="space-y-2">
+                <TextInput value={form.feesPerYear} onChange={(event) => upd('feesPerYear', event.target.value)} placeholder="e.g. 120000 or 120000-180000" />
+                <p className="text-xs text-light-muted dark:text-dark-muted">{RANGE_FIELD_HELP}</p>
+              </div>
             </FormField>
           </div>
           <FormField label="Eligibility">
@@ -170,7 +181,11 @@ export default function CoursesManager() {
           { key: 'category', label: 'Level', render: (course) => <span className="badge badge-orange">{course.category || 'UG'}</span> },
           { key: 'universityId', label: 'University', render: (course) => course.universityId?.name || '-' },
           { key: 'duration', label: 'Duration', render: (course) => course.duration ? `${course.duration} yr` : '-' },
-          { key: 'feesPerYear', label: 'Fees/Year', render: (course) => course.feesPerYear ? `INR ${course.feesPerYear.toLocaleString()}` : '-' },
+          {
+            key: 'feesPerYear',
+            label: 'Fees/Year',
+            render: (course) => course.feesPerYearLabel || (course.feesPerYear ? `INR ${course.feesPerYear.toLocaleString()}` : '-'),
+          },
         ]}
         searchFields={['name', 'baseCourse', 'specializationName', 'stream', 'category', 'universityId.name']}
         searchPlaceholder="Search courses..."

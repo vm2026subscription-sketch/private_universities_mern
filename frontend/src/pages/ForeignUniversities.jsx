@@ -348,7 +348,7 @@ export default function ForeignUniversities() {
                             <Award className="w-4 h-4 text-primary" />
                             Avg Package
                           </div>
-                          <div className="text-lg font-black text-slate-900 dark:text-white">{university.stats?.avgPackageLPA ? `INR ${university.stats.avgPackageLPA} LPA` : 'N/A'}</div>
+                          <div className="text-lg font-black text-slate-900 dark:text-white">{university.stats?.avgPackageLPALabel ? `INR ${university.stats.avgPackageLPALabel} LPA` : university.stats?.avgPackageLPA ? `INR ${university.stats.avgPackageLPA} LPA` : 'N/A'}</div>
                         </div>
                         <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4 border border-slate-100 dark:border-white/5">
                           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
@@ -384,10 +384,10 @@ export default function ForeignUniversities() {
                                       {course.duration} yrs
                                     </span>
                                   )}
-                                  {course.feesPerYear ? (
+                                  {(course.feesPerYearLabel || course.feesPerYear) ? (
                                     <span className="flex items-center gap-1">
                                       <IndianRupee className="w-3.5 h-3.5" />
-                                      {course.feesPerYear.toLocaleString('en-IN')}/yr
+                                      {course.feesPerYearLabel || course.feesPerYear.toLocaleString('en-IN')}/yr
                                     </span>
                                   ) : null}
                                 </div>

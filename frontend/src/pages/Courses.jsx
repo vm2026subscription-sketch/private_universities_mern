@@ -23,6 +23,16 @@ const STREAMS_CACHE_KEY = 'vm_course_streams_v1';
 const STREAMS_CACHE_TTL_MS = 10 * 60 * 1000;
 const COURSE_RESULTS_CACHE_TTL_MS = 10 * 60 * 1000;
 const getCourseResultsCacheKey = (suffix) => `vm_course_results_${suffix}`;
+const formatCourseFee = (course) => {
+  if (course?.feesPerYearLabel) return `Rs ${course.feesPerYearLabel}`;
+  if (course?.feesPerYear) return `Rs ${Number(course.feesPerYear).toLocaleString('en-IN')}`;
+  return '-';
+};
+const formatCourseSeats = (course) => course?.totalSeatsLabel || course?.totalSeats || '-';
+const formatEligibility = (value) => {
+  if (!value) return '-';
+  return value.length > 30 ? `${value.substring(0, 30)}...` : value;
+};
 
 export default function Courses() {
   const navigate = useNavigate();
@@ -619,10 +629,10 @@ export default function Courses() {
                             {/* Stats row */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 border-y border-light-border/60 dark:border-dark-border/60">
                               {[
-                                { label: 'Duration', value: item.duration ? `${item.duration} Yrs` : '—' },
-                                { label: 'Fees / Year', value: item.feesPerYear ? `₹${Number(item.feesPerYear).toLocaleString('en-IN')}` : '—' },
-                                { label: 'Total Seats', value: item.totalSeats || '—' },
-                                { label: 'Eligibility', value: item.eligibility ? item.eligibility.substring(0, 30) + (item.eligibility.length > 30 ? '…' : '') : '—' },
+                                { label: 'Duration', value: item.duration ? `${item.duration} Yrs` : '-' },
+                                { label: 'Fees / Year', value: formatCourseFee(item) },
+                                { label: 'Total Seats', value: formatCourseSeats(item) },
+                                { label: 'Eligibility', value: formatEligibility(item.eligibility) },
                               ].map(stat => (
                                 <div key={stat.label} className="flex flex-col">
                                   <span className="text-[9px] font-black uppercase tracking-[0.15em] text-light-muted dark:text-dark-muted">{stat.label}</span>

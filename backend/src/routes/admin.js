@@ -27,6 +27,7 @@ router.delete('/questions/:id', adminCtrl.deleteQuestion);
 
 // Universities (existing)
 router.post('/universities', adminCtrl.createUniversity);
+router.post('/universities/:id/duplicate', adminCtrl.duplicateUniversity);
 router.put('/universities/:id', adminCtrl.updateUniversity);
 router.delete('/universities/:id', adminCtrl.deleteUniversity);
 

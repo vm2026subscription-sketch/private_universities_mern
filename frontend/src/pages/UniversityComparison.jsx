@@ -587,7 +587,7 @@ export default function UniversityComparison() {
                                   </p>
                                 </div>
                                 <div className="text-right">
-                                   <p className="font-black text-sm text-primary">{course.feesPerYear ? `₹${(course.feesPerYear/100000).toFixed(1)}L` : 'N/A'}</p>
+                                   <p className="font-black text-sm text-primary">{course.feesPerYearLabel ? `₹${course.feesPerYearLabel}` : course.feesPerYear ? `₹${(course.feesPerYear/100000).toFixed(1)}L` : 'N/A'}</p>
                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Per Year</p>
                                 </div>
                               </div>

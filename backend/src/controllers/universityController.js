@@ -6,6 +6,12 @@ const { escapeRegExp } = require('../utils/regex');
 const { getDisplayUniversityType, normalizeUniversityClassification } = require('../utils/universityClassification');
 
 const uniq = (items) => [...new Set(items.filter(Boolean))];
+const PUBLISHED_UNIVERSITY_FILTER = {
+  $or: [
+    { status: 'published' },
+    { status: { $exists: false } },
+  ],
+};
 
 const collectCourseFees = (courses = []) => {
   const fees = courses.flatMap((course) => {
@@ -41,10 +47,15 @@ const buildComparisonProfile = (university) => {
       .map(([approval]) => approval.toUpperCase()),
     stats: {
       totalStudents: university.stats?.totalStudents || null,
+      totalStudentsLabel: university.stats?.totalStudentsLabel || null,
       campusSizeAcres: university.stats?.campusSizeAcres || null,
+      campusSizeLabel: university.stats?.campusSizeLabel || null,
       avgPackageLPA: university.stats?.avgPackageLPA || null,
+      avgPackageLPALabel: university.stats?.avgPackageLPALabel || null,
       highestPackageLPA: university.stats?.highestPackageLPA || null,
+      highestPackageLPALabel: university.stats?.highestPackageLPALabel || null,
       placementPercentage: university.stats?.placementPercentage || null,
+      placementPercentageLabel: university.stats?.placementPercentageLabel || null,
     },
     topRecruiters: (university.topRecruiters || []).slice(0, 8),
     facilities: (university.facilities || []).slice(0, 10),
@@ -60,8 +71,10 @@ const buildComparisonProfile = (university) => {
       category: course.category,
       duration: course.duration || null,
       feesPerYear: course.feesPerYear || null,
+      feesPerYearLabel: course.feesPerYearLabel || null,
       entranceExams: course.entranceExams || [],
       totalSeats: course.totalSeats || null,
+      totalSeatsLabel: course.totalSeatsLabel || null,
     })),
   };
 };
@@ -176,7 +189,7 @@ exports.getUniversities = async (req, res) => {
     
     const requestedType = String(type || '').trim().toLowerCase();
     const segmentFilter = buildSegmentFilter(requestedType);
-    filter.$and = [...(filter.$and || []), segmentFilter];
+    filter.$and = [...(filter.$and || []), PUBLISHED_UNIVERSITY_FILTER, segmentFilter];
     
     if (naacGrade) filter.naacGrade = { $in: naacGrade.split(',').map((item) => item.trim()).filter(Boolean) };
     if (nirfRank) {
@@ -289,10 +302,10 @@ exports.getUniversities = async (req, res) => {
 exports.getUniversity = async (req, res) => {
   try {
     const { id } = req.params;
-    let university = await University.findOne({ slug: id }).populate('courses');
+    let university = await University.findOne({ slug: id, ...PUBLISHED_UNIVERSITY_FILTER }).populate('courses');
     
     if (!university && mongoose.Types.ObjectId.isValid(id)) {
-      university = await University.findById(id).populate('courses');
+      university = await University.findOne({ _id: id, ...PUBLISHED_UNIVERSITY_FILTER }).populate('courses');
     }
     
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
@@ -370,7 +383,7 @@ exports.searchUniversities = async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.json({ success: true, data: [] });
-    const universities = await University.find({ $text: { $search: q } }, { score: { $meta: 'textScore' } }).sort({ score: { $meta: 'textScore' } }).limit(10).select('name city state type slug logoUrl');
+    const universities = await University.find({ $and: [{ $text: { $search: q } }, PUBLISHED_UNIVERSITY_FILTER] }, { score: { $meta: 'textScore' } }).sort({ score: { $meta: 'textScore' } }).limit(10).select('name city state type slug logoUrl');
     res.json({ success: true, data: universities });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -385,7 +398,7 @@ exports.compareUniversities = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please select at least 2 universities to compare' });
     }
 
-    const universities = await University.find({ _id: { $in: requestedIds } }).populate('courses');
+    const universities = await University.find({ _id: { $in: requestedIds }, ...PUBLISHED_UNIVERSITY_FILTER }).populate('courses');
     const orderedUniversities = requestedIds
       .map((id) => universities.find((university) => university._id.toString() === id))
       .filter(Boolean);
@@ -433,9 +446,14 @@ exports.compareUniversities = async (req, res) => {
 exports.getTrends = async (req, res) => {
   try {
     const popularUniversities = await University.find({
-      $or: [
-        { segment: 'normal' },
-        { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
+      $and: [
+        PUBLISHED_UNIVERSITY_FILTER,
+        {
+          $or: [
+            { segment: 'normal' },
+            { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
+          ],
+        },
       ],
     }).sort({ views: -1 }).limit(6).select('name slug views logoUrl city state segment institutionKind type');
     const trendingCourses = await Course.aggregate([
@@ -455,13 +473,14 @@ const recommender = require('../utils/recommender');
 exports.getSimilarUniversities = async (req, res) => {
   try {
     const { id } = req.params;
-    const university = await University.findById(id);
+    const university = await University.findOne({ _id: id, ...PUBLISHED_UNIVERSITY_FILTER });
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
     const classification = normalizeUniversityClassification(university);
 
     // Fetch pool of potential similar universities
     let pool = await University.find({
       _id: { $ne: university._id },
+      ...PUBLISHED_UNIVERSITY_FILTER,
       ...(classification.segment === 'normal'
         ? {
             $or: [
@@ -481,6 +500,7 @@ exports.getSimilarUniversities = async (req, res) => {
     if (pool.length < 4) {
       const statePool = await University.find({
         _id: { $ne: university._id },
+        ...PUBLISHED_UNIVERSITY_FILTER,
         state: university.state,
         ...(classification.segment === 'normal'
           ? {
@@ -502,7 +522,8 @@ exports.getSimilarUniversities = async (req, res) => {
     // Still small? Add any universities
     if (pool.length < 4) {
       const generalPool = await University.find({
-        _id: { $ne: university._id, $nin: pool.map(p => p._id) }
+        _id: { $ne: university._id, $nin: pool.map(p => p._id) },
+        ...PUBLISHED_UNIVERSITY_FILTER,
       }).limit(20);
       pool = [...pool, ...generalPool];
     }
