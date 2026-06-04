@@ -19,9 +19,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      setOtpSent(true);
-      toast.success('OTP sent to your email');
+      const data = await login(email, password);
+      if (data.token) {
+        // Admin direct login — no OTP needed
+        toast.success('Login successful');
+        navigate('/');
+      } else {
+        setOtpSent(true);
+        toast.success('OTP sent to your email');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {
