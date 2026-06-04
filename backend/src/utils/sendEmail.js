@@ -6,7 +6,23 @@ const hasResendConfig = () => Boolean(process.env.RESEND_API_KEY);
 const hasSmtpConfig = () => Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 const getResendFrom = () => process.env.RESEND_FROM || DEFAULT_RESEND_FROM;
 const isResendTestSender = (fromAddress) => /onboarding@resend\.dev/i.test(fromAddress || '');
-const isProduction = () => process.env.NODE_ENV === 'production';
+const normalizeAddress = (value) => String(value || '').trim().toLowerCase();
+const getAdminEmails = () =>
+  String(process.env.ADMIN_EMAIL || '')
+    .split(',')
+    .map(normalizeAddress)
+    .filter(Boolean);
+const getAllowedResendTestRecipients = () =>
+  [...new Set([normalizeAddress(process.env.SMTP_USER), ...getAdminEmails()])].filter(Boolean);
+const canUseResendTestSender = (toAddress) =>
+  getAllowedResendTestRecipients().includes(normalizeAddress(toAddress));
+const getSmtpPassword = () => {
+  const rawPassword = String(process.env.SMTP_PASS || '');
+  if (/smtp\.gmail\.com/i.test(process.env.SMTP_HOST || '')) {
+    return rawPassword.replace(/\s+/g, '');
+  }
+  return rawPassword;
+};
 
 let smtpTransporter = null;
 
@@ -19,7 +35,7 @@ const getSmtpTransporter = () => {
     secure: String(process.env.SMTP_PORT) === '465',
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      pass: getSmtpPassword(),
     },
   });
 
@@ -50,7 +66,7 @@ const sendEmail = async ({ to, subject, html }) => {
   const resendErrors = [];
 
   if (hasResendConfig()) {
-    const usingBlockedTestSender = isProduction() && isResendTestSender(resendFrom);
+    const usingBlockedTestSender = isResendTestSender(resendFrom) && !canUseResendTestSender(to);
 
     if (!usingBlockedTestSender) {
       try {
@@ -61,7 +77,7 @@ const sendEmail = async ({ to, subject, html }) => {
       }
     } else {
       resendErrors.push(
-        'Resend is configured with the default onboarding sender, which cannot send production emails to arbitrary recipients.'
+        'Resend is configured with the default onboarding sender, which can only deliver to approved test inboxes.'
       );
     }
   }
