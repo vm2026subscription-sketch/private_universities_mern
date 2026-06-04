@@ -455,3 +455,151 @@ exports.deleteNews = async (req, res) => {
   }
 };
 
+exports.bulkImportUniversities = async (req, res) => {
+  try {
+    const list = Array.isArray(req.body) ? req.body : req.body.universities;
+    if (!Array.isArray(list)) {
+      return res.status(400).json({ success: false, message: 'Invalid data format. Expected an array of universities.' });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (const item of list) {
+      try {
+        const { payload, courses, hasCoursesField } = sanitizeUniversityPayload(item);
+        if (!payload.name || !payload.state || !payload.city) {
+          errors.push({ item, error: 'Name, state, and city are required.' });
+          continue;
+        }
+
+        let university;
+        if (payload.universityCode) {
+          university = await University.findOne({ universityCode: payload.universityCode.toUpperCase() });
+        }
+        if (!university) {
+          university = await University.findOne({ name: payload.name });
+        }
+
+        if (university) {
+          payload.slug = await buildUniqueSlug({
+            model: University,
+            value: payload.name,
+            currentId: university._id,
+            fallback: 'university',
+          });
+          const updated = await University.findByIdAndUpdate(university._id, payload, { new: true, runValidators: true });
+          if (hasCoursesField) {
+            await syncUniversityCourses(updated, courses);
+          }
+          results.push(updated);
+        } else {
+          payload.slug = await buildUniqueSlug({
+            model: University,
+            value: payload.name,
+            fallback: 'university',
+          });
+          const created = await University.create(payload);
+          if (hasCoursesField) {
+            await syncUniversityCourses(created, courses);
+          }
+          results.push(created);
+        }
+      } catch (err) {
+        errors.push({ item, error: err.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk import completed: ${results.length} succeeded, ${errors.length} failed.`,
+      succeededCount: results.length,
+      failedCount: errors.length,
+      errors
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.bulkImportCourses = async (req, res) => {
+  try {
+    const list = Array.isArray(req.body) ? req.body : req.body.courses;
+    if (!Array.isArray(list)) {
+      return res.status(400).json({ success: false, message: 'Invalid data format. Expected an array of courses.' });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (const item of list) {
+      try {
+        let universityId = item.universityId;
+        if (!universityId && item.universityName) {
+          const uni = await University.findOne({ name: item.universityName });
+          if (uni) {
+            universityId = uni._id;
+          }
+        }
+
+        if (!universityId) {
+          errors.push({ item, error: 'University not found or not specified.' });
+          continue;
+        }
+
+        const payload = sanitizeCoursePayload(item, universityId);
+        if (!payload) {
+          errors.push({ item, error: 'Course base name is required.' });
+          continue;
+        }
+
+        let course = await Course.findOne({ universityId, name: payload.name });
+
+        if (course) {
+          payload.slug = await buildUniqueSlug({
+            model: Course,
+            value: payload.name,
+            currentId: course._id,
+            fallback: 'course',
+          });
+          const updated = await Course.findByIdAndUpdate(course._id, payload, { new: true, runValidators: true });
+          results.push(updated);
+        } else {
+          payload.slug = await buildUniqueSlug({
+            model: Course,
+            value: payload.name,
+            fallback: 'course',
+          });
+          const created = await Course.create(payload);
+          const university = await University.findByIdAndUpdate(
+            universityId,
+            { $addToSet: { courses: created._id } },
+            { new: true }
+          );
+          if (university) {
+            university.stats = {
+              ...(university.stats || {}),
+              totalCoursesCount: (university.courses || []).length,
+            };
+            await university.save();
+          }
+          results.push(created);
+        }
+      } catch (err) {
+        errors.push({ item, error: err.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk import completed: ${results.length} succeeded, ${errors.length} failed.`,
+      succeededCount: results.length,
+      failedCount: errors.length,
+      errors
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+

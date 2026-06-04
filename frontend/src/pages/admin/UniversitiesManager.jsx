@@ -10,11 +10,52 @@ import {
   ShieldCheck,
   BookOpen,
   X,
+  Copy,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, CheckboxField, FormActions } from './components/FormFields';
+
+const STATE_OPTIONS = [
+  { value: '', label: 'Select State' },
+  { value: 'Andhra Pradesh', label: 'Andhra Pradesh' },
+  { value: 'Arunachal Pradesh', label: 'Arunachal Pradesh' },
+  { value: 'Assam', label: 'Assam' },
+  { value: 'Bihar', label: 'Bihar' },
+  { value: 'Chhattisgarh', label: 'Chhattisgarh' },
+  { value: 'Goa', label: 'Goa' },
+  { value: 'Gujarat', label: 'Gujarat' },
+  { value: 'Haryana', label: 'Haryana' },
+  { value: 'Himachal Pradesh', label: 'Himachal Pradesh' },
+  { value: 'Jharkhand', label: 'Jharkhand' },
+  { value: 'Karnataka', label: 'Karnataka' },
+  { value: 'Kerala', label: 'Kerala' },
+  { value: 'Madhya Pradesh', label: 'Madhya Pradesh' },
+  { value: 'Maharashtra', label: 'Maharashtra' },
+  { value: 'Manipur', label: 'Manipur' },
+  { value: 'Meghalaya', label: 'Meghalaya' },
+  { value: 'Mizoram', label: 'Mizoram' },
+  { value: 'Nagaland', label: 'Nagaland' },
+  { value: 'Odisha', label: 'Odisha' },
+  { value: 'Punjab', label: 'Punjab' },
+  { value: 'Rajasthan', label: 'Rajasthan' },
+  { value: 'Sikkim', label: 'Sikkim' },
+  { value: 'Tamil Nadu', label: 'Tamil Nadu' },
+  { value: 'Telangana', label: 'Telangana' },
+  { value: 'Tripura', label: 'Tripura' },
+  { value: 'Uttar Pradesh', label: 'Uttar Pradesh' },
+  { value: 'Uttarakhand', label: 'Uttarakhand' },
+  { value: 'West Bengal', label: 'West Bengal' },
+  { value: 'Andaman and Nicobar Islands', label: 'Andaman and Nicobar Islands' },
+  { value: 'Chandigarh', label: 'Chandigarh' },
+  { value: 'Dadra and Nagar Haveli and Daman and Diu', label: 'Dadra and Nagar Haveli and Daman and Diu' },
+  { value: 'Delhi', label: 'Delhi' },
+  { value: 'Jammu and Kashmir', label: 'Jammu and Kashmir' },
+  { value: 'Ladakh', label: 'Ladakh' },
+  { value: 'Lakshadweep', label: 'Lakshadweep' },
+  { value: 'Puducherry', label: 'Puducherry' }
+];
 
 const SEGMENT_OPTIONS = [
   { value: 'normal', label: 'Normal' },
@@ -149,6 +190,7 @@ export default function UniversitiesManager() {
   const [saving, setSaving] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [selectedIds, setSelectedIds] = useState([]);
+  const [activeFormTab, setActiveFormTab] = useState('general');
 
   const load = async () => {
     setLoading(true);
@@ -182,9 +224,9 @@ export default function UniversitiesManager() {
   const updCourse = (index, field, value) => {
     setForm((prev) => ({
       ...prev,
-      courses: prev.courses.map((course, courseIndex) => (
+      courses: prev.courses.map((course, courseIndex) =>
         courseIndex === index ? { ...course, [field]: value } : course
-      )),
+      ),
     }));
   };
 
@@ -203,6 +245,24 @@ export default function UniversitiesManager() {
     setForm(emptyForm());
     setEditId(null);
     setShowForm(false);
+    setActiveFormTab('general');
+  };
+
+  const cloneCourse = (index) => {
+    setForm((prev) => {
+      const courseToCopy = prev.courses[index];
+      const cloned = {
+        ...courseToCopy,
+        _id: '',
+      };
+      const updatedCourses = [...prev.courses];
+      updatedCourses.splice(index + 1, 0, cloned);
+      return {
+        ...prev,
+        courses: updatedCourses,
+      };
+    });
+    toast.success(`Course #${index + 1} cloned successfully`);
   };
 
   const save = async (event) => {
@@ -337,6 +397,7 @@ export default function UniversitiesManager() {
     });
     setEditId(university._id);
     setShowForm(true);
+    setActiveFormTab('general');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -497,226 +558,324 @@ export default function UniversitiesManager() {
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-4">
-            <FormField label="University Code">
-              <TextInput value={form.universityCode} onChange={(event) => upd('universityCode', event.target.value)} placeholder="e.g. AMITY_NDA" />
-            </FormField>
-            <FormField label="University Name *" className="md:col-span-2">
-              <TextInput value={form.name} onChange={(event) => upd('name', event.target.value)} required />
-            </FormField>
-            <FormField label="University Segment">
-              <SelectInput
-                value={form.segment}
-                onChange={(event) => upd('segment', event.target.value)}
-                options={SEGMENT_OPTIONS}
-              />
-            </FormField>
-            {form.segment === 'normal' && (
-              <FormField label="Normal University Type">
-                <SelectInput
-                  value={form.institutionKind}
-                  onChange={(event) => upd('institutionKind', event.target.value)}
-                  options={INSTITUTION_KIND_OPTIONS}
-                />
-              </FormField>
-            )}
-            <FormField label="State *">
-              <TextInput value={form.state} onChange={(event) => upd('state', event.target.value)} required />
-            </FormField>
-            <FormField label="City *">
-              <TextInput value={form.city} onChange={(event) => upd('city', event.target.value)} required />
-            </FormField>
-            <FormField label="Established Year">
-              <TextInput type="number" value={form.establishedYear} onChange={(event) => upd('establishedYear', event.target.value)} />
-            </FormField>
-            <FormField label="NAAC Grade">
-              <TextInput value={form.naacGrade} onChange={(event) => upd('naacGrade', event.target.value)} placeholder="A++, A+, A, B++" />
-            </FormField>
-            <FormField label="NIRF Rank">
-              <TextInput type="number" value={form.nirfRank} onChange={(event) => upd('nirfRank', event.target.value)} />
-            </FormField>
-            <FormField label="Website">
-              <TextInput value={form.website} onChange={(event) => upd('website', event.target.value)} placeholder="https://example.edu" />
-            </FormField>
-            <FormField label="Logo URL">
-              <TextInput value={form.logoUrl} onChange={(event) => upd('logoUrl', event.target.value)} />
-            </FormField>
-            <FormField label="Banner Image URL">
-              <TextInput value={form.bannerImageUrl} onChange={(event) => upd('bannerImageUrl', event.target.value)} />
-            </FormField>
-            <FormField label="Email">
-              <TextInput value={form.email} onChange={(event) => upd('email', event.target.value)} />
-            </FormField>
-            <FormField label="Phone">
-              <TextInput value={form.phone} onChange={(event) => upd('phone', event.target.value)} />
-            </FormField>
-          </div>
-
-          <FormField label="Description">
-            <TextArea value={form.description} onChange={(event) => upd('description', event.target.value)} className="min-h-[140px]" />
-          </FormField>
-
-          <FormField label="Address">
-            <TextInput value={form.address} onChange={(event) => upd('address', event.target.value)} />
-          </FormField>
-
-          <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
-            <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-4">
-              <p className="text-sm font-black text-light-text dark:text-dark-text">Approvals</p>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {Object.keys(form.approvals).map((key) => (
-                  <CheckboxField
-                    key={key}
-                    label={key.toUpperCase()}
-                    checked={form.approvals[key]}
-                    onChange={(event) => updNested('approvals', key, event.target.checked)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-4">
-              <p className="text-sm font-black text-light-text dark:text-dark-text">Stats</p>
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField label="Total Students">
-                  <TextInput type="number" value={form.stats.totalStudents} onChange={(event) => updNested('stats', 'totalStudents', event.target.value)} />
-                </FormField>
-                <FormField label="Campus Acres">
-                  <TextInput type="number" value={form.stats.campusSizeAcres} onChange={(event) => updNested('stats', 'campusSizeAcres', event.target.value)} />
-                </FormField>
-                <FormField label="Avg Package LPA">
-                  <TextInput type="number" step="0.1" value={form.stats.avgPackageLPA} onChange={(event) => updNested('stats', 'avgPackageLPA', event.target.value)} />
-                </FormField>
-                <FormField label="Highest Package LPA">
-                  <TextInput type="number" step="0.1" value={form.stats.highestPackageLPA} onChange={(event) => updNested('stats', 'highestPackageLPA', event.target.value)} />
-                </FormField>
-                <FormField label="Placement %">
-                  <TextInput type="number" value={form.stats.placementPercentage} onChange={(event) => updNested('stats', 'placementPercentage', event.target.value)} />
-                </FormField>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <FormField label="Highlights">
-              <TextArea value={form.highlightsText} onChange={(event) => upd('highlightsText', event.target.value)} />
-            </FormField>
-            <FormField label="Top Recruiters">
-              <TextArea value={form.topRecruitersText} onChange={(event) => upd('topRecruitersText', event.target.value)} />
-            </FormField>
-            <FormField label="Facilities">
-              <TextArea value={form.facilitiesText} onChange={(event) => upd('facilitiesText', event.target.value)} />
-            </FormField>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            {Object.keys(form.links).map((key) => (
-              <FormField key={key} label={key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase())}>
-                <TextInput value={form.links[key]} onChange={(event) => updNested('links', key, event.target.value)} />
-              </FormField>
+          {/* Form Tabs Navigation */}
+          <div className="flex flex-wrap border-b border-light-border dark:border-dark-border gap-2 pb-2">
+            {[
+              { id: 'general', label: '1. Basic Info' },
+              { id: 'media', label: '2. Details & Media' },
+              { id: 'stats', label: '3. Approvals & Stats' },
+              { id: 'highlights', label: '4. Highlights & Links' },
+              { id: 'courses', label: '5. Course Catalog (' + form.courses.length + ')' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveFormTab(tab.id)}
+                className={`px-4 py-2 text-xs font-black uppercase tracking-[0.18em] border-b-2 transition-all ${
+                  activeFormTab === tab.id
+                    ? 'border-primary text-primary font-bold'
+                    : 'border-transparent text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text'
+                }`}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
 
-          <div className="rounded-[2rem] border border-light-border dark:border-dark-border p-5 md:p-6 space-y-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h4 className="text-lg font-black text-light-text dark:text-dark-text flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-primary" />
-                  Courses Inside University
-                </h4>
-                <p className="text-sm text-light-muted dark:text-dark-muted">
-                  Build the hierarchy directly here: Stream -&gt; Base Course -&gt; Universities.
-                </p>
-              </div>
-              <button type="button" onClick={addCourse} className="btn-outline text-sm flex items-center gap-1.5">
-                <Plus className="w-4 h-4" />
-                Add Course
-              </button>
+          {/* Tab 1: General Info */}
+          <div className={activeFormTab === 'general' ? 'space-y-6' : 'hidden'}>
+            <div className="grid gap-6 md:grid-cols-4">
+              <FormField label="University Code">
+                <TextInput value={form.universityCode} onChange={(event) => upd('universityCode', event.target.value)} placeholder="e.g. AMITY_NDA" />
+              </FormField>
+              <FormField label="University Name *" className="md:col-span-2">
+                <TextInput value={form.name} onChange={(event) => upd('name', event.target.value)} required />
+              </FormField>
+              <FormField label="University Segment">
+                <SelectInput
+                  value={form.segment}
+                  onChange={(event) => upd('segment', event.target.value)}
+                  options={SEGMENT_OPTIONS}
+                />
+              </FormField>
+              {form.segment === 'normal' && (
+                <FormField label="Normal University Type">
+                  <SelectInput
+                    value={form.institutionKind}
+                    onChange={(event) => upd('institutionKind', event.target.value)}
+                    options={INSTITUTION_KIND_OPTIONS}
+                  />
+                </FormField>
+              )}
+              <FormField label="State *">
+                <SelectInput
+                  value={form.state}
+                  onChange={(event) => upd('state', event.target.value)}
+                  options={STATE_OPTIONS}
+                  required
+                />
+              </FormField>
+              <FormField label="City *">
+                <TextInput value={form.city} onChange={(event) => upd('city', event.target.value)} required />
+              </FormField>
+              <FormField label="Email">
+                <TextInput value={form.email} onChange={(event) => upd('email', event.target.value)} />
+              </FormField>
+              <FormField label="Phone">
+                <TextInput value={form.phone} onChange={(event) => upd('phone', event.target.value)} />
+              </FormField>
             </div>
 
-            <div className="space-y-4">
-              {form.courses.map((course, index) => (
-                <div key={`${course._id || 'new'}-${index}`} className="rounded-[1.5rem] border border-light-border dark:border-dark-border p-4 md:p-5 space-y-4 bg-light-card/30 dark:bg-dark-card/30">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-black text-light-text dark:text-dark-text">Course #{index + 1}</div>
-                    <button
-                      type="button"
-                      onClick={() => removeCourse(index)}
-                      className="rounded-xl p-2 text-light-muted hover:bg-red-50 hover:text-red-500"
-                      aria-label={`Remove course ${index + 1}`}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
+            <FormField label="Address">
+              <TextInput value={form.address} onChange={(event) => upd('address', event.target.value)} />
+            </FormField>
+          </div>
 
-                  <div className="grid gap-4 md:grid-cols-4">
-                    <FormField label="Stream">
-                      <SelectInput
-                        value={course.stream}
-                        onChange={(event) => updCourse(index, 'stream', event.target.value)}
-                        options={STREAM_OPTIONS.map((stream) => ({ value: stream, label: stream }))}
-                      />
-                    </FormField>
-                    <FormField label="Course Level">
-                      <SelectInput
-                        value={course.category}
-                        onChange={(event) => updCourse(index, 'category', event.target.value)}
-                        options={COURSE_LEVEL_OPTIONS}
-                      />
-                    </FormField>
-                    <FormField label="Base Course *">
-                      <TextInput
-                        value={course.baseCourse}
-                        onChange={(event) => updCourse(index, 'baseCourse', event.target.value)}
-                        placeholder="e.g. LLB"
-                        required
-                      />
-                    </FormField>
-                    <FormField label="Specialization">
-                      <TextInput
-                        value={course.specializationName}
-                        onChange={(event) => updCourse(index, 'specializationName', event.target.value)}
-                        placeholder="e.g. Corporate Law"
-                      />
-                    </FormField>
-                    <FormField label="Duration (Years)">
-                      <TextInput type="number" value={course.duration} onChange={(event) => updCourse(index, 'duration', event.target.value)} />
-                    </FormField>
-                    <FormField label="Total Seats">
-                      <TextInput type="number" value={course.totalSeats} onChange={(event) => updCourse(index, 'totalSeats', event.target.value)} />
-                    </FormField>
-                    <FormField label="Fees Per Year">
-                      <TextInput type="number" value={course.feesPerYear} onChange={(event) => updCourse(index, 'feesPerYear', event.target.value)} />
-                    </FormField>
-                    <FormField label="Entrance Exams">
-                      <TextArea
-                        value={course.entranceExamsText}
-                        onChange={(event) => updCourse(index, 'entranceExamsText', event.target.value)}
-                        className="min-h-[92px]"
-                        placeholder="One exam per line"
-                      />
-                    </FormField>
-                  </div>
+          {/* Tab 2: Details & Media */}
+          <div className={activeFormTab === 'media' ? 'space-y-6' : 'hidden'}>
+            <div className="grid gap-6 md:grid-cols-3">
+              <FormField label="Established Year">
+                <TextInput type="number" value={form.establishedYear} onChange={(event) => upd('establishedYear', event.target.value)} />
+              </FormField>
+              <FormField label="NAAC Grade">
+                <TextInput value={form.naacGrade} onChange={(event) => upd('naacGrade', event.target.value)} placeholder="A++, A+, A, B++" />
+              </FormField>
+              <FormField label="NIRF Rank">
+                <TextInput type="number" value={form.nirfRank} onChange={(event) => upd('nirfRank', event.target.value)} />
+              </FormField>
+              <FormField label="Website">
+                <TextInput value={form.website} onChange={(event) => upd('website', event.target.value)} placeholder="https://example.edu" />
+              </FormField>
+              <FormField label="Logo URL">
+                <TextInput value={form.logoUrl} onChange={(event) => upd('logoUrl', event.target.value)} />
+              </FormField>
+              <FormField label="Banner Image URL">
+                <TextInput value={form.bannerImageUrl} onChange={(event) => upd('bannerImageUrl', event.target.value)} />
+              </FormField>
+            </div>
 
-                  <FormField label="Eligibility">
-                    <TextArea
-                      value={course.eligibility}
-                      onChange={(event) => updCourse(index, 'eligibility', event.target.value)}
-                      className="min-h-[92px]"
-                      placeholder="e.g. 10+2 with 50% marks"
+            <FormField label="Description">
+              <TextArea value={form.description} onChange={(event) => upd('description', event.target.value)} className="min-h-[140px]" />
+            </FormField>
+          </div>
+
+          {/* Tab 3: Stats & Approvals */}
+          <div className={activeFormTab === 'stats' ? 'space-y-6' : 'hidden'}>
+            <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
+              <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-4">
+                <p className="text-sm font-black text-light-text dark:text-dark-text">Approvals</p>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {Object.keys(form.approvals).map((key) => (
+                    <CheckboxField
+                      key={key}
+                      label={key.toUpperCase()}
+                      checked={form.approvals[key]}
+                      onChange={(event) => updNested('approvals', key, event.target.checked)}
                     />
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-4">
+                <p className="text-sm font-black text-light-text dark:text-dark-text">Stats</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField label="Total Students">
+                    <TextInput type="number" value={form.stats.totalStudents} onChange={(event) => updNested('stats', 'totalStudents', event.target.value)} />
+                  </FormField>
+                  <FormField label="Campus Acres">
+                    <TextInput type="number" value={form.stats.campusSizeAcres} onChange={(event) => updNested('stats', 'campusSizeAcres', event.target.value)} />
+                  </FormField>
+                  <FormField label="Avg Package LPA">
+                    <TextInput type="number" step="0.1" value={form.stats.avgPackageLPA} onChange={(event) => updNested('stats', 'avgPackageLPA', event.target.value)} />
+                  </FormField>
+                  <FormField label="Highest Package LPA">
+                    <TextInput type="number" step="0.1" value={form.stats.highestPackageLPA} onChange={(event) => updNested('stats', 'highestPackageLPA', event.target.value)} />
+                  </FormField>
+                  <FormField label="Placement %">
+                    <TextInput type="number" value={form.stats.placementPercentage} onChange={(event) => updNested('stats', 'placementPercentage', event.target.value)} />
                   </FormField>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tab 4: Highlights & Links */}
+          <div className={activeFormTab === 'highlights' ? 'space-y-6' : 'hidden'}>
+            <div className="grid gap-4 md:grid-cols-3">
+              <FormField label="Highlights (one per line)">
+                <TextArea value={form.highlightsText} onChange={(event) => upd('highlightsText', event.target.value)} className="min-h-[120px]" />
+              </FormField>
+              <FormField label="Top Recruiters (one per line)">
+                <TextArea value={form.topRecruitersText} onChange={(event) => upd('topRecruitersText', event.target.value)} className="min-h-[120px]" />
+              </FormField>
+              <FormField label="Facilities (one per line)">
+                <TextArea value={form.facilitiesText} onChange={(event) => upd('facilitiesText', event.target.value)} className="min-h-[120px]" />
+              </FormField>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {Object.keys(form.links).map((key) => (
+                <FormField key={key} label={key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase())}>
+                  <TextInput value={form.links[key]} onChange={(event) => updNested('links', key, event.target.value)} />
+                </FormField>
               ))}
             </div>
           </div>
 
-          <FormActions
-            onCancel={resetEditor}
-            isEditing={!!editId}
-            loading={saving}
-            submitLabel="Create University"
-          />
+          {/* Tab 5: Courses */}
+          <div className={activeFormTab === 'courses' ? 'space-y-6' : 'hidden'}>
+            <div className="rounded-[2rem] border border-light-border dark:border-dark-border p-5 md:p-6 space-y-5">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h4 className="text-lg font-black text-light-text dark:text-dark-text flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    Courses Inside University
+                  </h4>
+                  <p className="text-sm text-light-muted dark:text-dark-muted">
+                    Build the hierarchy directly here: Stream -&gt; Base Course -&gt; Universities.
+                  </p>
+                </div>
+                <button type="button" onClick={addCourse} className="btn-outline text-sm flex items-center gap-1.5">
+                  <Plus className="w-4 h-4" />
+                  Add Course
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {form.courses.map((course, index) => (
+                  <div key={`${course._id || 'new'}-${index}`} className="rounded-[1.5rem] border border-light-border dark:border-dark-border p-4 md:p-5 space-y-4 bg-light-card/30 dark:bg-dark-card/30">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-black text-light-text dark:text-dark-text">Course #{index + 1}</div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => cloneCourse(index)}
+                          className="rounded-xl p-2 text-light-muted hover:bg-primary/10 hover:text-primary flex items-center gap-1 text-xs font-bold"
+                          title="Clone this course details"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          Clone
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeCourse(index)}
+                          className="rounded-xl p-2 text-light-muted hover:bg-red-50 hover:text-red-500"
+                          aria-label={`Remove course ${index + 1}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <FormField label="Stream">
+                        <SelectInput
+                          value={course.stream}
+                          onChange={(event) => updCourse(index, 'stream', event.target.value)}
+                          options={STREAM_OPTIONS.map((stream) => ({ value: stream, label: stream }))}
+                        />
+                      </FormField>
+                      <FormField label="Course Level">
+                        <SelectInput
+                          value={course.category}
+                          onChange={(event) => updCourse(index, 'category', event.target.value)}
+                          options={COURSE_LEVEL_OPTIONS}
+                        />
+                      </FormField>
+                      <FormField label="Base Course *">
+                        <TextInput
+                          value={course.baseCourse}
+                          onChange={(event) => updCourse(index, 'baseCourse', event.target.value)}
+                          placeholder="e.g. LLB"
+                          required
+                        />
+                      </FormField>
+                      <FormField label="Specialization">
+                        <TextInput
+                          value={course.specializationName}
+                          onChange={(event) => updCourse(index, 'specializationName', event.target.value)}
+                          placeholder="e.g. Corporate Law"
+                        />
+                      </FormField>
+                      <FormField label="Duration (Years)">
+                        <TextInput type="number" value={course.duration} onChange={(event) => updCourse(index, 'duration', event.target.value)} />
+                      </FormField>
+                      <FormField label="Total Seats">
+                        <TextInput type="number" value={course.totalSeats} onChange={(event) => updCourse(index, 'totalSeats', event.target.value)} />
+                      </FormField>
+                      <FormField label="Fees Per Year">
+                        <TextInput type="number" value={course.feesPerYear} onChange={(event) => updCourse(index, 'feesPerYear', event.target.value)} />
+                      </FormField>
+                      <FormField label="Entrance Exams">
+                        <TextArea
+                          value={course.entranceExamsText}
+                          onChange={(event) => updCourse(index, 'entranceExamsText', event.target.value)}
+                          className="min-h-[92px]"
+                          placeholder="One exam per line"
+                        />
+                      </FormField>
+                    </div>
+
+                    <FormField label="Eligibility">
+                      <TextArea
+                        value={course.eligibility}
+                        onChange={(event) => updCourse(index, 'eligibility', event.target.value)}
+                        className="min-h-[92px]"
+                        placeholder="e.g. 10+2 with 50% marks"
+                      />
+                    </FormField>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Form Wizard Navigation Buttons & Submit Actions */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-light-border dark:border-dark-border pt-6">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const tabs = ['general', 'media', 'stats', 'highlights', 'courses'];
+                  const idx = tabs.indexOf(activeFormTab);
+                  if (idx > 0) setActiveFormTab(tabs[idx - 1]);
+                }}
+                disabled={activeFormTab === 'general'}
+                className="btn-outline text-sm py-2 px-4 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const tabs = ['general', 'media', 'stats', 'highlights', 'courses'];
+                  const idx = tabs.indexOf(activeFormTab);
+                  if (idx < tabs.length - 1) setActiveFormTab(tabs[idx + 1]);
+                }}
+                disabled={activeFormTab === 'courses'}
+                className="btn-outline text-sm py-2 px-4 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={resetEditor}
+                className="btn-outline text-sm text-light-muted hover:text-light-text py-2 px-4"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="btn-primary text-sm flex items-center gap-1.5 py-2 px-6"
+              >
+                {saving ? 'Saving...' : editId ? 'Update University' : 'Create University'}
+              </button>
+            </div>
+          </div>
         </form>
       )}
 
