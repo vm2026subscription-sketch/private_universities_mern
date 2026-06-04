@@ -45,7 +45,9 @@ router.post('/news', adminCtrl.createNews);
 router.put('/news/:id', adminCtrl.updateNews);
 router.delete('/news/:id', adminCtrl.deleteNews);
 
-// Bulk import (existing)
+// Bulk import
+router.post('/import/universities', adminCtrl.bulkImportUniversities);
+router.post('/import/courses', adminCtrl.bulkImportCourses);
 
 // ── New CMS Routes ─────────────────────────────────────────────
 
