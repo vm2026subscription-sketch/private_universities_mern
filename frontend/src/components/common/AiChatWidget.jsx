@@ -73,9 +73,44 @@ export default function AiChatWidget() {
   const [panelRect, setPanelRect] = useState(() =>
     typeof window === 'undefined' ? { width: 420, height: 620, x: 0, y: 0 } : getDesktopBounds()
   );
+  const [language, setLanguage] = useState('en');
   const scrollRef = useRef(null);
   const dragStateRef = useRef(null);
   const resizeStateRef = useRef(null);
+
+  const handleTranslate = async (targetLang) => {
+    if (language === targetLang) return;
+    setLanguage(targetLang);
+
+    if (messages.length === 0) return;
+
+    try {
+      toast.loading(`Translating to ${targetLang.toUpperCase()}...`, { id: 'chat-translate' });
+      
+      const translatedMessages = await Promise.all(
+        messages.map(async (msg) => {
+          if (!msg.content || msg.content.trim() === '') return msg;
+          try {
+            const { data } = await api.post('/bhashini/translate', {
+              text: msg.content,
+              targetLanguage: targetLang,
+            });
+            return { 
+              ...msg, 
+              content: data.isMock ? `[${targetLang.toUpperCase()}] ${msg.content}` : data.translatedText 
+            };
+          } catch (e) {
+             return msg;
+          }
+        })
+      );
+      
+      setMessages(translatedMessages);
+      toast.success('Translation complete', { id: 'chat-translate' });
+    } catch (e) {
+      toast.error('Translation failed', { id: 'chat-translate' });
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -250,14 +285,14 @@ export default function AiChatWidget() {
         animate={{ scale: 1, opacity: 1 }}
         className="fixed bottom-6 right-6 z-[90] group"
       >
-        <div className="absolute bottom-full right-0 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border px-4 py-2 rounded-2xl shadow-xl whitespace-nowrap text-xs font-bold text-primary flex items-center gap-2">
+        <div className="absolute bottom-full right-0 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border px-4 py-2 rounded-2xl shadow-xl whitespace-nowrap text-xs font-bold text-[#E05404] flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5" />
           Ask Vidyarthi Mitra AI
         </div>
         <button
           type="button"
           onClick={openChat}
-          className="rounded-full bg-gradient-to-br from-primary to-primary-light p-4 text-white shadow-[0_8px_30px_rgba(249,115,22,0.35)] hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center relative overflow-hidden border border-accent/20"
+          className="rounded-full bg-[#E05404] p-4 text-white shadow-[0_8px_30px_rgba(224,84,4,0.35)] hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-accent/20 animate-ping rounded-full" />
           <Bot className="w-7 h-7 relative z-10" />
@@ -276,7 +311,7 @@ export default function AiChatWidget() {
         <button
           type="button"
           onClick={() => setMinimized(false)}
-          className="rounded-full bg-primary px-5 py-3 text-sm font-bold text-white shadow-2xl inline-flex items-center gap-2 hover:scale-105 transition-transform"
+          className="rounded-full bg-[#E05404] px-5 py-3 text-sm font-bold text-white shadow-2xl inline-flex items-center gap-2 hover:scale-105 transition-transform"
         >
           <Bot className="w-5 h-5" />
           Vidyarthi Mitra AI
@@ -310,34 +345,52 @@ export default function AiChatWidget() {
     >
       <div className="flex flex-col h-full">
         <div
-          className={`flex items-center justify-between bg-gradient-to-r from-primary to-primary-light px-5 py-4 text-white border-b border-accent/20 shrink-0 ${isDesktopViewport() ? 'cursor-move select-none' : ''}`}
+          className={`flex items-center justify-between bg-gradient-to-r from-[#D54D02] to-[#EE6B17] px-5 py-4 text-white shrink-0 ${isDesktopViewport() ? 'cursor-move select-none' : ''}`}
           onPointerDown={startDrag}
         >
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="rounded-2xl bg-white/10 p-2.5 backdrop-blur-md border border-accent/30">
-                <Bot className="w-5 h-5" />
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent border-2 border-primary rounded-full" />
+            <div className="w-10 h-10 rounded-full bg-[#9B2A02] flex items-center justify-center shadow-inner shrink-0">
+              <span className="text-lg font-black text-white">VM</span>
             </div>
             <div>
-              <p className="font-bold text-sm tracking-tight">Vidyarthi Mitra AI</p>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-pulse" />
-                <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider">Ready To Help</p>
+              <p className="font-bold text-base tracking-tight leading-tight">Vidyarthi Mitra AI</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                <p className="text-[11px] text-white/90 font-medium tracking-wide">Online — Ask me anything</p>
               </div>
             </div>
-            {isDesktopViewport() && <Grip className="w-4 h-4 text-white/70" />}
+            {isDesktopViewport() && <Grip className="w-4 h-4 text-white/40 ml-2" />}
           </div>
 
           <div className="flex items-center gap-1.5">
-            <button type="button" onClick={clearChat} title="Clear Chat" className="rounded-full p-2 hover:bg-white/10 transition-colors">
-              <Trash2 className="w-4 h-4" />
+            <button 
+              type="button" 
+              onClick={() => handleTranslate('en')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+                language === 'en' ? 'bg-[#9B2A02] border-transparent' : 'border border-white/30 bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              EN
             </button>
-            <button type="button" onClick={() => setMinimized(true)} className="rounded-full p-2 hover:bg-white/10 transition-colors">
-              <Minimize2 className="w-4 h-4" />
+            <button 
+              type="button" 
+              onClick={() => handleTranslate('hi')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+                language === 'hi' ? 'bg-[#9B2A02] border-transparent' : 'border border-white/30 bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              HI
             </button>
-            <button type="button" onClick={closeChat} className="rounded-full p-2 hover:bg-white/10 transition-colors">
+            <button 
+              type="button" 
+              onClick={() => handleTranslate('mr')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors mr-1 ${
+                language === 'mr' ? 'bg-[#9B2A02] border-transparent' : 'border border-white/30 bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              MR
+            </button>
+            <button type="button" onClick={closeChat} className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>

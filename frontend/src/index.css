@@ -185,6 +185,7 @@ button:active, a:active {
 /* ── Accessibility Global Utilities ── */
 html.access-bw            { filter: grayscale(100%); }
 html.access-high-contrast { filter: contrast(130%) saturate(130%); }
+html.access-low-contrast  { filter: contrast(70%) saturate(70%); opacity: 0.9; }
 html.access-remove-green  { filter: hue-rotate(-20deg) sepia(20%) saturate(80%); }
 html.access-text-small    { font-size: 14px !important; }
 html.access-text-large    { font-size: 18px !important; }

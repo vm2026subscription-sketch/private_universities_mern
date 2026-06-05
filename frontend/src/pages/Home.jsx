@@ -157,7 +157,9 @@ export default function Home() {
   const [universities, setUniversities] = useState(() => cachedHomeData?.universities || []);
   const [questions, setQuestions] = useState(() => cachedHomeData?.questions || mockQuestions);
   const [news, setNews] = useState(() => cachedHomeData?.news || []);
+  const [testimonials, setTestimonials] = useState(() => cachedHomeData?.testimonials || []);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const featuredUniversity = featuredUniversities[currentSlide % featuredUniversities.length];
@@ -180,17 +182,19 @@ export default function Home() {
 
     const fetchData = async () => {
       try {
-        const [uniRes, examRes, testRes, newsRes] = await Promise.all([
+        const [uniRes, examRes, testRes, newsRes, testmRes] = await Promise.all([
           api.get('/universities?limit=12').catch(() => ({ data: { data: [] } })),
           api.get('/exams/upcoming?limit=4').catch(() => ({ data: { data: [] } })),
           api.get('/questions?limit=4').catch(() => ({ data: { data: [] } })),
-          api.get('/news?limit=4').catch(() => ({ data: { data: [] } }))
+          api.get('/news?limit=4').catch(() => ({ data: { data: [] } })),
+          api.get('/testimonials').catch(() => ({ data: { data: [] } }))
         ]);
 
         const fetchedUniversities = Array.isArray(uniRes?.data?.data) ? [...uniRes.data.data] : [];
         const fetchedExams = Array.isArray(examRes?.data?.data) ? examRes.data.data : [];
         const fetchedQuestions = Array.isArray(testRes?.data?.data) ? testRes.data.data : [];
         const fetchedNews = Array.isArray(newsRes?.data?.data) ? newsRes.data.data : Array.isArray(newsRes?.data?.articles) ? newsRes.data.articles : [];
+        const fetchedTestimonials = Array.isArray(testmRes?.data?.data) ? testmRes.data.data : [];
 
         const priority = ['Thakur', 'Amity', 'SAGE', 'Jindal', 'ITM', 'ISBM', 'AAFT', 'C.V. Raman', 'Dev Sanskriti'];
         const sortedUniversities = fetchedUniversities.sort((a, b) => {
@@ -212,6 +216,7 @@ export default function Home() {
           exams: fetchedExams.length > 0 ? fetchedExams : mockExams,
           questions: fetchedQuestions.length > 0 ? fetchedQuestions : mockQuestions,
           news: fetchedNews,
+          testimonials: fetchedTestimonials,
         };
 
         setCachedHomeData(nextHomeData);
@@ -220,6 +225,7 @@ export default function Home() {
           setExams(nextHomeData.exams);
           setQuestions(nextHomeData.questions);
           setNews(nextHomeData.news);
+          setTestimonials(nextHomeData.testimonials);
         });
       } catch (error) {
         console.error('Data fetch failed:', error);
@@ -231,9 +237,14 @@ export default function Home() {
       setCurrentSlide((prev) => (prev + 1) % featuredUniversities.length);
     }, 5000);
 
+    const testimonialInterval = setInterval(() => {
+      setCurrentTestimonialIndex((prev) => prev + 1);
+    }, 8000);
+
     return () => {
       isMounted = false;
       clearInterval(slideInterval);
+      clearInterval(testimonialInterval);
     };
   }, []);
 
@@ -692,35 +703,96 @@ export default function Home() {
               <div className="flex items-center justify-between mb-10">
                 <h2 className="text-3xl font-black italic">Words of Gratitude</h2>
                 <div className="flex gap-2">
-                  {[0, 1, 2].map((dot) => (
-                    <div key={dot} className={`w-2 h-2 rounded-full transition-all ${dot === 0 ? 'bg-primary w-6' : 'bg-white/20'}`} />
-                  ))}
+                  {(() => {
+                    const fallbackTestimonials = [
+                      {
+                        content: "Vidyarthimitra.org is a wonderful source of information for students seeking admissions. It helped me find the right college for my elder brother in Pune. One of the best sites I have ever seen!",
+                        name: "Amol Kulkarni",
+                        role: "Pune, Engineering Aspirant"
+                      },
+                      {
+                        content: "The expert counseling feature completely changed my perspective on which engineering branch to choose. Thank you to the entire team for building such a student-friendly platform.",
+                        name: "Priya Sharma",
+                        role: "Mumbai, B.Tech First Year"
+                      },
+                      {
+                        content: "I got to know about PERA CET through this portal and it helped me secure admission in a top private university when I thought I had no options left.",
+                        name: "Rahul Deshmukh",
+                        role: "Nashik, Management Student"
+                      }
+                    ];
+                    const displayTestimonials = testimonials.length > 0 ? testimonials : fallbackTestimonials;
+                    const activeIndex = currentTestimonialIndex % displayTestimonials.length;
+                    const activeTestimonial = displayTestimonials[activeIndex];
+
+                    return (
+                      <>
+                        {displayTestimonials.map((_, idx) => (
+                          <div key={idx} className={`w-2 h-2 rounded-full transition-all ${idx === activeIndex ? 'bg-primary w-6' : 'bg-white/20'}`} />
+                        ))}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
               <div className="min-h-[200px]">
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="space-y-8"
-                >
-                  <div className="flex flex-col md:flex-row gap-6 items-start">
-                    <div className="w-16 h-16 bg-primary rounded-2xl shrink-0 flex items-center justify-center text-2xl font-black">
-                      V
-                    </div>
-                    <div>
-                      <p className="text-lg md:text-xl italic text-slate-300 leading-relaxed mb-6">
-                        "Vidyarthimitra.org is a wonderful source of information for students seeking admissions. It helped me find the right college for my elder brother in Pune. One of the best sites I have ever seen!"
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-black text-primary uppercase tracking-widest text-sm">Amol Kulkarni</p>
-                          <p className="text-xs text-slate-500 font-bold">Pune, Engineering Aspirant</p>
+                {(() => {
+                  const fallbackTestimonials = [
+                    {
+                      content: "Vidyarthimitra.org is a wonderful source of information for students seeking admissions. It helped me find the right college for my elder brother in Pune. One of the best sites I have ever seen!",
+                      name: "Amol Kulkarni",
+                      role: "Pune, Engineering Aspirant"
+                    },
+                    {
+                      content: "The expert counseling feature completely changed my perspective on which engineering branch to choose. Thank you to the entire team for building such a student-friendly platform.",
+                      name: "Priya Sharma",
+                      role: "Mumbai, B.Tech First Year"
+                    },
+                    {
+                      content: "I got to know about PERA CET through this portal and it helped me secure admission in a top private university when I thought I had no options left.",
+                      name: "Rahul Deshmukh",
+                      role: "Nashik, Management Student"
+                    }
+                  ];
+                  const displayTestimonials = testimonials.length > 0 ? testimonials : fallbackTestimonials;
+                  const activeIndex = currentTestimonialIndex % displayTestimonials.length;
+                  const activeTestimonial = displayTestimonials[activeIndex];
+
+                  return (
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeIndex}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-8"
+                      >
+                        <div className="flex flex-col md:flex-row gap-6 items-start">
+                          {activeTestimonial.avatarUrl ? (
+                            <img src={activeTestimonial.avatarUrl} alt={activeTestimonial.name} className="w-16 h-16 rounded-2xl shrink-0 object-cover shadow-sm" />
+                          ) : (
+                            <div className="w-16 h-16 bg-primary rounded-2xl shrink-0 flex items-center justify-center text-2xl font-black shadow-sm">
+                              {activeTestimonial.name ? activeTestimonial.name[0].toUpperCase() : 'V'}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-lg md:text-xl italic text-slate-300 leading-relaxed mb-6">
+                              "{activeTestimonial.content}"
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-black text-primary uppercase tracking-widest text-sm">{activeTestimonial.name}</p>
+                                <p className="text-xs text-slate-500 font-bold">{activeTestimonial.role || activeTestimonial.designation}</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+                      </motion.div>
+                    </AnimatePresence>
+                  );
+                })()}
               </div>
             </div>
           </section>
