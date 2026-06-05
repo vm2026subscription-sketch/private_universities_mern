@@ -223,13 +223,21 @@ export default function Universities() {
                  const displayType = getUniversityDisplayType(u);
                  
                   return (
-                    <motion.div 
-                      key={u._id} 
+                    <motion.div
+                      key={u._id}
                       layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="group relative h-full min-h-[380px] [perspective:1500px]"
                     >
+                      {/* Bookmark — outside flip so always visible */}
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleBookmark(u._id); }}
+                        className={`absolute top-5 right-5 z-30 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-90 ${isSaved ? 'bg-primary text-white' : 'bg-white/90 backdrop-blur-md text-slate-400 hover:text-primary hover:bg-white'}`}
+                      >
+                        <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
+                      </button>
+
                       <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
                         {/* Front Face */}
                         <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-lg flex flex-col overflow-hidden">
@@ -241,14 +249,6 @@ export default function Universities() {
                               </div>
                             )}
                           </div>
-
-                          {/* Bookmark Button */}
-                          <button 
-                            onClick={(e) => { e.preventDefault(); handleBookmark(u._id); }}
-                            className={`absolute top-5 right-5 z-20 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-90 ${isSaved ? 'bg-primary text-white' : 'bg-white/90 backdrop-blur-md text-slate-400 hover:text-primary hover:bg-white'}`}
-                          >
-                            <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
-                          </button>
                           
                           <div className="p-6 pt-16 flex flex-col h-full relative">
                             <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 blur-[40px] rounded-full" />
