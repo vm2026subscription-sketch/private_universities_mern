@@ -16,7 +16,8 @@ const getAdminEmails = () =>
 
 const getAdminEmail = () => getAdminEmails()[0];
 const isAdminEmail = (email) => getAdminEmails().includes(normalizeEmail(email));
-const getClientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
+const getClientUrl = () =>
+  (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
 const normalizeEmail = (email = '') => String(email).trim().toLowerCase();
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const isProduction = () => process.env.NODE_ENV === 'production';
