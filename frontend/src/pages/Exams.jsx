@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { CalendarDays, ExternalLink, FileCheck2, Landmark, Search, Globe, MapPin, CheckCircle2, X } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { readSessionCache, writeSessionCache } from '../utils/pageCache';
@@ -105,6 +106,10 @@ export default function Exams() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 pb-20 md:pb-12">
+      <Helmet>
+        <title>Entrance Exams 2026 | JEE, NEET, MHT-CET, CAT & More | VidyarthiMitra</title>
+        <meta name="description" content="Complete list of entrance exams for engineering, medical, management and law in India. Get exam dates, eligibility, syllabus and registration details." />
+      </Helmet>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between mb-10">
         <div>
           <span className="badge badge-orange mb-4 inline-flex">Exam Updates</span>

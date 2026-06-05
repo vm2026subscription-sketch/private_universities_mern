@@ -156,6 +156,7 @@ export default function Home() {
   const [exams, setExams] = useState(() => cachedHomeData?.exams || mockExams);
   const [universities, setUniversities] = useState(() => cachedHomeData?.universities || []);
   const [questions, setQuestions] = useState(() => cachedHomeData?.questions || mockQuestions);
+  const [news, setNews] = useState(() => cachedHomeData?.news || []);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -179,15 +180,17 @@ export default function Home() {
 
     const fetchData = async () => {
       try {
-        const [uniRes, examRes, testRes] = await Promise.all([
+        const [uniRes, examRes, testRes, newsRes] = await Promise.all([
           api.get('/universities?limit=12').catch(() => ({ data: { data: [] } })),
           api.get('/exams/upcoming?limit=4').catch(() => ({ data: { data: [] } })),
-          api.get('/questions?limit=4').catch(() => ({ data: { data: [] } }))
+          api.get('/questions?limit=4').catch(() => ({ data: { data: [] } })),
+          api.get('/news?limit=4').catch(() => ({ data: { data: [] } }))
         ]);
 
         const fetchedUniversities = Array.isArray(uniRes?.data?.data) ? [...uniRes.data.data] : [];
         const fetchedExams = Array.isArray(examRes?.data?.data) ? examRes.data.data : [];
         const fetchedQuestions = Array.isArray(testRes?.data?.data) ? testRes.data.data : [];
+        const fetchedNews = Array.isArray(newsRes?.data?.data) ? newsRes.data.data : Array.isArray(newsRes?.data?.articles) ? newsRes.data.articles : [];
 
         const priority = ['Thakur', 'Amity', 'SAGE', 'Jindal', 'ITM', 'ISBM', 'AAFT', 'C.V. Raman', 'Dev Sanskriti'];
         const sortedUniversities = fetchedUniversities.sort((a, b) => {
@@ -208,6 +211,7 @@ export default function Home() {
           universities: sortedUniversities.slice(0, 6),
           exams: fetchedExams.length > 0 ? fetchedExams : mockExams,
           questions: fetchedQuestions.length > 0 ? fetchedQuestions : mockQuestions,
+          news: fetchedNews,
         };
 
         setCachedHomeData(nextHomeData);
@@ -215,6 +219,7 @@ export default function Home() {
           setUniversities(nextHomeData.universities);
           setExams(nextHomeData.exams);
           setQuestions(nextHomeData.questions);
+          setNews(nextHomeData.news);
         });
       } catch (error) {
         console.error('Data fetch failed:', error);
@@ -728,17 +733,14 @@ export default function Home() {
               <Bell className="w-5 h-5" />
             </div>
             <div className="divide-y divide-slate-50 dark:divide-white/5">
-              {[
-                { title: 'DTE Maharashtra Cut-offs 2024-25 Released', tag: 'New' },
-                { title: 'Top 10 Private Universities for MBA in Pune', tag: 'Ranking' },
-                { title: 'MHT-CET & JEE Online Mock Test Series', tag: 'Practice' },
-                { title: 'Last Date for PERA CET 2026 Registration', tag: 'Alert' },
-              ].map((n, i) => (
+              {news.length > 0 ? news.map((n, i) => (
                 <div key={i} className="p-5 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-all group">
-                  <span className="text-[9px] font-black uppercase text-primary">{n.tag}</span>
-                  <h4 className="text-sm font-bold mt-2 group-hover:text-primary transition-colors">{n.title}</h4>
+                  <span className="text-[9px] font-black uppercase text-primary">{n.category || 'News'}</span>
+                  <h4 className="text-sm font-bold mt-2 group-hover:text-primary transition-colors line-clamp-2">{n.title}</h4>
                 </div>
-              ))}
+              )) : (
+                <div className="p-8 text-center text-sm text-light-muted">No news yet. Check back soon!</div>
+              )}
             </div>
           </section>
 

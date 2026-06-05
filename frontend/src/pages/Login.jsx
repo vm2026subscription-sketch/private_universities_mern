@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Eye, EyeOff, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -57,7 +58,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 pb-20 md:pb-0">
+      <Helmet>
+        <title>Login | VidyarthiMitra</title>
+        <meta name="description" content="Login to VidyarthiMitra to track applications, save universities and get personalized college recommendations." />
+      </Helmet>
       <div className="card p-8 w-full max-w-md">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold">Login</h1>

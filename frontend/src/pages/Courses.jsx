@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
@@ -254,6 +255,10 @@ export default function Courses() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
+      <Helmet>
+        <title>Courses in India | UG PG PhD Diploma | VidyarthiMitra</title>
+        <meta name="description" content="Browse 10,000+ courses across engineering, management, medical, law, design and more. Find fees, seats, entrance exams and eligibility." />
+      </Helmet>
       {/* Professional Compact Hero */}
       <div className="relative mb-6 shrink-0 rounded-[3rem] overflow-hidden bg-slate-900 text-white shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-indigo-500/20" />

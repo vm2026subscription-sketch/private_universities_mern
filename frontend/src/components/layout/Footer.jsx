@@ -51,11 +51,11 @@ const footerGroups = [
 ];
 
 const socialLinks = [
-  { label: 'Facebook', href: 'https://facebook.com', icon: Facebook },
-  { label: 'Twitter', href: 'https://twitter.com', icon: Twitter },
-  { label: 'LinkedIn', href: 'https://linkedin.com', icon: Linkedin },
-  { label: 'Instagram', href: 'https://instagram.com', icon: Instagram },
-  { label: 'YouTube', href: 'https://youtube.com', icon: Youtube },
+  { label: 'Facebook', href: 'https://www.facebook.com/vidyarthimitra', icon: Facebook },
+  { label: 'Twitter', href: 'https://twitter.com/vidyarthimitra', icon: Twitter },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/vidyarthimitra', icon: Linkedin },
+  { label: 'Instagram', href: 'https://www.instagram.com/vidyarthimitra', icon: Instagram },
+  { label: 'YouTube', href: 'https://www.youtube.com/@vidyarthimitra', icon: Youtube },
 ];
 
 export default function Footer() {

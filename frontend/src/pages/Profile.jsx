@@ -366,7 +366,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] dark:bg-dark-bg flex flex-col md:flex-row relative selection:bg-primary/30">
+    <div className="min-h-screen bg-[#FDFCFB] dark:bg-dark-bg flex flex-col md:flex-row relative selection:bg-primary/30 pb-20 md:pb-0">
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}

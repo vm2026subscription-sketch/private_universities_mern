@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award } from 'lucide-react';
+import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -122,6 +123,10 @@ export default function Universities() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20 md:pb-8">
+      <Helmet>
+        <title>Universities in India | Fees, Rankings & Admissions 2026 | VidyarthiMitra</title>
+        <meta name="description" content="Explore 500+ private and deemed universities in India. Compare fees, NAAC grades, NIRF rankings, placements and admission process." />
+      </Helmet>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-serif font-bold text-primary">Universities</h1>
         <div className="flex items-center gap-3">
@@ -214,7 +219,14 @@ export default function Universities() {
 
         <div className="flex-1">
           <p className="text-sm text-light-muted mb-4">{total} universities found</p>
-          {loading ? <CardSkeleton /> : (
+          {loading ? <CardSkeleton /> : universities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <GraduationCap className="w-16 h-16 text-light-muted opacity-20 mb-4" />
+              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">No Universities Found</h3>
+              <p className="text-sm text-light-muted max-w-sm">Try changing your filters or search term.</p>
+              <button onClick={() => setFilters({ state: [], type: 'both', naacGrade: [], city: '' })} className="btn-primary mt-6">Clear Filters</button>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {universities.map(u => {
                  const isSaved = savedIds.includes(u._id);
