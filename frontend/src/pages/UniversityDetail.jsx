@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
-import { 
-  MapPin, Globe, Phone, Mail, BookOpen, Users, Award, 
-  Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2, ArrowRight, ExternalLink 
+import {
+  MapPin, Globe, Phone, Mail, BookOpen, Users, Award,
+  Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2, ArrowRight, ExternalLink, ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
@@ -60,6 +60,8 @@ export default function UniversityDetail() {
 
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
+  const [isTracked, setIsTracked] = useState(false);
+  const [trackLoading, setTrackLoading] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -93,10 +95,30 @@ export default function UniversityDetail() {
       api.get('/users/saved-universities').then(({ data }) => {
         setIsSaved(data.data.some(u => u._id === uni._id));
       }).catch(() => {});
+      api.get('/users/profile').then(({ data }) => {
+        const apps = data.data?.applications || [];
+        setIsTracked(apps.some(a => a.universityId?._id === uni._id || a.universityId === uni._id));
+      }).catch(() => {});
     } else {
       setIsSaved(false);
+      setIsTracked(false);
     }
   }, [user, uni]);
+
+  const handleTrackApplication = async () => {
+    if (!user) return toast.error('Please login to track applications');
+    if (isTracked) return toast('Already tracking this university', { icon: '📋' });
+    setTrackLoading(true);
+    try {
+      await api.post('/users/applications', { universityId: uni._id });
+      setIsTracked(true);
+      toast.success('Added to Application Tracker!');
+    } catch {
+      toast.error('Failed to track application');
+    } finally {
+      setTrackLoading(false);
+    }
+  };
 
   const handleBookmark = async () => {
     if (!user) return toast.error('Please login to save universities');
@@ -163,11 +185,19 @@ export default function UniversityDetail() {
               >
                 <Bookmark className="w-6 h-6" fill={isSaved ? "currentColor" : "none"} />
               </button>
-              <button 
+              <button
                 onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Link copied'); }}
                 className="p-4 rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 shadow-lg shadow-slate-200/50 transition-all"
               >
                 <Share2 className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleTrackApplication}
+                disabled={trackLoading || isTracked}
+                title={isTracked ? 'Already in Application Tracker' : 'Track Application'}
+                className={`p-4 rounded-2xl transition-all shadow-lg ${isTracked ? 'bg-green-500 text-white shadow-green-200' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 shadow-slate-200/50'}`}
+              >
+                <ClipboardList className="w-6 h-6" />
               </button>
               {uni.website && (
                 <a 
