@@ -10,6 +10,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import MobileNav from './components/layout/MobileNav';
 import FeedbackWidget from './components/layout/FeedbackWidget';
+import SocialFloatButtons from './components/layout/SocialFloatButtons';
 
 const Home = lazy(() => import('./pages/Home'));
 const Universities = lazy(() => import('./pages/Universities'));
@@ -122,6 +123,7 @@ function PublicLayout() {
       <Footer />
       <MobileNav />
       <FeedbackWidget />
+      <SocialFloatButtons />
       <DeferredAiChatWidget />
     </div>
   );
