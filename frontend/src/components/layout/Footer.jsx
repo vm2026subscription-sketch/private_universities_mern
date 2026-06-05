@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import {
   Facebook,
-  Twitter,
   Instagram,
   Linkedin,
   Youtube,
@@ -52,9 +51,8 @@ const footerGroups = [
 
 const socialLinks = [
   { label: 'Facebook', href: 'https://www.facebook.com/vidyarthimitra', icon: Facebook },
-  { label: 'Twitter', href: 'https://twitter.com/vidyarthimitra', icon: Twitter },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/company/vidyarthimitra', icon: Linkedin },
-  { label: 'Instagram', href: 'https://www.instagram.com/vidyarthimitra', icon: Instagram },
+  { label: 'Instagram', href: 'https://www.instagram.com/vidyarthi_mitra/', icon: Instagram },
   { label: 'YouTube', href: 'https://www.youtube.com/@vidyarthimitra', icon: Youtube },
 ];
 
