@@ -238,6 +238,17 @@ export default function Universities() {
                         <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
                       </button>
 
+                      {/* Download Brochure — outside flip so always visible */}
+                      {u.links?.brochureLink && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(u.links.brochureLink, '_blank'); }}
+                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-primary hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90"
+                          title="Download Brochure"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      )}
+
                       <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
                         {/* Front Face */}
                         <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-lg flex flex-col overflow-hidden">
@@ -282,21 +293,12 @@ export default function Universities() {
                               </div>
 
                               <div className="flex items-center gap-3">
-                                <Link 
+                                <Link
                                   to={`/universities/${u.slug}`}
                                   className="flex-1 py-3 bg-slate-900 dark:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
                                 >
                                   View Details
                                 </Link>
-                                {u.links?.brochureLink && (
-                                  <button 
-                                    onClick={(e) => { e.preventDefault(); window.open(u.links.brochureLink, '_blank'); }}
-                                    className="w-12 h-12 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white rounded-xl flex items-center justify-center transition-all shrink-0 active:scale-95"
-                                    title="Download Brochure"
-                                  >
-                                    <Download className="w-4 h-4" />
-                                  </button>
-                                )}
                               </div>
                             </div>
                           </div>
