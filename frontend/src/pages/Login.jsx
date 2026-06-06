@@ -22,9 +22,10 @@ export default function Login() {
     try {
       const data = await login(email, password);
       if (data.token) {
-        // Admin direct login — no OTP needed
+        // Admin / superadmin direct login — redirect to admin panel
+        const role = data.user?.role;
         toast.success('Login successful');
-        navigate('/');
+        navigate(role === 'admin' || role === 'superadmin' ? '/admin' : '/');
       } else {
         setOtpSent(true);
         toast.success('OTP sent to your email');
@@ -42,9 +43,10 @@ export default function Login() {
 
     setLoading(true);
     try {
-      await verifyLoginOtp(email, otp);
+      const otpData = await verifyLoginOtp(email, otp);
       toast.success('Login successful');
-      navigate('/');
+      const role = otpData?.user?.role;
+      navigate(role === 'admin' || role === 'superadmin' ? '/admin' : '/');
     } catch (error) {
       toast.error(error.response?.data?.message || 'OTP verification failed');
     } finally {

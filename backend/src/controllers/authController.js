@@ -23,7 +23,7 @@ const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const isProduction = () => process.env.NODE_ENV === 'production';
 
 const ensureAdminRole = async (user) => {
-  if (isAdminEmail(user?.email) && user.role !== 'admin') {
+  if (isAdminEmail(user?.email) && user.role !== 'admin' && user.role !== 'superadmin') {
     user.role = 'admin';
     await user.save();
   }
@@ -197,8 +197,8 @@ exports.login = async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
 
-    // Admin logs in directly without OTP
-    if (user.role === 'admin') {
+    // Admin / superadmin logs in directly without OTP
+    if (user.role === 'admin' || user.role === 'superadmin') {
       await ensureAdminRole(user);
       await updateLoginTracking(user);
       const token = generateToken(user._id);

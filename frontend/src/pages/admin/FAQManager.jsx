@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
+import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, CheckboxField, FormActions } from './components/FormFields';
 
 const empty = () => ({ question: '', answer: '', category: 'general', order: 0, isPublished: true });
 
 export default function FAQManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(empty());
   const [editId, setEditId] = useState(null);
@@ -54,7 +56,7 @@ export default function FAQManager() {
         { key: 'isPublished', label: 'Status', render: f => f.isPublished ? <span className="badge badge-green">Published</span> : <span className="badge badge-orange">Draft</span> },
       ]} searchFields={['question', 'category']} actions={(f) => (<>
         <button onClick={() => edit(f)} className="p-1.5 rounded-lg hover:bg-light-card"><Pencil className="w-4 h-4" /></button>
-        <button onClick={() => del(f._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+        {canDelete && <button onClick={() => del(f._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>}
       </>)} />
     </div>
   );

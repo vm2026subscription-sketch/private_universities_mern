@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
+import { useRole } from '../../hooks/useRole';
 import {
   LayoutDashboard, Building2, BookOpen, FileText, Newspaper,
   Users, Image, MessageSquareQuote, FileEdit, HelpCircle,
-  Mail, Bell, Send, Settings, Shield, Menu, X, ChevronLeft
+  Mail, Bell, Send, Settings, Shield, Menu, X, ChevronLeft, FileSpreadsheet
 } from 'lucide-react';
 
 const navItems = [
@@ -12,7 +13,7 @@ const navItems = [
   { label: 'Courses', icon: BookOpen, path: '/admin/courses' },
   { label: 'Exams', icon: FileText, path: '/admin/exams' },
   { label: 'News', icon: Newspaper, path: '/admin/news' },
-  { label: 'Users', icon: Users, path: '/admin/users' },
+  { label: 'Users', icon: Users, path: '/admin/users', superadminOnly: true },
   { divider: true, label: 'CMS' },
   { label: 'Banners', icon: Image, path: '/admin/banners' },
   { label: 'Testimonials', icon: MessageSquareQuote, path: '/admin/testimonials' },
@@ -24,13 +25,17 @@ const navItems = [
   { label: 'Newsletter', icon: Send, path: '/admin/newsletter' },
   { divider: true, label: 'System' },
   { label: 'Site Settings', icon: Settings, path: '/admin/settings' },
-  { label: 'Audit Logs', icon: Shield, path: '/admin/audit-logs' },
+  { label: 'Data Import', icon: FileSpreadsheet, path: '/admin/data-import' },
+  { label: 'Audit Logs', icon: Shield, path: '/admin/audit-logs', superadminOnly: true },
 ];
 
 export default function AdminLayout() {
+  const { isSuperAdmin } = useRole();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+
+  const filteredNavItems = navItems.filter(item => !item.superadminOnly || isSuperAdmin);
 
   const isActive = (path) => {
     if (path === '/admin') return location.pathname === '/admin';
@@ -49,7 +54,7 @@ export default function AdminLayout() {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
-        {navItems.map((item, i) => {
+        {filteredNavItems.map((item, i) => {
           if (item.divider) {
             return sidebarOpen ? (
               <div key={i} className="pt-4 pb-1 px-3">
@@ -76,7 +81,13 @@ export default function AdminLayout() {
           );
         })}
       </div>
-      <div className="p-3 border-t border-light-border dark:border-dark-border">
+      <div className="p-3 border-t border-light-border dark:border-dark-border space-y-1">
+        {sidebarOpen && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold ${isSuperAdmin ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-primary/10 text-primary'}`}>
+            <Shield className="w-3.5 h-3.5 shrink-0" />
+            <span>{isSuperAdmin ? '⭐ Super Admin' : '🔧 Admin'}</span>
+          </div>
+        )}
         <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-light-card dark:hover:bg-dark-card transition-colors text-light-muted dark:text-dark-muted">
           <ChevronLeft className="w-4 h-4" />
           {sidebarOpen && <span>Back to Site</span>}
@@ -108,9 +119,18 @@ export default function AdminLayout() {
           <button onClick={() => setMobileOpen(true)} className="md:hidden p-1.5 rounded-lg hover:bg-light-card dark:hover:bg-dark-card">
             <Menu className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold capitalize">
-            {navItems.find(n => !n.divider && isActive(n.path))?.label || 'Admin'}
+          <h1 className="text-lg font-semibold capitalize flex-1">
+            {filteredNavItems.find(n => !n.divider && isActive(n.path))?.label || 'Admin'}
           </h1>
+          {isSuperAdmin ? (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+              ⭐ Super Admin
+            </span>
+          ) : (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+              🔧 Admin
+            </span>
+          )}
         </header>
         <main className="flex-1 p-4 md:p-6">
           <Outlet />

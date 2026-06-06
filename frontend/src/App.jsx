@@ -50,6 +50,7 @@ const NotificationsManager = lazy(() => import('./pages/admin/NotificationsManag
 const NewsletterManager = lazy(() => import('./pages/admin/NewsletterManager'));
 const SiteSettingsManager = lazy(() => import('./pages/admin/SiteSettingsManager'));
 const AuditLogViewer = lazy(() => import('./pages/admin/AuditLogViewer'));
+const DataImportManager = lazy(() => import('./pages/admin/DataImportManager'));
 const AiChatWidget = lazy(() => import('./components/common/AiChatWidget'));
 
 function PageLoader() {
@@ -144,7 +145,7 @@ export default function App() {
                   <Route path="courses" element={<CoursesManager />} />
                   <Route path="exams" element={<ExamsManager />} />
                   <Route path="news" element={<NewsManager />} />
-                  <Route path="users" element={<UsersManager />} />
+                  <Route path="users" element={<ProtectedRoute superadminOnly><UsersManager /></ProtectedRoute>} />
                   <Route path="banners" element={<BannersManager />} />
                   <Route path="testimonials" element={<TestimonialsManager />} />
                   <Route path="pages" element={<PagesManager />} />
@@ -153,7 +154,8 @@ export default function App() {
                   <Route path="notifications" element={<NotificationsManager />} />
                   <Route path="newsletter" element={<NewsletterManager />} />
                   <Route path="settings" element={<SiteSettingsManager />} />
-                  <Route path="audit-logs" element={<AuditLogViewer />} />
+                  <Route path="audit-logs" element={<ProtectedRoute superadminOnly><AuditLogViewer /></ProtectedRoute>} />
+                  <Route path="data-import" element={<DataImportManager />} />
                 </Route>
 
                 <Route path="/admin-legacy" element={<Navigate to="/admin" replace />} />

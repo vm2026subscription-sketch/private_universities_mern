@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Pencil, Trash2, Plus, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
+import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, CheckboxField, FormActions } from './components/FormFields';
 
 const emptyForm = () => ({ name: '', role: '', university: '', content: '', rating: 5, imageUrl: '', isApproved: false, isFeatured: false });
 
 export default function TestimonialsManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
@@ -64,7 +66,7 @@ export default function TestimonialsManager() {
       <DataTable data={items} columns={columns} searchFields={['name', 'university', 'content']} searchPlaceholder="Search testimonials..."
         actions={(t) => (<>
           <button onClick={() => edit(t)} className="p-1.5 rounded-lg hover:bg-light-card dark:hover:bg-dark-card"><Pencil className="w-4 h-4" /></button>
-          <button onClick={() => del(t._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+          {canDelete && <button onClick={() => del(t._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>}
         </>)}
       />
     </div>

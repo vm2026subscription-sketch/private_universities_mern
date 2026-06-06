@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Trash2, Plus, Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
+import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, CheckboxField, FormActions } from './components/FormFields';
 
 const empty = () => ({ title: '', message: '', type: 'info', category: 'general', link: '', isBroadcast: true, userId: '' });
 
 export default function NotificationsManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(empty());
   const [show, setShow] = useState(false);
@@ -54,7 +56,7 @@ export default function NotificationsManager() {
         { key: 'isBroadcast', label: 'Target', render: n => n.isBroadcast ? 'All Users' : 'Specific User' },
         { key: 'createdAt', label: 'Sent', render: n => new Date(n.createdAt).toLocaleDateString() },
       ]} searchFields={['title', 'message']} actions={(n) => (
-        <button onClick={() => del(n._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+        canDelete && <button onClick={() => del(n._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
       )} />
     </div>
   );

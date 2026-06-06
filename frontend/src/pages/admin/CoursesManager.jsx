@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pencil, Trash2, Plus, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
+import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, FormActions } from './components/FormFields';
 
@@ -30,6 +31,7 @@ const STREAM_OPTIONS = ['Engineering', 'Medical', 'Management', 'Law', 'Design',
 const LEVEL_OPTIONS = ['UG', 'PG', 'Diploma', 'PhD'];
 
 export default function CoursesManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [universities, setUniversities] = useState([]);
   const [form, setForm] = useState(emptyForm());
@@ -192,7 +194,7 @@ export default function CoursesManager() {
         actions={(course) => (
           <>
             <button onClick={() => edit(course)} className="p-1.5 rounded-lg hover:bg-light-card"><Pencil className="w-4 h-4" /></button>
-            <button onClick={() => del(course._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+            {canDelete && <button onClick={() => del(course._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>}
           </>
         )}
       />

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
+import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, CheckboxField } from './components/FormFields';
 
@@ -286,6 +287,7 @@ const statCards = (items) => [
 ];
 
 export default function UniversitiesManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
@@ -1369,9 +1371,11 @@ export default function UniversitiesManager() {
               <button onClick={() => edit(university)} className="p-2 rounded-xl hover:bg-light-card dark:hover:bg-dark-card">
                 <Pencil className="w-4 h-4" />
               </button>
-              <button onClick={() => del(university._id)} className="p-2 rounded-xl hover:bg-red-50 text-red-500">
-                <Trash2 className="w-4 h-4" />
-              </button>
+              {canDelete && (
+                <button onClick={() => del(university._id)} className="p-2 rounded-xl hover:bg-red-50 text-red-500">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </>
           )}
         />

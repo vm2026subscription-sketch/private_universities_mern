@@ -24,6 +24,20 @@ exports.protect = async (req, res, next) => {
 };
 
 exports.admin = (req, res, next) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin access required' });
+  const role = req.user?.role;
+  if (role !== 'admin' && role !== 'superadmin') {
+    return res.status(403).json({ success: false, message: 'Admin access required' });
+  }
+  next();
+};
+
+// Only superadmins can perform destructive operations (DELETE)
+exports.superadmin = (req, res, next) => {
+  if (req.user?.role !== 'superadmin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Super Admin access required. Deletion is restricted to superadmins only.',
+    });
+  }
   next();
 };
