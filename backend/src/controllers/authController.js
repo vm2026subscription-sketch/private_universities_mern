@@ -6,6 +6,7 @@ const otpService = require('../services/otpService');
 const { getSafeUser } = require('../utils/userSerializer');
 
 const ADMIN_EMAIL = 'vidyarthimitrauniversity@gmail.com';
+const DEFAULT_SUPERADMIN_EMAIL = 'ankurs3110@gmail.com,vm2026.subscription@gmail.com';
 const MIN_PASSWORD_LENGTH = 6;
 
 const getAdminEmails = () =>
@@ -14,7 +15,14 @@ const getAdminEmails = () =>
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 
+const getSuperAdminEmails = () =>
+  (process.env.SUPERADMIN_EMAIL || DEFAULT_SUPERADMIN_EMAIL)
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
 const getAdminEmail = () => getAdminEmails()[0];
+const isSuperAdminEmail = (email) => getSuperAdminEmails().includes(normalizeEmail(email));
 const isAdminEmail = (email) => getAdminEmails().includes(normalizeEmail(email));
 const getClientUrl = () =>
   (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
@@ -23,7 +31,12 @@ const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const isProduction = () => process.env.NODE_ENV === 'production';
 
 const ensureAdminRole = async (user) => {
-  if (isAdminEmail(user?.email) && user.role !== 'admin') {
+  if (!user) return user;
+  const normalizedEmail = normalizeEmail(user.email);
+  if (isSuperAdminEmail(normalizedEmail) && user.role !== 'superadmin') {
+    user.role = 'superadmin';
+    await user.save();
+  } else if (isAdminEmail(normalizedEmail) && !['admin', 'superadmin'].includes(user.role)) {
     user.role = 'admin';
     await user.save();
   }
@@ -92,8 +105,9 @@ exports.register = async (req, res) => {
       if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
     }
 
+    const isSuperAdmin = isSuperAdminEmail(normalizedEmail);
     const isAdmin = isAdminEmail(normalizedEmail);
-    const role = isAdmin ? 'admin' : 'user';
+    const role = isSuperAdmin ? 'superadmin' : isAdmin ? 'admin' : 'user';
     const userData = {
       name: normalizedName,
       email: normalizedEmail,
@@ -101,7 +115,7 @@ exports.register = async (req, res) => {
       role,
       authProvider: 'local',
       status: 'active',
-      isEmailVerified: isAdmin, // admin auto-verified
+      isEmailVerified: isSuperAdmin || isAdmin, // admin/superadmin auto-verified
       phone: phone || undefined,
       countryCode: phone ? countryCode || '+91' : '+91',
     };
@@ -197,8 +211,8 @@ exports.login = async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
 
-    // Admin logs in directly without OTP
-    if (user.role === 'admin') {
+    // Admin / superadmin logs in directly without OTP
+    if (['admin', 'superadmin'].includes(user.role)) {
       await ensureAdminRole(user);
       await updateLoginTracking(user);
       const token = generateToken(user._id);

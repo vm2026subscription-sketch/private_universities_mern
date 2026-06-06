@@ -240,7 +240,15 @@ exports.getUsers = async (req, res) => {
 exports.updateUserAccess = async (req, res) => {
   try {
     const updates = {};
-    if (typeof req.body.role === 'string') updates.role = req.body.role;
+    if (typeof req.body.role === 'string') {
+      if (req.body.role === 'superadmin' && req.user.role !== 'superadmin') {
+        return res.status(403).json({ success: false, message: 'Only superadmin can assign the superadmin role' });
+      }
+      if (!['user', 'admin', 'superadmin'].includes(req.body.role)) {
+        return res.status(400).json({ success: false, message: 'Invalid role' });
+      }
+      updates.role = req.body.role;
+    }
     if (typeof req.body.isEmailVerified === 'boolean') updates.isEmailVerified = req.body.isEmailVerified;
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('name email role isEmailVerified createdAt');
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });

@@ -33,7 +33,9 @@ export default function UsersManager() {
         { key: 'email', label: 'Email' },
         { key: 'role', label: 'Role', render: u => (
           <select value={u.role} onChange={e => updateUser(u._id, { role: e.target.value })} className="text-xs border rounded px-2 py-1 bg-transparent">
-            <option value="user">User</option><option value="admin">Admin</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+            <option value="superadmin">Superadmin</option>
           </select>
         )},
         { key: 'isEmailVerified', label: 'Verified', render: u => u.isEmailVerified ? <span className="badge badge-green">Yes</span> : <span className="badge badge-orange">No</span> },

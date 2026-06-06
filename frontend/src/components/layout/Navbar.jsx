@@ -37,7 +37,9 @@ export default function Navbar() {
     { to: '/compare-universities', label: 'Comparison' },
     { to: '/foreign-universities', label: 'Abroad' },
   ];
-  const visibleNavLinks = user?.role === 'admin' ? [...navLinks, { to: '/admin', label: 'Admin' }] : navLinks;
+  const visibleNavLinks = ['admin', 'superadmin'].includes(user?.role)
+    ? [...navLinks, { to: '/admin', label: 'Admin' }]
+    : navLinks;
 
   useEffect(() => {
     const timer = setTimeout(async () => {

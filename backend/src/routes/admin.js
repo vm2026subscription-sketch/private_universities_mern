@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { protect, admin } = require('../middleware/auth');
+const { protect, admin, superAdmin } = require('../middleware/auth');
 const adminCtrl = require('../controllers/adminController');
 const settingsCtrl = require('../controllers/siteSettingController');
 const bannerCtrl = require('../controllers/bannerController');
@@ -20,31 +20,31 @@ router.get('/content', adminCtrl.getContentData);
 // Users (existing)
 router.get('/users', adminCtrl.getUsers);
 router.patch('/users/:id', adminCtrl.updateUserAccess);
-router.delete('/users/:id', adminCtrl.deleteUser);
+router.delete('/users/:id', superAdmin, adminCtrl.deleteUser);
 
 // Questions (existing)
-router.delete('/questions/:id', adminCtrl.deleteQuestion);
+router.delete('/questions/:id', superAdmin, adminCtrl.deleteQuestion);
 
 // Universities (existing)
 router.post('/universities', adminCtrl.createUniversity);
 router.post('/universities/:id/duplicate', adminCtrl.duplicateUniversity);
 router.put('/universities/:id', adminCtrl.updateUniversity);
-router.delete('/universities/:id', adminCtrl.deleteUniversity);
+router.delete('/universities/:id', superAdmin, adminCtrl.deleteUniversity);
 
 // Courses (existing)
 router.post('/courses', adminCtrl.createCourse);
 router.put('/courses/:id', adminCtrl.updateCourse);
-router.delete('/courses/:id', adminCtrl.deleteCourse);
+router.delete('/courses/:id', superAdmin, adminCtrl.deleteCourse);
 
 // Exams (existing)
 router.post('/exams', adminCtrl.createExam);
 router.put('/exams/:id', adminCtrl.updateExam);
-router.delete('/exams/:id', adminCtrl.deleteExam);
+router.delete('/exams/:id', superAdmin, adminCtrl.deleteExam);
 
 // News (existing)
 router.post('/news', adminCtrl.createNews);
 router.put('/news/:id', adminCtrl.updateNews);
-router.delete('/news/:id', adminCtrl.deleteNews);
+router.delete('/news/:id', superAdmin, adminCtrl.deleteNews);
 
 // Bulk import
 router.post('/import/universities', adminCtrl.bulkImportUniversities);
@@ -56,45 +56,45 @@ router.post('/import/courses', adminCtrl.bulkImportCourses);
 router.get('/site-settings', settingsCtrl.getSettings);
 router.post('/site-settings', settingsCtrl.upsertSetting);
 router.post('/site-settings/bulk', settingsCtrl.bulkUpsertSettings);
-router.delete('/site-settings/:id', settingsCtrl.deleteSetting);
+router.delete('/site-settings/:id', superAdmin, settingsCtrl.deleteSetting);
 
 // Banners
 router.get('/banners', bannerCtrl.getBanners);
 router.post('/banners', bannerCtrl.createBanner);
 router.put('/banners/:id', bannerCtrl.updateBanner);
-router.delete('/banners/:id', bannerCtrl.deleteBanner);
+router.delete('/banners/:id', superAdmin, bannerCtrl.deleteBanner);
 
 // Testimonials
 router.get('/testimonials', testimonialCtrl.getAll);
 router.post('/testimonials', testimonialCtrl.create);
 router.put('/testimonials/:id', testimonialCtrl.update);
-router.delete('/testimonials/:id', testimonialCtrl.remove);
+router.delete('/testimonials/:id', superAdmin, testimonialCtrl.remove);
 
 // Pages
 router.get('/pages', pageCtrl.getAll);
 router.post('/pages', pageCtrl.create);
 router.put('/pages/:id', pageCtrl.update);
-router.delete('/pages/:id', pageCtrl.remove);
+router.delete('/pages/:id', superAdmin, pageCtrl.remove);
 
 // FAQs
 router.get('/faqs', faqCtrl.getAll);
 router.post('/faqs', faqCtrl.create);
 router.put('/faqs/:id', faqCtrl.update);
-router.delete('/faqs/:id', faqCtrl.remove);
+router.delete('/faqs/:id', superAdmin, faqCtrl.remove);
 
 // Contacts
 router.get('/contacts', contactCtrl.getAll);
 router.patch('/contacts/:id', contactCtrl.updateStatus);
-router.delete('/contacts/:id', contactCtrl.remove);
+router.delete('/contacts/:id', superAdmin, contactCtrl.remove);
 
 // Notifications
 router.get('/notifications', notificationCtrl.getAll);
 router.post('/notifications', notificationCtrl.create);
-router.delete('/notifications/:id', notificationCtrl.remove);
+router.delete('/notifications/:id', superAdmin, notificationCtrl.remove);
 
 // Newsletter
 router.get('/newsletter/subscribers', newsletterCtrl.getSubscribers);
-router.delete('/newsletter/subscribers/:id', newsletterCtrl.removeSubscriber);
+router.delete('/newsletter/subscribers/:id', superAdmin, newsletterCtrl.removeSubscriber);
 
 // Audit Logs
 router.get('/audit-logs', auditCtrl.getLogs);
