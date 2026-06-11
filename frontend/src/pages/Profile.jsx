@@ -1,7 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Navigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import {
   LayoutDashboard,
   Bookmark,
@@ -10,8 +9,6 @@ import {
   Lightbulb,
   GitCompare,
   Clock,
-  Moon,
-  Sun,
   Menu,
   X,
   User as UserIcon,
@@ -48,7 +45,6 @@ function ProfileSectionLoader() {
 
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
-  const { dark, toggle: toggleTheme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'overview';
 
@@ -440,13 +436,6 @@ export default function Profile() {
 
           <div className="pt-6 border-t border-light-border dark:border-dark-border mt-auto space-y-2">
             <button
-              onClick={toggleTheme}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-light-muted hover:bg-primary-50 dark:hover:bg-dark-border transition-all"
-            >
-              {dark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
-              {dark ? 'Light' : 'Dark'} Mode
-            </button>
-            <button
               onClick={logout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all group"
             >
@@ -456,7 +445,7 @@ export default function Profile() {
         </div>
       </aside>
 
-      <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full overflow-y-auto h-screen">
         <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8">
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
             <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">

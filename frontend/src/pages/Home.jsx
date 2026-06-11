@@ -161,6 +161,17 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showAllStatesModal, setShowAllStatesModal] = useState(false);
+
+  const ALL_INDIA_STATES = [
+    'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',
+    'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli', 'Daman and Diu', 'Delhi NCR',
+    'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand',
+    'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra',
+    'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab',
+    'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
+    'Uttarakhand', 'West Bengal'
+  ];
   const [avatarPreview, setAvatarPreview] = useState(null);
   const featuredUniversity = featuredUniversities[currentSlide % featuredUniversities.length];
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -483,7 +494,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-10">
           <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Explore by State</h2>
-          <Link to="/universities" className="text-primary font-bold text-sm">View All States</Link>
+          <button onClick={() => setShowAllStatesModal(true)} className="text-primary font-bold text-sm hover:underline transition-all">View All States →</button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {[
@@ -1002,6 +1013,63 @@ export default function Home() {
                   </div>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* All States Modal */}
+      <AnimatePresence>
+        {showAllStatesModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+              onClick={() => setShowAllStatesModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white dark:bg-dark-card rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col z-10 overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-dark-border shrink-0">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white">Explore by State</h2>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">All {ALL_INDIA_STATES.length} states & union territories</p>
+                </div>
+                <button
+                  onClick={() => setShowAllStatesModal(false)}
+                  className="w-10 h-10 rounded-full bg-slate-100 dark:bg-dark-border flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="overflow-y-auto flex-1 p-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {ALL_INDIA_STATES.map((state) => (
+                    <button
+                      key={state}
+                      onClick={() => { setShowAllStatesModal(false); navigate(`/universities?state=${encodeURIComponent(state)}`); }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-dark-bg hover:bg-primary/10 dark:hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20 transition-all text-left group"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors truncate">{state}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="px-8 py-5 border-t border-slate-100 dark:border-dark-border shrink-0 flex items-center justify-between">
+                <p className="text-xs text-slate-400 font-medium">Click on any state to browse universities</p>
+                <button
+                  onClick={() => { setShowAllStatesModal(false); navigate('/universities'); }}
+                  className="px-6 py-2.5 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-colors"
+                >
+                  Browse All Universities
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

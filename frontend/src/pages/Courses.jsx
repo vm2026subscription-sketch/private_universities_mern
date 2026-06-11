@@ -173,7 +173,8 @@ export default function Courses() {
 
     const query = normalizeText(deferredSearch);
     if (!query) return filtered;
-    return filtered.filter((group) => group.searchIndex.includes(query));
+    const terms = query.split(' ').filter(Boolean);
+    return filtered.filter((group) => terms.every(t => group.searchIndex.includes(t)));
   }, [courseGroups, deferredSearch, selectedSpec]);
 
   const visibleCourseGroups = useMemo(() => {
@@ -233,6 +234,7 @@ export default function Courses() {
 
     const query = normalizeText(deferredSearch);
     if (!query) return filtered;
+    const terms = query.split(' ').filter(Boolean);
     return filtered.filter((course) => {
       const searchIndex = normalizeText(
         course.universityId?.name,
@@ -241,7 +243,7 @@ export default function Courses() {
         course.specializationName,
         course.name
       );
-      return searchIndex.includes(query);
+      return terms.every(t => searchIndex.includes(t));
     });
   }, [courses, selectedCourse, deferredSearch, selectedSpec]);
 

@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 import { calculateFitScore } from '../utils/fitScore';
 import UniversityLogo from '../components/common/UniversityLogo';
 import { getUniversityDisplayType } from '../utils/universityType';
+import { generateBrochure } from '../utils/brochureGenerator';
 
 const states = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -113,10 +114,10 @@ export default function Universities() {
 
   const toggleFilter = (key, value) => {
     setFilters(f => {
-      // All filters are now single select
       const currentValues = f[key];
       const isSelected = currentValues.includes(value);
-      return { ...f, [key]: isSelected ? [] : [value] };
+      // Multi-select: toggle value in/out of array
+      return { ...f, [key]: isSelected ? currentValues.filter(v => v !== value) : [...currentValues, value] };
     });
     setPage(1);
   };
@@ -157,11 +158,10 @@ export default function Universities() {
                   {states.map(s => (
                     <label key={s} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
                       <input 
-                        type="radio" 
-                        name="state"
+                        type="checkbox" 
                         checked={filters.state.includes(s)} 
                         onChange={() => toggleFilter('state', s)} 
-                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
+                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded"
                       />
                       <span className={`text-sm font-bold transition-colors ${filters.state.includes(s) ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{s}</span>
                     </label>
@@ -195,11 +195,10 @@ export default function Universities() {
                   {naacGrades.map(g => (
                     <label key={g} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
                       <input 
-                        type="radio" 
-                        name="naacGrade"
+                        type="checkbox"
                         checked={filters.naacGrade.includes(g)} 
                         onChange={() => toggleFilter('naacGrade', g)} 
-                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
+                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded"
                       />
                       <span className={`text-sm font-bold transition-colors ${filters.naacGrade.includes(g) ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{g}</span>
                     </label>
@@ -250,16 +249,14 @@ export default function Universities() {
                         <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
                       </button>
 
-                      {/* Download Brochure — outside flip so always visible */}
-                      {u.links?.brochureLink && (
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(u.links.brochureLink, '_blank'); }}
+                      {/* Download Brochure */}
+                      <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); try { generateBrochure(u); } catch { toast.error('Could not generate brochure'); } }}
                           className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-primary hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90"
-                          title="Download Brochure"
+                          title="Download University Brochure (PDF)"
                         >
                           <Download className="w-4 h-4" />
                         </button>
-                      )}
 
                       <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
                         {/* Front Face */}
