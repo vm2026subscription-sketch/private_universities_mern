@@ -16,7 +16,7 @@ const examsData = [
     registrationDeadline: new Date('2026-03-30'),
     eligibility: '10+2 from a recognized board with minimum 50% aggregate.',
     pattern: 'MCQs, Computer Based Test (CBT)',
-    officialUrl: 'https://exams.nta.ac.in/CUET-UG/',
+    officialUrl: "https://cuet.nta.nic.in/",
     category: 'others',
     scope: 'national',
     participatingUniversities: 250,
@@ -126,7 +126,7 @@ const examsData = [
     registrationDeadline: new Date('2026-04-06'),
     eligibility: '10+2 with Physics, Chemistry and Mathematics/Biology.',
     pattern: '160 MCQs, 3 hours, CBT format',
-    officialUrl: 'https://tseamcet.nic.in/',
+    officialUrl: 'https://ecet.tgche.ac.in/',
     category: 'engineering',
     scope: 'state',
     state: 'Telangana',
@@ -222,7 +222,7 @@ const examsData = [
     registrationDeadline: new Date('2026-05-05'),
     eligibility: '10th pass (for lateral entry to Polytechnic) or 10+2 for B.Tech.',
     pattern: 'MCQs, OMR based',
-    officialUrl: 'https://www.delhi.gov.in/page/cet',
+    officialUrl: "https://admissions.nic.in/",
     category: 'engineering',
     scope: 'state',
     state: 'Delhi',
@@ -238,7 +238,7 @@ const examsData = [
     registrationDeadline: new Date('2026-05-18'),
     eligibility: '10+2 with Physics, Chemistry and Mathematics/Biology with 45% marks.',
     pattern: 'MCQs, 3 hours, CBT',
-    officialUrl: 'https://upcet.nta.nic.in/',
+    officialUrl: "https://uptac.admissions.nic.in/",
     category: 'engineering',
     scope: 'state',
     state: 'Uttar Pradesh',
@@ -254,7 +254,7 @@ const examsData = [
     registrationDeadline: new Date('2026-04-30'),
     eligibility: '10+2 with Physics, Chemistry and Mathematics with minimum 50% marks (PCM).',
     pattern: 'Merit-based (no separate exam), Counselling process',
-    officialUrl: 'https://tnea.ac.in/',
+    officialUrl: "https://www.tneaonline.org/",
     category: 'engineering',
     scope: 'state',
     state: 'Tamil Nadu',
@@ -270,7 +270,7 @@ const examsData = [
     registrationDeadline: new Date('2026-04-22'),
     eligibility: '10+2 with Physics, Chemistry and Mathematics.',
     pattern: '150 MCQs, 3 hours, OMR based',
-    officialUrl: 'https://www.mppeb.org/',
+    officialUrl: "https://dte.mponline.gov.in/",
     category: 'engineering',
     scope: 'state',
     state: 'Madhya Pradesh',
@@ -397,10 +397,10 @@ async function seedExams() {
 
     // Remove existing exams to avoid duplicates in this demo script
     await Exam.deleteMany({});
-    
+
     await Exam.insertMany(examsData);
     console.log('Exams seeded successfully!');
-    
+
     process.exit(0);
   } catch (error) {
     console.error('Error seeding exams:', error);
