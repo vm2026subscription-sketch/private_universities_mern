@@ -458,7 +458,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 py-20">
         <div className="text-center mb-16">
           <p className="text-primary font-black text-xs uppercase tracking-[0.3em] mb-4">The Vidyarthi Mitra Edge</p>
-          <h2 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">Why 50,000+ Students Trust Us</h2>
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">Why 50,00,000+ Students Trust Us</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {[

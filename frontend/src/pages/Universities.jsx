@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap } from 'lucide-react';
+import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap, Loader2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
@@ -11,6 +11,7 @@ import { calculateFitScore } from '../utils/fitScore';
 import UniversityLogo from '../components/common/UniversityLogo';
 import { getUniversityDisplayType } from '../utils/universityType';
 import { generateBrochure } from '../utils/brochureGenerator';
+
 
 const states = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -27,6 +28,7 @@ export default function Universities() {
   const { user } = useAuth();
   const [universities, setUniversities] = useState([]);
   const [savedIds, setSavedIds] = useState([]);
+  const [downloadingId, setDownloadingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState('ranking');
   const [page, setPage] = useState(1);
@@ -250,12 +252,15 @@ export default function Universities() {
                       </button>
 
                       {/* Download Brochure */}
-                      <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); try { generateBrochure(u); } catch { toast.error('Could not generate brochure'); } }}
-                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-primary hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90"
+                       <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDownloadBrochure(u); }}
+                          disabled={downloadingId === u._id}
+                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-primary hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90 disabled:opacity-60 disabled:cursor-not-allowed"
                           title="Download University Brochure (PDF)"
                         >
-                          <Download className="w-4 h-4" />
+                          {downloadingId === u._id
+                            ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            : <Download className="w-4 h-4" />}
                         </button>
 
                       <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
