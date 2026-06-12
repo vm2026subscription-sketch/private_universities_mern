@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { getUniversityDisplayType } from './universityType';
 
 export const generateBrochure = (university) => {
@@ -7,90 +7,99 @@ export const generateBrochure = (university) => {
   const primaryColor = [13, 148, 136]; // #0d9488 (Teal/Primary)
   const displayType = getUniversityDisplayType(university);
 
-  // Header Background
+  // ── Header Background ──────────────────────────────────────────────────────
   doc.setFillColor(...primaryColor);
   doc.rect(0, 0, 210, 40, 'F');
 
-  // Title
+  // University name
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text(university.name, 105, 20, { align: 'center' });
-  
+  doc.text(university.name || 'University', 105, 20, { align: 'center' });
+
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${university.city}, ${university.state}`, 105, 30, { align: 'center' });
+  doc.text(`${university.city || ''}, ${university.state || ''}`, 105, 30, { align: 'center' });
 
-  // Body
+  // ── Overview section ───────────────────────────────────────────────────────
   doc.setTextColor(40, 40, 40);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text("University Overview", 14, 55);
+  doc.text('University Overview', 14, 55);
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
   const details = [
-    ["Type", displayType],
-    ["NIRF Rank", university.nirfRank || 'N/A'],
-    ["NAAC Grade", university.naacGrade || 'N/A'],
-    ["Website", university.website || 'N/A'],
-    ["Contact", university.email || university.phone || 'N/A']
+    ['Type', displayType || 'N/A'],
+    ['NIRF Rank', university.nirfRank ? String(university.nirfRank) : 'N/A'],
+    ['NAAC Grade', university.naacGrade || 'N/A'],
+    ['Website', university.website || 'N/A'],
+    ['Contact', university.email || university.phone || 'N/A'],
   ];
 
-  doc.autoTable({
+  // jspdf-autotable v5: call as standalone function, returns table object
+  let tableResult = autoTable(doc, {
     startY: 60,
     head: [['Parameter', 'Detail']],
     body: details,
     theme: 'striped',
-    headStyles: { fillColor: primaryColor }
+    headStyles: { fillColor: primaryColor },
   });
 
-  // Stats
-  let currentY = doc.lastAutoTable.finalY + 15;
+  // ── Stats section ──────────────────────────────────────────────────────────
+  // finalY is on doc.lastAutoTable in v3/v4; on the returned object in v5
+  let currentY = (tableResult?.finalY ?? doc.lastAutoTable?.finalY ?? 110) + 15;
+
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text("Statistics & Highlights", 14, currentY);
+  doc.text('Statistics & Highlights', 14, currentY);
 
   const stats = [
-    ["Average Package", `${university.stats?.avgPackageLPA || '4.5'} LPA`],
-    ["Highest Package", `${university.stats?.highestPackageLPA || '12.0'} LPA`],
-    ["Campus Size", `${university.stats?.campusSizeAcres || '50'} Acres`],
-    ["Hostel Facility", university.campus?.hostelDetails || 'Available'],
-    ["Placement Rate", `${university.stats?.placementPercentage || '85'}%`]
+    ['Average Package', `${university.stats?.avgPackageLPA || '4.5'} LPA`],
+    ['Highest Package', `${university.stats?.highestPackageLPA || '12.0'} LPA`],
+    ['Campus Size', `${university.stats?.campusSizeAcres || '50'} Acres`],
+    ['Hostel Facility', university.campus?.hostelDetails || 'Available'],
+    ['Placement Rate', `${university.stats?.placementPercentage || '85'}%`],
   ];
 
-  doc.autoTable({
+  tableResult = autoTable(doc, {
     startY: currentY + 5,
     body: stats,
     theme: 'plain',
-    columnStyles: { 0: { fontStyle: 'bold' } }
+    columnStyles: { 0: { fontStyle: 'bold' } },
   });
 
-  // Courses
-  currentY = doc.lastAutoTable.finalY + 15;
+  // ── Courses section ────────────────────────────────────────────────────────
+  currentY = (tableResult?.finalY ?? doc.lastAutoTable?.finalY ?? currentY + 60) + 15;
+
   if (university.courses && university.courses.length > 0) {
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text("Programs Offered", 14, currentY);
+    doc.text('Programs Offered', 14, currentY);
 
-    const courses = university.courses.map(c => [c.baseCourse || c.name, c.category, `${c.duration} Years`, c.feesPerYear ? `Rs. ${c.feesPerYear}` : 'Contact University']);
-    doc.autoTable({
+    const courses = university.courses.map((c) => [
+      c.baseCourse || c.name || '',
+      c.category || '',
+      `${c.duration || '?'} Years`,
+      c.feesPerYear ? `Rs. ${c.feesPerYear}` : 'Contact University',
+    ]);
+
+    autoTable(doc, {
       startY: currentY + 5,
       head: [['Course Name', 'Level', 'Duration', 'Fees (Annual)']],
       body: courses,
-      headStyles: { fillColor: primaryColor }
+      headStyles: { fillColor: primaryColor },
     });
   }
 
-  // Footer
+  // ── Footer on every page ───────────────────────────────────────────────────
   const pageCount = doc.internal.getNumberOfPages();
-  for(let i = 1; i <= pageCount; i++) {
+  for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Generated by Vidyarthi Mitra - Find Your Perfect University`, 105, 285, { align: 'center' });
+    doc.text('Generated by Vidyarthi Mitra - Find Your Perfect University', 105, 285, { align: 'center' });
     doc.text(`Page ${i} of ${pageCount}`, 190, 285, { align: 'right' });
   }
 
-  doc.save(`${university.slug}_brochure.pdf`);
+  const fileName = (university.slug || university.name || 'university').replace(/\s+/g, '_');
+  doc.save(`${fileName}_brochure.pdf`);
 };

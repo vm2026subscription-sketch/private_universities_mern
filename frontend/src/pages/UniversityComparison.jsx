@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRightLeft, Check, GraduationCap, Search, Trash2, MapPin, X, Scale, Layers, Sparkles, GripVertical, AlertCircle, Loader2, Award, Star, ArrowUpRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
@@ -20,6 +20,7 @@ export default function UniversityComparison() {
   const [loadingResults, setLoadingResults] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('compareRecentSearches');
@@ -161,9 +162,10 @@ export default function UniversityComparison() {
             {/* Search Bar */}
             <div className="relative group z-40">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-indigo-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
-              <div className="relative flex items-center bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-[2rem] shadow-lg overflow-hidden">
-                <Search className="w-6 h-6 ml-6 text-slate-400" />
+              <div className="relative flex items-center bg-white dark:bg-dark-card border-2 border-light-border dark:border-dark-border group-focus-within:border-primary/40 rounded-[2rem] shadow-xl overflow-hidden transition-all duration-300">
+                <Search className="w-6 h-6 ml-6 text-slate-400 group-focus-within:text-primary transition-colors" />
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -341,9 +343,17 @@ export default function UniversityComparison() {
 
           {/* Right Column: Actions */}
           <div className="space-y-6">
-            <div className="bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border p-8 shadow-lg sticky top-24">
-              <h3 className="text-lg font-black mb-2 text-slate-900 dark:text-white">Ready to Compare?</h3>
-              <p className="text-sm text-slate-500 mb-8 font-medium">Add at least 2 universities to generate a comprehensive benchmark report.</p>
+            <div className="relative bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border p-8 shadow-xl sticky top-24 overflow-hidden">
+              {/* Decorative background orb */}
+              <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-primary/10 to-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Scale className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Ready to Compare?</h3>
+              </div>
+              <p className="text-sm text-slate-500 mb-6 font-medium">Add at least 2 universities to generate a comprehensive benchmark report.</p>
               
               <button
                 onClick={runComparison}
@@ -361,22 +371,27 @@ export default function UniversityComparison() {
                 )}
               </button>
 
-              <div className="mt-8 pt-8 border-t border-slate-100 dark:border-dark-border">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 text-center">Popular Benchmarks</p>
+              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-dark-border">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 text-center">Popular Benchmarks</p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {EXAMPLE_UNIVERSITIES.map((name) => (
                     <button
                       key={name}
                       onClick={() => {
                         setQuery(name);
+                        // Scroll to top then focus the search input so dropdown appears
                         window.scrollTo({ top: 0, behavior: 'smooth' });
+                        setTimeout(() => {
+                          searchInputRef.current?.focus();
+                        }, 400);
                       }}
-                      className="px-4 py-2.5 rounded-full text-xs font-bold bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary transition-colors"
+                      className="px-4 py-2.5 rounded-full text-xs font-bold bg-gradient-to-r from-slate-50 to-white dark:from-dark-bg dark:to-dark-bg border border-slate-200 dark:border-dark-border text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary hover:shadow-md hover:shadow-primary/10 active:scale-95 transition-all duration-200"
                     >
                       {name}
                     </button>
                   ))}
                 </div>
+              </div>
               </div>
             </div>
           </div>
