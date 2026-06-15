@@ -93,6 +93,28 @@ export default function Universities() {
     }
   };
 
+  const handleDownloadBrochure = async (university) => {
+    try {
+      setDownloadingId(university._id);
+      // Fetch full university data so the brochure has all details
+      const { data } = await api.get(`/universities/${university.slug || university._id}`);
+      const fullData = data?.data || university;
+      generateBrochure(fullData);
+      toast.success('Brochure downloaded!');
+    } catch (error) {
+      console.error('Brochure download failed:', error);
+      // Fall back to generating with whatever data we already have
+      try {
+        generateBrochure(university);
+        toast.success('Brochure downloaded!');
+      } catch (pdfErr) {
+        toast.error('Failed to generate brochure. Please try again.');
+      }
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
