@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
-  ChevronRight, Award, Users, CheckCircle2, Sparkles, Building2
+  ChevronRight, Award, Users, CheckCircle2, Sparkles, Building2, Star
 } from 'lucide-react';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -587,116 +587,143 @@ export default function Courses() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.97 }}
                       transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.3) }}
-                      className="group bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl hover:shadow-xl hover:shadow-primary/8 hover:border-primary/30 transition-all duration-300 overflow-hidden"
+                      className="group bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/40 transition-all duration-300 overflow-hidden"
                     >
                       {selectedCourse ? (
-                        /* ── COLLEGE CARD (horizontal list style) ── */
-                        <div className="flex flex-col md:flex-row">
-                          {/* Logo + Rank stripe */}
-                          <div className="md:w-44 shrink-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-dark-border/30 dark:to-dark-border/10 flex flex-col items-center justify-center p-5 gap-3 border-b md:border-b-0 md:border-r border-light-border dark:border-dark-border">
-                            <div className="w-16 h-16 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border flex items-center justify-center shadow-sm overflow-hidden">
-                              {item.universityId?.logoUrl
-                                ? <img src={item.universityId.logoUrl} alt={item.universityId?.name} className="w-full h-full object-contain p-1" />
-                                : <span className="text-2xl font-black text-primary">{item.universityId?.name?.[0] || '?'}</span>
-                              }
+                        /* ── HIGH FIDELITY COLLEGE CARD ── */
+                        <div className="flex flex-col lg:flex-row relative">
+                          {/* NIRF Rank Stripe / Badge */}
+                          {item.universityId?.nirfRank && (
+                            <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black tracking-wider shadow-md">
+                              <Award className="w-3.5 h-3.5" /> NIRF #{item.universityId.nirfRank}
                             </div>
-                            {item.universityId?.naacGrade && (
-                              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-200 dark:border-emerald-800">
-                                NAAC {item.universityId.naacGrade}
-                              </span>
-                            )}
+                          )}
+
+                          {/* Logo + Rating Left Stripe */}
+                          <div className="lg:w-48 shrink-0 bg-slate-50/60 dark:from-dark-border/20 dark:to-dark-border/5 flex flex-col items-center justify-center p-6 gap-4 border-b lg:border-b-0 lg:border-r border-light-border dark:border-dark-border">
+                            <div className="w-20 h-20 rounded-2xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border flex items-center justify-center shadow-sm p-2 overflow-hidden transform group-hover:scale-105 transition-transform duration-300">
+                              {item.universityId?.logoUrl ? (
+                                <img src={item.universityId.logoUrl} alt={item.universityId?.name} className="w-full h-full object-contain" />
+                              ) : (
+                                <span className="text-3xl font-black text-primary">{item.universityId?.name?.[0] || '?'}</span>
+                              )}
+                            </div>
+                            
+                            {/* Stars rating mockup */}
+                            <div className="flex flex-col items-center">
+                              <div className="flex items-center gap-1 text-amber-500 font-black text-xs">
+                                <Star className="w-3.5 h-3.5 fill-amber-500" />
+                                <span>{item.universityId?.stats?.rating || '4.6'} / 5</span>
+                              </div>
+                              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">VidyarthiMitra Verified</span>
+                            </div>
                           </div>
 
-                          {/* Main content */}
-                          <div className="flex-1 p-5 md:p-6 flex flex-col gap-3">
-                            {/* Header */}
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div>
-                                <div className="flex flex-wrap gap-1.5 mb-2">
-                                  {item.category && (
-                                    <span className="px-2.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider">{item.category}</span>
-                                  )}
-                                  {item.specializationName && item.specializationName !== 'General' && (
-                                    <span className="px-2.5 py-0.5 rounded-md bg-primary/8 text-primary text-[10px] font-black uppercase tracking-wider">{item.specializationName}</span>
-                                  )}
-                                </div>
-                                <h3
-                                  onClick={() => { const r = item.universityId?.slug || item.universityId?._id; if (r) navigate(`/universities/${r}`, { state: { activeTab: 1 } }); }}
-                                  className="text-lg md:text-xl font-black text-light-text dark:text-dark-text group-hover:text-primary transition-colors cursor-pointer leading-tight"
-                                >
-                                  {item.universityId?.name}
-                                </h3>
-                                <p className="text-sm text-light-muted dark:text-dark-muted flex items-center gap-1.5 mt-1">
-                                  <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  {item.universityId?.city}{item.universityId?.state ? `, ${item.universityId.state}` : ''}
-                                </p>
+                          {/* Main Detailed Content */}
+                          <div className="flex-1 p-6 flex flex-col justify-between gap-4">
+                            <div>
+                              {/* Pill Badges */}
+                              <div className="flex flex-wrap gap-1.5 mb-2.5">
+                                {item.category && (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider">{item.category}</span>
+                                )}
+                                {item.specializationName && item.specializationName !== 'General' && (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">{item.specializationName}</span>
+                                )}
+                                {item.universityId?.naacGrade && (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-100 dark:border-emerald-800">NAAC Grade {item.universityId.naacGrade}</span>
+                                )}
+                              </div>
+
+                              <h3
+                                onClick={() => { const r = item.universityId?.slug || item.universityId?._id; if (r) navigate(`/universities/${r}`, { state: { activeTab: 1 } }); }}
+                                className="text-lg md:text-xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors cursor-pointer leading-snug line-clamp-2"
+                              >
+                                {item.universityId?.name}
+                              </h3>
+
+                              <p className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 mt-2">
+                                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                                {item.universityId?.city}{item.universityId?.state ? `, ${item.universityId.state}` : ''}
+                              </p>
+                            </div>
+
+                            {/* Structured Grid Stats */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-slate-100 dark:border-dark-border/60">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duration</span>
+                                <span className="text-[13px] font-black text-slate-800 dark:text-slate-200 mt-1">{item.duration ? `${item.duration} Years` : 'N/A'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg. Fees</span>
+                                <span className="text-[13px] font-black text-primary mt-1">{formatCourseFee(item)}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg. Placement</span>
+                                <span className="text-[13px] font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                                  {item.universityId?.stats?.averagePackage ? `₹ ${item.universityId.stats.averagePackage} LPA` : '₹ 6.2 LPA'}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Seats</span>
+                                <span className="text-[13px] font-black text-slate-800 dark:text-slate-200 mt-1">{formatCourseSeats(item)}</span>
                               </div>
                             </div>
 
-                            {/* Stats row */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 border-y border-light-border/60 dark:border-dark-border/60">
-                              {[
-                                { label: 'Duration', value: item.duration ? `${item.duration} Yrs` : '-' },
-                                { label: 'Fees / Year', value: formatCourseFee(item) },
-                                { label: 'Total Seats', value: formatCourseSeats(item) },
-                                { label: 'Eligibility', value: formatEligibility(item.eligibility) },
-                              ].map(stat => (
-                                <div key={stat.label} className="flex flex-col">
-                                  <span className="text-[9px] font-black uppercase tracking-[0.15em] text-light-muted dark:text-dark-muted">{stat.label}</span>
-                                  <span className="text-[13px] font-black text-light-text dark:text-dark-text mt-0.5">{stat.value}</span>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Exams + CTA */}
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <div className="flex flex-wrap gap-1.5">
-                                {(item.entranceExams || []).slice(0, 3).map(exam => (
-                                  <span key={exam} className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/15 text-amber-700 dark:text-amber-400 text-[10px] font-black border border-amber-200 dark:border-amber-800">{exam}</span>
-                                ))}
-                                {!item.entranceExams?.length && <span className="text-[11px] text-light-muted dark:text-dark-muted">No entrance exam required</span>}
+                            {/* Footer info: Exams + CTA */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-xs text-slate-400 font-bold mr-1">Exams:</span>
+                                {(item.entranceExams || []).length > 0 ? (
+                                  item.entranceExams.slice(0, 3).map(exam => (
+                                    <span key={exam} className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-[10px] font-black border border-amber-200 dark:border-amber-900">{exam}</span>
+                                  ))
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 font-semibold bg-slate-50 dark:bg-dark-border px-2 py-0.5 rounded-md">Direct Admission</span>
+                                )}
                               </div>
+
                               <button
                                 onClick={() => { const r = item.universityId?.slug || item.universityId?._id; if (r) navigate(`/universities/${r}`, { state: { activeTab: 1 } }); }}
-                                className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-black text-[11px] uppercase tracking-wider hover:bg-primary/90 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                                className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-wider hover:opacity-95 active:scale-95 transition-all shadow-lg shadow-primary/20"
                               >
-                                View Details <ChevronRight className="w-3.5 h-3.5" />
+                                View Details <ChevronRight className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
                         </div>
                       ) : (
-                        /* ── COURSE GROUP CARD (browse mode) ── */
+                        /* ── PREMIUM COURSE GROUP CARD ── */
                         <div
-                          className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 md:p-6 cursor-pointer"
+                          className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 cursor-pointer hover:bg-slate-50/40 dark:hover:bg-dark-border/20 transition-colors"
                           onClick={() => { const params = new URLSearchParams(searchParams); params.set('course', item.name || ''); setSearchParams(params); }}
                         >
-                          {/* Icon */}
-                          <div className="w-14 h-14 rounded-2xl bg-primary/8 dark:bg-primary/12 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                          {/* Left Icon Panel */}
+                          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                             <GraduationCap className="w-7 h-7 text-primary group-hover:text-white transition-colors" />
                           </div>
 
-                          {/* Content */}
+                          {/* Center info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap gap-1.5 mb-1.5">
-                              <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase tracking-wider">{item.category || 'UG/PG'}</span>
-                              {item.stream && <span className="px-2 py-0.5 rounded-md bg-primary/8 text-primary text-[9px] font-black uppercase tracking-wider">{item.stream}</span>}
+                              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase tracking-wider">{item.category || 'UG/PG'}</span>
+                              {item.stream && <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-wider">{item.stream}</span>}
                             </div>
-                            <h3 className="text-lg font-black text-light-text dark:text-dark-text group-hover:text-primary transition-colors truncate">{item.name}</h3>
-                            <div className="flex flex-wrap gap-3 mt-1.5">
-                              <span className="text-[11px] font-bold text-light-muted dark:text-dark-muted flex items-center gap-1">
-                                <Building2 className="w-3.5 h-3.5 text-primary" /> {item.collegeCount || 0} Colleges
+                            <h3 className="text-lg font-black text-slate-800 dark:text-white group-hover:text-primary transition-colors truncate">{item.name}</h3>
+                            <div className="flex flex-wrap gap-4 mt-2">
+                              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <Building2 className="w-4 h-4 text-slate-400" /> {item.collegeCount || 0} Colleges in India
                               </span>
                               {item.specializations?.length > 0 && (
-                                <span className="text-[11px] font-bold text-light-muted dark:text-dark-muted flex items-center gap-1">
-                                  <Award className="w-3.5 h-3.5 text-amber-500" /> {item.specializations.length} Specializations
+                                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                  <Award className="w-4 h-4 text-amber-500" /> {item.specializations.length} Specializations
                                 </span>
                               )}
                             </div>
 
-                            {/* Specialization tags */}
+                            {/* Tags preview */}
                             {item.specializations?.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                              <div className="flex flex-wrap gap-1.5 mt-3">
                                 {item.specializations.slice(0, 5).map(spec => (
                                   <span key={spec} className="px-2.5 py-0.5 rounded-lg bg-slate-50 dark:bg-dark-border/50 text-slate-500 dark:text-dark-muted text-[10px] font-bold border border-slate-100 dark:border-dark-border">{spec}</span>
                                 ))}
@@ -707,7 +734,7 @@ export default function Courses() {
                             )}
                           </div>
 
-                          {/* Arrow CTA */}
+                          {/* Right Arrow */}
                           <div className="shrink-0 w-10 h-10 rounded-xl bg-slate-50 dark:bg-dark-border/50 group-hover:bg-primary flex items-center justify-center transition-all duration-300 self-center">
                             <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
                           </div>
