@@ -32,6 +32,24 @@ const getDisplayType = (university) => {
   return university?.institutionKind === 'deemed' || university?.type === 'deemed' ? 'Deemed' : 'Private';
 };
 
+const formatMetric = (numericValue, labelValue, suffix = '') => {
+  if (labelValue) return suffix ? `${labelValue} ${suffix}` : labelValue;
+  if (numericValue === null || numericValue === undefined || numericValue === '') return 'N/A';
+  return suffix ? `${numericValue} ${suffix}` : String(numericValue);
+};
+
+const formatCurrencyMetric = (numericValue, labelValue, suffix = '') => {
+  if (labelValue) return suffix ? `INR ${labelValue} ${suffix}` : `INR ${labelValue}`;
+  if (numericValue === null || numericValue === undefined || numericValue === '') return 'N/A';
+  return `INR ${numericValue} ${suffix}`.trim();
+};
+
+const formatCourseFee = (course) => {
+  if (course?.feesPerYearLabel) return `${course.feesPerYearLabel}/yr`;
+  if (course?.feesPerYear) return `${course.feesPerYear.toLocaleString()}/yr`;
+  return null;
+};
+
 export default function UniversityDetail() {
   const { slug } = useParams();
   const location = useLocation();
@@ -85,10 +103,30 @@ export default function UniversityDetail() {
       api.get('/users/saved-universities').then(({ data }) => {
         setIsSaved(data.data.some(u => u._id === uni._id));
       }).catch(() => {});
+      api.get('/users/profile').then(({ data }) => {
+        const apps = data.data?.applications || [];
+        setIsTracked(apps.some(a => a.universityId?._id === uni._id || a.universityId === uni._id));
+      }).catch(() => {});
     } else {
       setIsSaved(false);
+      setIsTracked(false);
     }
   }, [user, uni]);
+
+  const handleTrackApplication = async () => {
+    if (!user) return toast.error('Please login to track applications');
+    if (isTracked) return toast('Already tracking this university', { icon: '📋' });
+    setTrackLoading(true);
+    try {
+      await api.post('/users/applications', { universityId: uni._id });
+      setIsTracked(true);
+      toast.success('Added to Application Tracker!');
+    } catch {
+      toast.error('Failed to track application');
+    } finally {
+      setTrackLoading(false);
+    }
+  };
 
   const handleBookmark = async () => {
     if (!user) return toast.error('Please login to save universities');
@@ -211,11 +249,19 @@ export default function UniversityDetail() {
               >
                 <Bookmark className="w-6 h-6" fill={isSaved ? "currentColor" : "none"} />
               </button>
-              <button 
+              <button
                 onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Link copied'); }}
                 className="p-4 rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 shadow-lg shadow-slate-200/50 transition-all"
               >
                 <Share2 className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleTrackApplication}
+                disabled={trackLoading || isTracked}
+                title={isTracked ? 'Already in Application Tracker' : 'Track Application'}
+                className={`p-4 rounded-2xl transition-all shadow-lg ${isTracked ? 'bg-green-500 text-white shadow-green-200' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 shadow-slate-200/50'}`}
+              >
+                <ClipboardList className="w-6 h-6" />
               </button>
               {uni.website && (
                 <a 
@@ -259,12 +305,12 @@ export default function UniversityDetail() {
           {/* Stats Grid - unchanged */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mt-12 pt-10 border-t border-slate-50 dark:border-white/5">
             {[
-              { icon: Users, label: 'Students', value: uni.stats?.totalStudents?.toLocaleString() || 'N/A' },
-              { icon: Award, label: 'Avg Package', value: uni.stats?.avgPackageLPA ? `INR ${uni.stats.avgPackageLPA} LPA` : 'N/A' },
+              { icon: Users, label: 'Students', value: formatMetric(uni.stats?.totalStudents, uni.stats?.totalStudentsLabel) },
+              { icon: Award, label: 'Avg Package', value: formatCurrencyMetric(uni.stats?.avgPackageLPA, uni.stats?.avgPackageLPALabel, 'LPA') },
               { icon: BookOpen, label: 'Courses', value: uni.stats?.totalCoursesCount || uni.courses?.length || 0, link: `/courses?universityId=${uni._id}&universityName=${encodeURIComponent(uni.name)}` },
-              { icon: Building, label: 'Campus', value: uni.stats?.campusSizeAcres ? `${uni.stats.campusSizeAcres} Acres` : 'N/A' },
-              { icon: CheckCircle2, label: 'Placement', value: uni.stats?.placementPercentage ? `${uni.stats.placementPercentage}%` : 'N/A' },
-              { icon: Award, label: 'Highest Pkg', value: uni.stats?.highestPackageLPA ? `INR ${uni.stats.highestPackageLPA} LPA` : 'N/A' },
+              { icon: Building, label: 'Campus', value: formatMetric(uni.stats?.campusSizeAcres, uni.stats?.campusSizeLabel, 'Acres') },
+              { icon: CheckCircle2, label: 'Placement', value: formatMetric(uni.stats?.placementPercentage, uni.stats?.placementPercentageLabel, '%') },
+              { icon: Award, label: 'Highest Pkg', value: formatCurrencyMetric(uni.stats?.highestPackageLPA, uni.stats?.highestPackageLPALabel, 'LPA') },
             ].map((s, i) => {
               const content = (
                 <>
@@ -384,7 +430,7 @@ export default function UniversityDetail() {
                               {course.category} | {course.duration} Year{course.duration > 1 ? 's' : ''}
                             </p>
                           </div>
-                          {course.feesPerYear ? <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-black">INR {course.feesPerYear.toLocaleString()}/yr</span> : null}
+                          {formatCourseFee(course) ? <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-black">INR {formatCourseFee(course)}</span> : null}
                         </div>
                         {course.entranceExams?.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-4">
@@ -437,15 +483,15 @@ export default function UniversityDetail() {
                 <div className="space-y-12">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="p-8 rounded-[2.5rem] bg-indigo-500/5 border border-indigo-500/10 text-center">
-                      <p className="text-4xl font-serif font-black text-indigo-600 mb-2">{uni.stats?.avgPackageLPA ? `INR ${uni.stats.avgPackageLPA} LPA` : 'N/A'}</p>
+                      <p className="text-4xl font-serif font-black text-indigo-600 mb-2">{formatCurrencyMetric(uni.stats?.avgPackageLPA, uni.stats?.avgPackageLPALabel, 'LPA')}</p>
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Average Package</p>
                     </div>
                     <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/10 text-center">
-                      <p className="text-4xl font-serif font-black text-emerald-600 mb-2">{uni.stats?.highestPackageLPA ? `INR ${uni.stats.highestPackageLPA} LPA` : 'N/A'}</p>
+                      <p className="text-4xl font-serif font-black text-emerald-600 mb-2">{formatCurrencyMetric(uni.stats?.highestPackageLPA, uni.stats?.highestPackageLPALabel, 'LPA')}</p>
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Highest Package</p>
                     </div>
                     <div className="p-8 rounded-[2.5rem] bg-orange-500/5 border border-orange-500/10 text-center">
-                      <p className="text-4xl font-serif font-black text-orange-600 mb-2">{uni.stats?.placementPercentage || 'N/A'}{uni.stats?.placementPercentage ? '%' : ''}</p>
+                      <p className="text-4xl font-serif font-black text-orange-600 mb-2">{formatMetric(uni.stats?.placementPercentage, uni.stats?.placementPercentageLabel, '%')}</p>
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Placement Rate</p>
                     </div>
                   </div>

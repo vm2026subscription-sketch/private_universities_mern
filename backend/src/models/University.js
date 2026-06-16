@@ -6,8 +6,19 @@ const universitySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   universityCode: { type: String, unique: true, sparse: true, trim: true, uppercase: true },
   slug: { type: String, unique: true },
-  state: { type: String, required: true },
-  city: { type: String, required: true },
+  status: { type: String, enum: ['draft', 'published', 'needs_review'], default: 'published' },
+  state: {
+    type: String,
+    required() {
+      return this.status !== 'draft';
+    },
+  },
+  city: {
+    type: String,
+    required() {
+      return this.status !== 'draft';
+    },
+  },
   segment: { type: String, enum: ['normal', 'foreign', 'twinning'], default: 'normal' },
   institutionKind: { type: String, enum: ['private', 'deemed'] },
   type: { type: String, enum: ['private', 'deemed', 'foreign', 'twinning'], required: true },
@@ -31,10 +42,15 @@ const universitySchema = new mongoose.Schema({
   },
   stats: {
     totalStudents: Number,
+    totalStudentsLabel: String,
     campusSizeAcres: Number,
+    campusSizeLabel: String,
     avgPackageLPA: Number,
+    avgPackageLPALabel: String,
     highestPackageLPA: Number,
+    highestPackageLPALabel: String,
     placementPercentage: Number,
+    placementPercentageLabel: String,
     totalCoursesCount: Number,
     avgFees: String,
     rating: { type: Number, default: 0 }
@@ -111,6 +127,7 @@ universitySchema.pre('save', function(next) {
 universitySchema.index({ name: 'text', state: 'text', city: 'text' });
 universitySchema.index({ state: 1, type: 1, naacGrade: 1 });
 universitySchema.index({ segment: 1, institutionKind: 1 });
+universitySchema.index({ status: 1, segment: 1, institutionKind: 1 });
 universitySchema.index({ type: 1, nirfRank: 1 });
 universitySchema.index({ state: 1, nirfRank: 1 });
 universitySchema.index({ state: 1, 'stats.avgPackageLPA': -1 });

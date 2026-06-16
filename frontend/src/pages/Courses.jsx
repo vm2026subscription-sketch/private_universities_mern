@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
@@ -341,15 +342,18 @@ export default function Courses() {
   const selectedSpec = searchParams.get('specialization') || 'All';
   const universityId = searchParams.get('universityId');
   const universityName = searchParams.get('universityName');
+  const cachedStreams = readSessionCache(STREAMS_CACHE_KEY, STREAMS_CACHE_TTL_MS) || [];
   
   const [courses, setCourses] = useState([]);
-  const [streams, setStreams] = useState([]);
+  const [streams, setStreams] = useState(cachedStreams);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [stateSearch, setStateSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [visibleCount, setVisibleCount] = useState(24);
+  const deferredSearch = useDeferredValue(search);
+  const deferredStateSearch = useDeferredValue(stateSearch);
 
   // Edit / Delete modal state
   const [editingCourse, setEditingCourse] = useState(null);
@@ -368,7 +372,10 @@ export default function Courses() {
     const fetchStreams = async () => {
       try {
         const { data } = await api.get('/courses/streams');
-        if (data.success) setStreams(data.data);
+        if (data.success) {
+          setStreams(data.data);
+          writeSessionCache(STREAMS_CACHE_KEY, data.data);
+        }
       } catch (error) {
         console.error('Failed to fetch streams:', error);
       }
@@ -379,21 +386,36 @@ export default function Courses() {
   useEffect(() => {
     let active = true;
     const loadData = async () => {
-      setLoading(true);
       try {
         let queryParams = new URLSearchParams();
         if (selectedCategory !== 'All') queryParams.append('category', selectedCategory);
         if (selectedState !== 'All') queryParams.append('state', selectedState);
         if (selectedStream !== 'All') queryParams.append('stream', selectedStream);
         if (universityId) queryParams.append('universityId', universityId);
+        const queryStringBase = queryParams.toString();
+        const requestKey = selectedCourse
+          ? getCourseResultsCacheKey(`list_${queryStringBase}&baseCourse=${encodeURIComponent(selectedCourse)}`)
+          : getCourseResultsCacheKey(`grouped_${queryStringBase}`);
+        const cachedData = readSessionCache(requestKey, COURSE_RESULTS_CACHE_TTL_MS);
+
+        if (cachedData && active) {
+          setCourses(cachedData.data || []);
+          setTotalCount(cachedData.total || cachedData.data?.length || 0);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
 
         if (selectedCourse) {
           queryParams.append('baseCourse', selectedCourse);
           queryParams.append('limit', '100');
           const { data } = await api.get(`/courses?${queryParams.toString()}`);
           if (active) {
-            setCourses(data.data || []);
-            setTotalCount(data.pagination?.total || data.data.length);
+            const nextCourses = data.data || [];
+            const nextTotal = data.pagination?.total || nextCourses.length;
+            setCourses(nextCourses);
+            setTotalCount(nextTotal);
+            writeSessionCache(requestKey, { data: nextCourses, total: nextTotal });
           }
         } else {
           const { data } = await api.get(`/courses/grouped?${queryParams.toString()}`);
@@ -444,6 +466,7 @@ export default function Courses() {
         category: course.category || 'Others',
         stream: course.stream || 'Others',
         normName: normalizeText(course.name),
+        searchIndex: normalizeText(course.name, course.category, course.stream, course.specializations),
       }));
   }, [courses, selectedCourse]);
 
@@ -457,10 +480,9 @@ export default function Courses() {
     }
     const query = search.trim().toLowerCase();
     if (!query) return filtered;
-    return filtered.filter((group) => (
-      normalizeText(group.name, group.category, group.stream, group.specializations).includes(query)
-    ));
-  }, [courseGroups, search, selectedSpec]);
+    const terms = query.split(' ').filter(Boolean);
+    return filtered.filter((group) => terms.every(t => group.searchIndex.includes(t)));
+  }, [courseGroups, deferredSearch, selectedSpec]);
 
   const visibleCourseGroups = useMemo(() => filteredCourseGroups.slice(0, visibleCount), [filteredCourseGroups, visibleCount]);
 
@@ -528,10 +550,10 @@ export default function Courses() {
   const visibleColleges = useMemo(() => filteredColleges.slice(0, visibleCount), [filteredColleges, visibleCount]);
 
   const filteredStates = useMemo(() => {
-    const query = stateSearch.trim().toLowerCase();
+    const query = deferredStateSearch.trim().toLowerCase();
     if (!query) return ALL_STATES;
     return ALL_STATES.filter((state) => state.toLowerCase().includes(query));
-  }, [stateSearch]);
+  }, [deferredStateSearch]);
 
   // ── Card action buttons (admin only) ──────────────────────────────────────
 
@@ -608,8 +630,17 @@ export default function Courses() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by degree, stream or keyword..."
-                  className="w-full pl-5 pr-8 py-7 bg-transparent border-none outline-none text-xl text-white font-bold placeholder:text-white/20"
+                  className="w-full pl-5 pr-14 py-7 bg-transparent border-none outline-none text-xl text-white font-bold placeholder:text-white/20"
                 />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="mr-4 rounded-full bg-white/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
             {(universityName || selectedStream !== 'All' || selectedCourse) && (
@@ -807,8 +838,8 @@ export default function Courses() {
               )}
             </motion.div>
           ) : (
-            <div className="flex items-center justify-between gap-6 mb-10">
-              <div className="flex items-center gap-6">
+            <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-4 lg:gap-6">
                 <h2 className="text-2xl font-serif font-black text-slate-800 dark:text-white">
                   {selectedStream !== 'All' ? selectedStream : 'Academic Programs'}
                 </h2>
@@ -817,6 +848,11 @@ export default function Courses() {
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   {totalCount} RESULTS
                 </div>
+                {search ? (
+                  <div className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                    Searching for "{deferredSearch || search}"
+                  </div>
+                ) : null}
               </div>
               <button 
                 onClick={() => setShowFilters(true)}
@@ -844,18 +880,17 @@ export default function Courses() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {(selectedCourse ? visibleColleges : visibleCourseGroups).map((item, idx) => (
-                    <motion.div 
+                    <motion.div
                       layout
                       key={item._id || item.normName || `${item.name || 'item'}-${idx}`}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.5, delay: idx * 0.05 }}
-                      whileHover={{ y: -8 }}
-                      className="group relative bg-white dark:bg-dark-card rounded-[3rem] p-1 border border-light-border dark:border-dark-border shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500"
+                      exit={{ opacity: 0, scale: 0.97 }}
+                      transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.3) }}
+                      className="group bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/40 transition-all duration-300 overflow-hidden"
                     >
                       {/* Admin edit/delete buttons — only shown in college (selectedCourse) view */}
                       {isAdmin && selectedCourse && (
@@ -931,27 +966,99 @@ export default function Courses() {
                           </div>
                         </div>
 
-                        {selectedCourse && (
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-400">
-                              <span>Specialization</span>
-                              <span className="text-emerald-500">{item.specializationName || 'General'}</span>
+                          {/* Main Detailed Content */}
+                          <div className="flex-1 p-6 flex flex-col justify-between gap-4">
+                            <div>
+                              {/* Pill Badges */}
+                              <div className="flex flex-wrap gap-1.5 mb-2.5">
+                                {item.category && (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider">{item.category}</span>
+                                )}
+                                {item.specializationName && item.specializationName !== 'General' && (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">{item.specializationName}</span>
+                                )}
+                                {item.universityId?.naacGrade && (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-100 dark:border-emerald-800">NAAC Grade {item.universityId.naacGrade}</span>
+                                )}
+                              </div>
+
+                              <h3
+                                onClick={() => { const r = item.universityId?.slug || item.universityId?._id; if (r) navigate(`/universities/${r}`, { state: { activeTab: 1 } }); }}
+                                className="text-lg md:text-xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors cursor-pointer leading-snug line-clamp-2"
+                              >
+                                {item.universityId?.name}
+                              </h3>
+
+                              <p className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 mt-2">
+                                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                                {item.universityId?.city}{item.universityId?.state ? `, ${item.universityId.state}` : ''}
+                              </p>
                             </div>
                             <div className="h-1 w-full bg-slate-50 dark:bg-dark-border/30 rounded-full overflow-hidden">
                               <div className="h-full bg-primary w-2/3" />
                             </div>
-                          </div>
-                        )}
 
-                        {!selectedCourse && item.specializations?.length > 0 && (
-                          <div className="flex flex-wrap gap-2 py-6 border-y border-slate-50 dark:border-dark-border/30">
-                            {item.specializations.slice(0, 4).map(spec => (
-                              <span key={spec} className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-dark-border/50 text-[11px] font-bold text-slate-500 border border-slate-100 dark:border-dark-border">
-                                {spec}
+                            {/* Footer info: Exams + CTA */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-xs text-slate-400 font-bold mr-1">Exams:</span>
+                                {(item.entranceExams || []).length > 0 ? (
+                                  item.entranceExams.slice(0, 3).map(exam => (
+                                    <span key={exam} className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-[10px] font-black border border-amber-200 dark:border-amber-900">{exam}</span>
+                                  ))
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 font-semibold bg-slate-50 dark:bg-dark-border px-2 py-0.5 rounded-md">Direct Admission</span>
+                                )}
+                              </div>
+
+                              <button
+                                onClick={() => { const r = item.universityId?.slug || item.universityId?._id; if (r) navigate(`/universities/${r}`, { state: { activeTab: 1 } }); }}
+                                className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-wider hover:opacity-95 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                              >
+                                View Details <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        /* ── PREMIUM COURSE GROUP CARD ── */
+                        <div
+                          className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 cursor-pointer hover:bg-slate-50/40 dark:hover:bg-dark-border/20 transition-colors"
+                          onClick={() => { const params = new URLSearchParams(searchParams); params.set('course', item.name || ''); setSearchParams(params); }}
+                        >
+                          {/* Left Icon Panel */}
+                          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                            <GraduationCap className="w-7 h-7 text-primary group-hover:text-white transition-colors" />
+                          </div>
+
+                          {/* Center info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap gap-1.5 mb-1.5">
+                              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase tracking-wider">{item.category || 'UG/PG'}</span>
+                              {item.stream && <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-wider">{item.stream}</span>}
+                            </div>
+                            <h3 className="text-lg font-black text-slate-800 dark:text-white group-hover:text-primary transition-colors truncate">{item.name}</h3>
+                            <div className="flex flex-wrap gap-4 mt-2">
+                              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <Building2 className="w-4 h-4 text-slate-400" /> {item.collegeCount || 0} Colleges in India
                               </span>
-                            ))}
-                            {item.specializations.length > 4 && (
-                              <span className="text-[11px] font-black text-primary px-2">+{item.specializations.length - 4} Others</span>
+                              {item.specializations?.length > 0 && (
+                                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                  <Award className="w-4 h-4 text-amber-500" /> {item.specializations.length} Specializations
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Tags preview */}
+                            {item.specializations?.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-3">
+                                {item.specializations.slice(0, 5).map(spec => (
+                                  <span key={spec} className="px-2.5 py-0.5 rounded-lg bg-slate-50 dark:bg-dark-border/50 text-slate-500 dark:text-dark-muted text-[10px] font-bold border border-slate-100 dark:border-dark-border">{spec}</span>
+                                ))}
+                                {item.specializations.length > 5 && (
+                                  <span className="px-2.5 py-0.5 rounded-lg bg-slate-50 dark:bg-dark-border/50 text-primary text-[10px] font-black">+{item.specializations.length - 5} more</span>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
@@ -986,7 +1093,7 @@ export default function Courses() {
                             </div>
                           </button>
                         </div>
-                      </div>
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>

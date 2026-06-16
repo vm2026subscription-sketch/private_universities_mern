@@ -65,7 +65,7 @@ export default function RankPredictor() {
   };
 
   return (
-    <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen py-12">
+    <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen py-12 pb-20 md:pb-12">
       <div className="max-w-5xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
@@ -184,6 +184,14 @@ export default function RankPredictor() {
                   </button>
                 </div>
 
+                {results.length === 0 && (
+                  <div className="text-center py-16">
+                    <Trophy className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-slate-600 dark:text-slate-300 mb-2">No Colleges Found</h3>
+                    <p className="text-sm text-slate-400 max-w-sm mx-auto">No universities found for this exam. Try a different exam or score.</p>
+                    <button onClick={() => setStep(1)} className="btn-primary mt-6">Try Again</button>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {results.map((uni, i) => (
                     <motion.div 

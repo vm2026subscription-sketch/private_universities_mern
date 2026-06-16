@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 const Course = require('../models/Course');
 const { escapeRegExp } = require('../utils/regex');
 
+const PUBLISHED_UNIVERSITY_MATCH = {
+  $or: [
+    { 'universityId.status': 'published' },
+    { 'universityId.status': { $exists: false } },
+  ],
+};
+
 exports.getCourses = async (req, res) => {
   try {
     const { category, universityId, name, baseCourse, state, segment = 'normal', page = 1, limit = 50 } = req.query;
@@ -46,6 +53,7 @@ exports.getCourses = async (req, res) => {
     pipeline.push({ $unwind: '$universityId' });
 
     const universityMatch = {};
+    Object.assign(universityMatch, PUBLISHED_UNIVERSITY_MATCH);
     if (state && state !== 'All') {
       universityMatch['universityId.state'] = { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') };
     }
@@ -86,7 +94,9 @@ exports.getCourses = async (req, res) => {
         duration: 1,
         specializations: 1,
         totalSeats: 1,
+        totalSeatsLabel: 1,
         feesPerYear: 1,
+        feesPerYearLabel: 1,
         entranceExams: 1,
         eligibility: 1,
         'universityId._id': 1,
@@ -164,23 +174,35 @@ exports.getGroupedCourses = async (req, res) => {
     pipeline.push({ $unwind: '$university' });
 
     const universityMatch = {};
+    universityMatch.$and = [
+      {
+        $or: [
+          { 'university.status': 'published' },
+          { 'university.status': { $exists: false } },
+        ],
+      },
+    ];
     if (state && state !== 'All') {
-      universityMatch['university.state'] = { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') };
+      universityMatch.$and.push({ 'university.state': { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') } });
     }
     if (segment && segment !== 'all' && !universityId) {
       if (segment === 'foreign' || segment === 'twinning') {
-        universityMatch.$or = [
-          { 'university.segment': segment },
-          { 'university.segment': { $exists: false }, 'university.type': segment },
-        ];
+        universityMatch.$and.push({
+          $or: [
+            { 'university.segment': segment },
+            { 'university.segment': { $exists: false }, 'university.type': segment },
+          ],
+        });
       } else {
-        universityMatch.$or = [
-          { 'university.segment': 'normal' },
-          { 'university.segment': { $exists: false }, 'university.type': { $nin: ['foreign', 'twinning'] } },
-        ];
+        universityMatch.$and.push({
+          $or: [
+            { 'university.segment': 'normal' },
+            { 'university.segment': { $exists: false }, 'university.type': { $nin: ['foreign', 'twinning'] } },
+          ],
+        });
       }
     }
-    if (Object.keys(universityMatch).length) {
+    if (universityMatch.$and.length) {
       pipeline.push({ $match: universityMatch });
     }
 
@@ -268,9 +290,19 @@ exports.getStreamStats = async (req, res) => {
       { $unwind: '$university' },
       {
         $match: {
-          $or: [
-            { 'university.segment': 'normal' },
-            { 'university.segment': { $exists: false }, 'university.type': { $nin: ['foreign', 'twinning'] } },
+          $and: [
+            {
+              $or: [
+                { 'university.status': 'published' },
+                { 'university.status': { $exists: false } },
+              ],
+            },
+            {
+              $or: [
+                { 'university.segment': 'normal' },
+                { 'university.segment': { $exists: false }, 'university.type': { $nin: ['foreign', 'twinning'] } },
+              ],
+            },
           ],
         },
       },

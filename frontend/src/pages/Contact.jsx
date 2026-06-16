@@ -83,7 +83,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
+    <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 md:pb-0">
       <Helmet>
         <title>Contact Us | Vidyarthi Mitra – Pune & Mumbai Office</title>
         <meta name="description" content="Get in touch with Vidyarthi Mitra. Visit our Pune or Mumbai offices, call us, or send a message. We're here to help you find the right career path." />

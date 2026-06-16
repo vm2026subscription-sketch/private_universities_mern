@@ -46,7 +46,7 @@ const stats = [
 
 export default function About() {
   return (
-    <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
+    <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 md:pb-0">
       <Helmet>
         <title>About Us | Vidyarthi Mitra – Our Mission, Team & Story</title>
         <meta name="description" content="Learn about Vidyarthi Mitra — India's trusted education portal. Our mission, vision, founding team, and milestones since 1981." />

@@ -13,6 +13,27 @@ const parseNumber = (value) => {
   const number = Number(value);
   return Number.isNaN(number) ? undefined : number;
 };
+const parseFlexibleMetric = (value) => {
+  const rawValue = String(value || '').trim();
+  if (!rawValue) return { numericValue: undefined, labelValue: undefined };
+
+  const normalizedNumericCandidate = rawValue.replace(/,/g, '');
+  if (/^-?\d+(\.\d+)?$/.test(normalizedNumericCandidate)) {
+    const numericValue = Number(normalizedNumericCandidate);
+    return {
+      numericValue: Number.isNaN(numericValue) ? undefined : numericValue,
+      labelValue: undefined,
+    };
+  }
+
+  const firstMatch = normalizedNumericCandidate.match(/-?\d+(\.\d+)?/);
+  const numericValue = firstMatch ? Number(firstMatch[0]) : undefined;
+
+  return {
+    numericValue: Number.isNaN(numericValue) ? undefined : numericValue,
+    labelValue: rawValue,
+  };
+};
 const toArray = (value) => {
   if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
   return splitPipe(value);
@@ -32,6 +53,8 @@ const buildCourseName = (baseCourse, specializationName, fallbackName) => {
 const sanitizeCoursePayload = (course = {}, universityId) => {
   const baseCourse = String(course.baseCourse || course.name || '').trim();
   const specializationName = String(course.specializationName || '').trim();
+  const totalSeatsMetric = parseFlexibleMetric(course.totalSeats);
+  const feesMetric = parseFlexibleMetric(course.feesPerYear);
   const payload = {
     _id: course._id,
     universityId,
@@ -41,8 +64,10 @@ const sanitizeCoursePayload = (course = {}, universityId) => {
     baseCourse,
     specializationName: specializationName || undefined,
     duration: parseNumber(course.duration),
-    totalSeats: parseNumber(course.totalSeats),
-    feesPerYear: parseNumber(course.feesPerYear),
+    totalSeats: totalSeatsMetric.numericValue,
+    totalSeatsLabel: totalSeatsMetric.labelValue,
+    feesPerYear: feesMetric.numericValue,
+    feesPerYearLabel: feesMetric.labelValue,
     eligibility: course.eligibility ? String(course.eligibility).trim() : undefined,
     entranceExams: toArray(course.entranceExams || course.entranceExamsText),
   };
@@ -56,6 +81,26 @@ const sanitizeUniversityPayload = (input = {}) => {
   const hasCoursesField = Array.isArray(payload.courses);
   const courses = hasCoursesField ? payload.courses : [];
   delete payload.courses;
+
+  const totalStudentsMetric = parseFlexibleMetric(payload.stats?.totalStudents);
+  const campusSizeMetric = parseFlexibleMetric(payload.stats?.campusSizeAcres);
+  const avgPackageMetric = parseFlexibleMetric(payload.stats?.avgPackageLPA);
+  const highestPackageMetric = parseFlexibleMetric(payload.stats?.highestPackageLPA);
+  const placementMetric = parseFlexibleMetric(payload.stats?.placementPercentage);
+
+  payload.stats = {
+    ...(payload.stats || {}),
+    totalStudents: totalStudentsMetric.numericValue,
+    totalStudentsLabel: totalStudentsMetric.labelValue,
+    campusSizeAcres: campusSizeMetric.numericValue,
+    campusSizeLabel: campusSizeMetric.labelValue,
+    avgPackageLPA: avgPackageMetric.numericValue,
+    avgPackageLPALabel: avgPackageMetric.labelValue,
+    highestPackageLPA: highestPackageMetric.numericValue,
+    highestPackageLPALabel: highestPackageMetric.labelValue,
+    placementPercentage: placementMetric.numericValue,
+    placementPercentageLabel: placementMetric.labelValue,
+  };
 
   const classification = normalizeUniversityClassification(payload);
 
@@ -294,6 +339,54 @@ exports.deleteUniversity = async (req, res) => {
   }
 };
 
+exports.duplicateUniversity = async (req, res) => {
+  try {
+    const sourceUniversity = await University.findById(req.params.id).populate('courses');
+    if (!sourceUniversity) {
+      return res.status(404).json({ success: false, message: 'University not found' });
+    }
+
+    const source = sourceUniversity.toObject();
+    const clonedPayload = {
+      ...source,
+      _id: undefined,
+      slug: undefined,
+      universityCode: source.universityCode ? `${source.universityCode}_${Date.now().toString().slice(-4)}` : undefined,
+      name: `${source.name} Copy`,
+      status: 'draft',
+      courses: undefined,
+      createdAt: undefined,
+      updatedAt: undefined,
+      __v: undefined,
+    };
+
+    const { payload } = sanitizeUniversityPayload(clonedPayload);
+    payload.slug = await buildUniqueSlug({
+      model: University,
+      value: payload.name,
+      fallback: 'university',
+    });
+
+    const duplicatedUniversity = await University.create(payload);
+
+    const sourceCourses = (source.courses || []).map((course) => ({
+      ...course,
+      _id: undefined,
+      slug: undefined,
+      createdAt: undefined,
+      updatedAt: undefined,
+      __v: undefined,
+    }));
+
+    await syncUniversityCourses(duplicatedUniversity, sourceCourses);
+
+    const populatedUniversity = await University.findById(duplicatedUniversity._id).populate('courses');
+    res.status(201).json({ success: true, data: populatedUniversity });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.createCourse = async (req, res) => {
   try {
     const payload = sanitizeCoursePayload(req.body, req.body.universityId);
@@ -454,4 +547,152 @@ exports.deleteNews = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.bulkImportUniversities = async (req, res) => {
+  try {
+    const list = Array.isArray(req.body) ? req.body : req.body.universities;
+    if (!Array.isArray(list)) {
+      return res.status(400).json({ success: false, message: 'Invalid data format. Expected an array of universities.' });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (const item of list) {
+      try {
+        const { payload, courses, hasCoursesField } = sanitizeUniversityPayload(item);
+        if (!payload.name || !payload.state || !payload.city) {
+          errors.push({ item, error: 'Name, state, and city are required.' });
+          continue;
+        }
+
+        let university;
+        if (payload.universityCode) {
+          university = await University.findOne({ universityCode: payload.universityCode.toUpperCase() });
+        }
+        if (!university) {
+          university = await University.findOne({ name: payload.name });
+        }
+
+        if (university) {
+          payload.slug = await buildUniqueSlug({
+            model: University,
+            value: payload.name,
+            currentId: university._id,
+            fallback: 'university',
+          });
+          const updated = await University.findByIdAndUpdate(university._id, payload, { new: true, runValidators: true });
+          if (hasCoursesField) {
+            await syncUniversityCourses(updated, courses);
+          }
+          results.push(updated);
+        } else {
+          payload.slug = await buildUniqueSlug({
+            model: University,
+            value: payload.name,
+            fallback: 'university',
+          });
+          const created = await University.create(payload);
+          if (hasCoursesField) {
+            await syncUniversityCourses(created, courses);
+          }
+          results.push(created);
+        }
+      } catch (err) {
+        errors.push({ item, error: err.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk import completed: ${results.length} succeeded, ${errors.length} failed.`,
+      succeededCount: results.length,
+      failedCount: errors.length,
+      errors
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.bulkImportCourses = async (req, res) => {
+  try {
+    const list = Array.isArray(req.body) ? req.body : req.body.courses;
+    if (!Array.isArray(list)) {
+      return res.status(400).json({ success: false, message: 'Invalid data format. Expected an array of courses.' });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (const item of list) {
+      try {
+        let universityId = item.universityId;
+        if (!universityId && item.universityName) {
+          const uni = await University.findOne({ name: item.universityName });
+          if (uni) {
+            universityId = uni._id;
+          }
+        }
+
+        if (!universityId) {
+          errors.push({ item, error: 'University not found or not specified.' });
+          continue;
+        }
+
+        const payload = sanitizeCoursePayload(item, universityId);
+        if (!payload) {
+          errors.push({ item, error: 'Course base name is required.' });
+          continue;
+        }
+
+        let course = await Course.findOne({ universityId, name: payload.name });
+
+        if (course) {
+          payload.slug = await buildUniqueSlug({
+            model: Course,
+            value: payload.name,
+            currentId: course._id,
+            fallback: 'course',
+          });
+          const updated = await Course.findByIdAndUpdate(course._id, payload, { new: true, runValidators: true });
+          results.push(updated);
+        } else {
+          payload.slug = await buildUniqueSlug({
+            model: Course,
+            value: payload.name,
+            fallback: 'course',
+          });
+          const created = await Course.create(payload);
+          const university = await University.findByIdAndUpdate(
+            universityId,
+            { $addToSet: { courses: created._id } },
+            { new: true }
+          );
+          if (university) {
+            university.stats = {
+              ...(university.stats || {}),
+              totalCoursesCount: (university.courses || []).length,
+            };
+            await university.save();
+          }
+          results.push(created);
+        }
+      } catch (err) {
+        errors.push({ item, error: err.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk import completed: ${results.length} succeeded, ${errors.length} failed.`,
+      succeededCount: results.length,
+      failedCount: errors.length,
+      errors
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
@@ -14,10 +14,12 @@ import {
   Search,
   Building2,
   Sparkles,
+  X,
 } from 'lucide-react';
 import api from '../utils/api';
 import { ListSkeleton } from '../components/common/LoadingSkeleton';
 import UniversityLogo from '../components/common/UniversityLogo';
+import { readSessionCache, writeSessionCache } from '../utils/pageCache';
 
 const typeCopy = {
   foreign: {
@@ -49,6 +51,8 @@ const accentBySegment = {
   foreign: 'from-primary to-orange-400',
   twinning: 'from-indigo-600 to-sky-500',
 };
+const FOREIGN_CACHE_TTL_MS = 10 * 60 * 1000;
+const getForeignCacheKey = (segment) => `vm_foreign_catalog_${segment}_v1`;
 
 const formatDisplayType = (university) => {
   if (university.segment === 'twinning' || university.type === 'twinning') return 'Twinning';
@@ -56,23 +60,33 @@ const formatDisplayType = (university) => {
 };
 
 export default function ForeignUniversities() {
+  const cachedForeign = readSessionCache(getForeignCacheKey('foreign'), FOREIGN_CACHE_TTL_MS) || [];
+  const cachedTwinning = readSessionCache(getForeignCacheKey('twinning'), FOREIGN_CACHE_TTL_MS) || [];
   const [activeTab, setActiveTab] = useState('foreign');
-  const [universitiesByType, setUniversitiesByType] = useState({ foreign: [], twinning: [] });
-  const [loadingByType, setLoadingByType] = useState({ foreign: true, twinning: false });
+  const [universitiesByType, setUniversitiesByType] = useState({ foreign: cachedForeign, twinning: cachedTwinning });
+  const [loadingByType, setLoadingByType] = useState({ foreign: cachedForeign.length === 0, twinning: false });
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     let active = true;
 
     const load = async (segment) => {
-      setLoadingByType((prev) => ({ ...prev, [segment]: true }));
+      const cachedSegmentData = readSessionCache(getForeignCacheKey(segment), FOREIGN_CACHE_TTL_MS) || [];
+      if (cachedSegmentData.length === 0) {
+        setLoadingByType((prev) => ({ ...prev, [segment]: true }));
+      }
       try {
         const { data } = await api.get(`/universities?type=${segment}&limit=100`);
         if (!active) return;
-        setUniversitiesByType((prev) => ({ ...prev, [segment]: data.data || [] }));
+        const nextUniversities = Array.isArray(data.data) ? data.data : [];
+        setUniversitiesByType((prev) => ({ ...prev, [segment]: nextUniversities }));
+        writeSessionCache(getForeignCacheKey(segment), nextUniversities);
       } catch {
         if (!active) return;
-        setUniversitiesByType((prev) => ({ ...prev, [segment]: [] }));
+        if (cachedSegmentData.length === 0) {
+          setUniversitiesByType((prev) => ({ ...prev, [segment]: [] }));
+        }
       } finally {
         if (active) {
           setLoadingByType((prev) => ({ ...prev, [segment]: false }));
@@ -116,13 +130,10 @@ export default function ForeignUniversities() {
   const currentUniversities = universitiesByType[activeTab] || [];
   const loading = loadingByType[activeTab];
   const copy = typeCopy[activeTab];
-
-  const filteredUniversities = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return currentUniversities;
-
-    return currentUniversities.filter((university) => (
-      [
+  const indexedUniversities = useMemo(() => {
+    return currentUniversities.map((university) => ({
+      ...university,
+      searchIndex: [
         university.name,
         university.city,
         university.state,
@@ -131,10 +142,16 @@ export default function ForeignUniversities() {
       ]
         .filter(Boolean)
         .join(' ')
-        .toLowerCase()
-        .includes(query)
-    ));
-  }, [currentUniversities, search]);
+        .toLowerCase(),
+    }));
+  }, [currentUniversities]);
+
+  const filteredUniversities = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+    if (!query) return indexedUniversities;
+
+    return indexedUniversities.filter((university) => university.searchIndex.includes(query));
+  }, [indexedUniversities, deferredSearch]);
 
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
@@ -196,10 +213,24 @@ export default function ForeignUniversities() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={`Search ${activeTab} universities...`}
-                className="input-field pl-11 text-sm"
+                className="input-field pl-11 pr-11 text-sm"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-border"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
+        </div>
+
+        <div className="mb-6 flex items-center justify-between gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+          <span>{filteredUniversities.length} results in {activeTab}</span>
+          {search ? <span>Searching for "{deferredSearch.trim() || search}"</span> : null}
         </div>
 
         <div className="rounded-[2.5rem] bg-white dark:bg-dark-card border border-light-border dark:border-dark-border p-6 md:p-8 shadow-sm mb-10">
@@ -317,7 +348,7 @@ export default function ForeignUniversities() {
                             <Award className="w-4 h-4 text-primary" />
                             Avg Package
                           </div>
-                          <div className="text-lg font-black text-slate-900 dark:text-white">{university.stats?.avgPackageLPA ? `INR ${university.stats.avgPackageLPA} LPA` : 'N/A'}</div>
+                          <div className="text-lg font-black text-slate-900 dark:text-white">{university.stats?.avgPackageLPALabel ? `INR ${university.stats.avgPackageLPALabel} LPA` : university.stats?.avgPackageLPA ? `INR ${university.stats.avgPackageLPA} LPA` : 'N/A'}</div>
                         </div>
                         <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4 border border-slate-100 dark:border-white/5">
                           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
@@ -353,10 +384,10 @@ export default function ForeignUniversities() {
                                       {course.duration} yrs
                                     </span>
                                   )}
-                                  {course.feesPerYear ? (
+                                  {(course.feesPerYearLabel || course.feesPerYear) ? (
                                     <span className="flex items-center gap-1">
                                       <IndianRupee className="w-3.5 h-3.5" />
-                                      {course.feesPerYear.toLocaleString('en-IN')}/yr
+                                      {course.feesPerYearLabel || course.feesPerYear.toLocaleString('en-IN')}/yr
                                     </span>
                                   ) : null}
                                 </div>

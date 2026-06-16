@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Trash2, Mail, Archive, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
+import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 
 export default function ContactManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const load = () => api.get('/admin/contacts').then(r => setItems(r.data.data || []));
   useEffect(() => { load(); }, []);
@@ -32,7 +34,7 @@ export default function ContactManager() {
           <button onClick={() => updateStatus(c._id, 'read')} title="Mark Read" className="p-1.5 rounded-lg hover:bg-light-card"><Eye className="w-4 h-4" /></button>
           <button onClick={() => updateStatus(c._id, 'replied')} title="Mark Replied" className="p-1.5 rounded-lg hover:bg-light-card"><Mail className="w-4 h-4" /></button>
           <button onClick={() => updateStatus(c._id, 'archived')} title="Archive" className="p-1.5 rounded-lg hover:bg-light-card"><Archive className="w-4 h-4" /></button>
-          <button onClick={() => del(c._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+          {canDelete && <button onClick={() => del(c._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>}
         </>)}
       />
     </div>

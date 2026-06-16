@@ -4,11 +4,13 @@ import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, CheckboxField, FormActions } from './components/FormFields';
+import { useRole } from '../../hooks/useRole';
 
 const emptyForm = () => ({ title: '', summary: '', content: '', category: 'general', source: '', publishedAt: '', imageUrl: '', isFeatured: false, tagsText: '' });
 const splitLines = v => String(v || '').split('\n').map(s => s.trim()).filter(Boolean);
 
 export default function NewsManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
@@ -74,7 +76,7 @@ export default function NewsManager() {
       ]} searchFields={['title', 'source', 'category']} searchPlaceholder="Search news..."
         actions={n => (<>
           <button onClick={() => edit(n)} className="p-1.5 rounded-lg hover:bg-light-card"><Pencil className="w-4 h-4" /></button>
-          <button onClick={() => del(n._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+          {canDelete && <button onClick={() => del(n._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>}
         </>)}
       />
     </div>

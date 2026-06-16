@@ -40,3 +40,10 @@ uploads/
 Thumbs.db
 .vscode/
 .idea/
+
+# Local data import scripts
+fill_data.py
+import_unis.py
+*.import.json
+mh_deemed_import.json
+mh_deemed_import_filled.json

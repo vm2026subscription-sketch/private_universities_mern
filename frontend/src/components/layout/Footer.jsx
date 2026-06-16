@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import { useAiChat } from '../../context/AiChatContext';
+import toast from 'react-hot-toast';
+import api from '../../utils/api';
 import {
   Facebook,
-  Twitter,
   Instagram,
   Linkedin,
   Youtube,
@@ -11,6 +13,7 @@ import {
   Phone,
   Sparkles,
   ArrowRight,
+  Bell,
 } from 'lucide-react';
 
 const footerGroups = [
@@ -47,15 +50,31 @@ const footerGroups = [
 ];
 
 const socialLinks = [
-  { label: 'Facebook', href: 'https://facebook.com', icon: Facebook },
-  { label: 'Twitter', href: 'https://twitter.com', icon: Twitter },
-  { label: 'LinkedIn', href: 'https://linkedin.com', icon: Linkedin },
-  { label: 'Instagram', href: 'https://instagram.com', icon: Instagram },
-  { label: 'YouTube', href: 'https://youtube.com', icon: Youtube },
+  { label: 'Facebook', href: 'https://www.facebook.com/vidyarthimitra', icon: Facebook },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/vidyarthimitra', icon: Linkedin },
+  { label: 'Instagram', href: 'https://www.instagram.com/vidyarthi_mitra/', icon: Instagram },
+  { label: 'YouTube', href: 'https://www.youtube.com/@vidyarthimitra', icon: Youtube },
 ];
 
 export default function Footer() {
   const { openChat } = useAiChat();
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubscribing(true);
+    try {
+      await api.post('/newsletter/subscribe', { email: email.trim() });
+      toast.success('Subscribed successfully!');
+      setEmail('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Subscription failed. Try again.');
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   return (
     <footer className="mt-20 bg-primary text-white border-t border-primary-dark/60">
@@ -166,6 +185,36 @@ export default function Footer() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Newsletter Subscribe */}
+        <div className="mb-10 rounded-[2rem] border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Bell className="w-5 h-5 text-accent-light" />
+                <h4 className="text-base font-black text-white">Stay Updated</h4>
+              </div>
+              <p className="text-sm text-white/60">Get latest admission dates, exam updates & scholarship alerts directly in your inbox.</p>
+            </div>
+            <form onSubmit={handleSubscribe} className="flex gap-3 w-full md:w-auto">
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="flex-1 md:w-64 px-4 py-3 rounded-2xl bg-white/10 border border-white/15 text-white placeholder-white/40 text-sm outline-none focus:border-accent/50 focus:bg-white/15 transition-all"
+              />
+              <button
+                type="submit"
+                disabled={subscribing}
+                className="px-5 py-3 rounded-2xl bg-accent text-slate-950 text-sm font-black hover:bg-accent-light transition-all disabled:opacity-60 whitespace-nowrap"
+              >
+                {subscribing ? 'Subscribing...' : 'Subscribe'}
+              </button>
+            </form>
           </div>
         </div>
 

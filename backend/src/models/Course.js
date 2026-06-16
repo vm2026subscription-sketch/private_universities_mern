@@ -16,7 +16,9 @@ const courseSchema = new mongoose.Schema({
     feesPerYear: Number
   }],
   totalSeats: Number,
+  totalSeatsLabel: String,
   feesPerYear: Number,
+  feesPerYearLabel: String,
   entranceExams: [String],
   eligibility: String
 }, { timestamps: true });

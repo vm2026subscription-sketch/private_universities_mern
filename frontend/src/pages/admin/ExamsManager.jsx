@@ -4,11 +4,13 @@ import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, FormActions } from './components/FormFields';
+import { useRole } from '../../hooks/useRole';
 
 const emptyForm = () => ({ name: '', shortName: '', conductingBody: '', examDate: '', registrationDeadline: '', eligibility: '', pattern: '', officialUrl: '', logoUrl: '', participatingUniversities: '', category: 'others' });
 const num = v => v === '' ? undefined : Number(v);
 
 export default function ExamsManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
@@ -77,7 +79,7 @@ export default function ExamsManager() {
       ]} searchFields={['name', 'shortName', 'conductingBody']} searchPlaceholder="Search exams..."
         actions={ex => (<>
           <button onClick={() => edit(ex)} className="p-1.5 rounded-lg hover:bg-light-card"><Pencil className="w-4 h-4" /></button>
-          <button onClick={() => del(ex._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+          {canDelete && <button onClick={() => del(ex._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>}
         </>)}
       />
     </div>

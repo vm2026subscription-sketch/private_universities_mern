@@ -31,7 +31,11 @@ const app = express();
 
 app.use(compression());
 
-const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').trim();
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((u) => u.trim())
+  .filter(Boolean);
+
 const googleAuthConfigured = Boolean(
   process.env.GOOGLE_CLIENT_ID &&
   process.env.GOOGLE_CLIENT_SECRET &&
@@ -41,7 +45,10 @@ const googleAuthConfigured = Boolean(
 app.use(helmet());
 app.use(
   cors({
-    origin: clientUrl,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(null, false);
+    },
     credentials: true,
   })
 );

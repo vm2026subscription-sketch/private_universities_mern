@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Moon, Sun, Menu, X, User, Bookmark, Settings, LogOut, 
   ChevronDown, GraduationCap, Building2, Stethoscope, Scale, 
-  Palette, Briefcase, MapPin, Trophy, BookOpen, Globe 
+  Palette, Briefcase, MapPin, Trophy, BookOpen, Globe, Shield 
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -37,7 +37,8 @@ export default function Navbar() {
     { to: '/compare-universities', label: 'Comparison' },
     { to: '/foreign-universities', label: 'Abroad' },
   ];
-  const visibleNavLinks = user?.role === 'admin' ? [...navLinks, { to: '/admin', label: 'Admin' }] : navLinks;
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const visibleNavLinks = isAdmin ? [...navLinks, { to: '/admin', label: '⚙ Admin' }] : navLinks;
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -186,6 +187,11 @@ export default function Navbar() {
                         <Link to="/profile?tab=settings" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-primary-50 hover:text-primary rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
                           <Settings className="w-4 h-4" /> Settings
                         </Link>
+                        {isAdmin && (
+                          <Link to="/admin" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
+                            <Shield className="w-4 h-4" /> Admin Panel
+                          </Link>
+                        )}
                         <div className="h-px bg-slate-100 dark:bg-white/5 my-2 mx-2" />
                         <button onClick={() => { logout(); setShowDropdown(false); navigate('/'); }} className="flex items-center gap-3 px-4 py-2.5 text-sm font-black w-full text-left text-error hover:bg-red-50 rounded-xl transition-all">
                           <LogOut className="w-4 h-4" /> Logout Account

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bot, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2 } from 'lucide-react';
+import { Bot, Grip, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -22,6 +22,47 @@ const INITIAL_MESSAGE = {
   timestamp: new Date(),
 };
 
+const DESKTOP_BREAKPOINT = 768;
+const DESKTOP_MARGIN = 24;
+const MOBILE_MARGIN = 16;
+const MIN_WIDTH = 340;
+const MIN_HEIGHT = 420;
+
+const isDesktopViewport = () => typeof window !== 'undefined' && window.innerWidth >= DESKTOP_BREAKPOINT;
+
+const getDesktopBounds = () => {
+  const width = Math.min(420, Math.max(MIN_WIDTH, window.innerWidth - DESKTOP_MARGIN * 2));
+  const maxHeight = Math.min(680, Math.floor(window.innerHeight * 0.78));
+  const height = Math.max(MIN_HEIGHT, maxHeight);
+
+  return {
+    width,
+    height,
+    x: DESKTOP_MARGIN,
+    y: Math.max(DESKTOP_MARGIN, window.innerHeight - height - DESKTOP_MARGIN),
+  };
+};
+
+const clampRectToViewport = (rect) => {
+  if (!isDesktopViewport()) {
+    return rect;
+  }
+
+  const maxWidth = Math.max(MIN_WIDTH, window.innerWidth - DESKTOP_MARGIN * 2);
+  const maxHeight = Math.max(MIN_HEIGHT, window.innerHeight - DESKTOP_MARGIN * 2);
+  const width = Math.min(Math.max(rect.width, MIN_WIDTH), maxWidth);
+  const height = Math.min(Math.max(rect.height, MIN_HEIGHT), maxHeight);
+  const maxX = Math.max(DESKTOP_MARGIN, window.innerWidth - width - DESKTOP_MARGIN);
+  const maxY = Math.max(DESKTOP_MARGIN, window.innerHeight - height - DESKTOP_MARGIN);
+
+  return {
+    width,
+    height,
+    x: Math.min(Math.max(rect.x, DESKTOP_MARGIN), maxX),
+    y: Math.min(Math.max(rect.y, DESKTOP_MARGIN), maxY),
+  };
+};
+
 export default function AiChatWidget() {
   const { isOpen, openChat, closeChat } = useAiChat();
   const { user } = useAuth();
@@ -29,13 +70,136 @@ export default function AiChatWidget() {
   const [loading, setLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+  const [panelRect, setPanelRect] = useState(() =>
+    typeof window === 'undefined' ? { width: 420, height: 620, x: 0, y: 0 } : getDesktopBounds()
+  );
+  const [language, setLanguage] = useState('en');
   const scrollRef = useRef(null);
+  const dragStateRef = useRef(null);
+  const resizeStateRef = useRef(null);
+
+  const handleTranslate = async (targetLang) => {
+    if (language === targetLang) return;
+    setLanguage(targetLang);
+
+    if (messages.length === 0) return;
+
+    try {
+      toast.loading(`Translating to ${targetLang.toUpperCase()}...`, { id: 'chat-translate' });
+      
+      const translatedMessages = await Promise.all(
+        messages.map(async (msg) => {
+          if (!msg.content || msg.content.trim() === '') return msg;
+          try {
+            const { data } = await api.post('/bhashini/translate', {
+              text: msg.content,
+              targetLanguage: targetLang,
+            });
+            return { 
+              ...msg, 
+              content: data.isMock ? `[${targetLang.toUpperCase()}] ${msg.content}` : data.translatedText 
+            };
+          } catch (e) {
+             return msg;
+          }
+        })
+      );
+      
+      setMessages(translatedMessages);
+      toast.success('Translation complete', { id: 'chat-translate' });
+    } catch (e) {
+      toast.error('Translation failed', { id: 'chat-translate' });
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, loading]);
+
+  useEffect(() => {
+    const handleViewportChange = () => {
+      if (!isDesktopViewport()) {
+        return;
+      }
+
+      setPanelRect((current) => clampRectToViewport(current));
+    };
+
+    handleViewportChange();
+    window.addEventListener('resize', handleViewportChange);
+    return () => window.removeEventListener('resize', handleViewportChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || minimized || !isDesktopViewport()) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event) => {
+      if (dragStateRef.current) {
+        const { startX, startY, originX, originY } = dragStateRef.current;
+        setPanelRect((current) =>
+          clampRectToViewport({
+            ...current,
+            x: originX + (event.clientX - startX),
+            y: originY + (event.clientY - startY),
+          })
+        );
+      } else if (resizeStateRef.current) {
+        const { startX, startY, originWidth, originHeight } = resizeStateRef.current;
+        setPanelRect((current) =>
+          clampRectToViewport({
+            ...current,
+            width: originWidth + (event.clientX - startX),
+            height: originHeight + (event.clientY - startY),
+          })
+        );
+      }
+    };
+
+    const stopInteractions = () => {
+      dragStateRef.current = null;
+      resizeStateRef.current = null;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', stopInteractions);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', stopInteractions);
+    };
+  }, [isOpen, minimized]);
+
+  const startDrag = (event) => {
+    if (!isDesktopViewport() || event.target.closest('button')) {
+      return;
+    }
+
+    dragStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: panelRect.x,
+      originY: panelRect.y,
+    };
+  };
+
+  const startResize = (event) => {
+    if (!isDesktopViewport()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    resizeStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originWidth: panelRect.width,
+      originHeight: panelRect.height,
+    };
+  };
 
   const askAssistant = async (question) => {
     const trimmed = question.trim();
@@ -119,16 +283,16 @@ export default function AiChatWidget() {
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="fixed bottom-6 right-6 z-[90] group"
+        className="fixed bottom-6 left-6 z-[90] group"
       >
-        <div className="absolute bottom-full right-0 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border px-4 py-2 rounded-2xl shadow-xl whitespace-nowrap text-xs font-bold text-primary flex items-center gap-2">
+        <div className="absolute bottom-full left-0 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border px-4 py-2 rounded-2xl shadow-xl whitespace-nowrap text-xs font-bold text-[#E05404] flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5" />
           Ask Vidyarthi Mitra AI
         </div>
         <button
           type="button"
           onClick={openChat}
-          className="rounded-full bg-gradient-to-br from-primary to-primary-light p-4 text-white shadow-[0_8px_30px_rgba(249,115,22,0.35)] hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center relative overflow-hidden border border-accent/20"
+          className="rounded-full bg-[#E05404] p-4 text-white shadow-[0_8px_30px_rgba(224,84,4,0.35)] hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-accent/20 animate-ping rounded-full" />
           <Bot className="w-7 h-7 relative z-10" />
@@ -140,14 +304,14 @@ export default function AiChatWidget() {
   if (minimized) {
     return (
       <motion.div
-        className="fixed bottom-6 right-6 z-[90] shadow-2xl overflow-hidden"
+        className="fixed bottom-6 left-6 z-[90] shadow-2xl overflow-hidden"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
       >
         <button
           type="button"
           onClick={() => setMinimized(false)}
-          className="rounded-full bg-primary px-5 py-3 text-sm font-bold text-white shadow-2xl inline-flex items-center gap-2 hover:scale-105 transition-transform"
+          className="rounded-full bg-[#E05404] px-5 py-3 text-sm font-bold text-white shadow-2xl inline-flex items-center gap-2 hover:scale-105 transition-transform"
         >
           <Bot className="w-5 h-5" />
           Vidyarthi Mitra AI
@@ -159,36 +323,74 @@ export default function AiChatWidget() {
 
   return (
     <motion.div
-      className="fixed bottom-6 right-6 z-[90] w-[calc(100vw-2rem)] max-w-[420px] h-[min(78vh,680px)] overflow-hidden rounded-[32px] border border-light-border dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+      className="fixed z-[90] overflow-hidden rounded-[32px] border border-light-border dark:border-dark-border bg-white dark:bg-dark-card shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
+      style={
+        isDesktopViewport()
+          ? {
+              left: panelRect.x,
+              top: panelRect.y,
+              width: panelRect.width,
+              height: panelRect.height,
+            }
+          : {
+              left: MOBILE_MARGIN,
+              right: MOBILE_MARGIN,
+              bottom: MOBILE_MARGIN,
+              width: `calc(100vw - ${MOBILE_MARGIN * 2}px)`,
+              height: 'min(78vh, 680px)',
+            }
+      }
     >
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between bg-gradient-to-r from-primary to-primary-light px-5 py-4 text-white border-b border-accent/20 shrink-0">
+        <div
+          className={`flex items-center justify-between bg-gradient-to-r from-[#D54D02] to-[#EE6B17] px-5 py-4 text-white shrink-0 ${isDesktopViewport() ? 'cursor-move select-none' : ''}`}
+          onPointerDown={startDrag}
+        >
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="rounded-2xl bg-white/10 p-2.5 backdrop-blur-md border border-accent/30">
-                <Bot className="w-5 h-5" />
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent border-2 border-primary rounded-full" />
+            <div className="w-10 h-10 rounded-full bg-[#9B2A02] flex items-center justify-center shadow-inner shrink-0">
+              <span className="text-lg font-black text-white">VM</span>
             </div>
             <div>
-              <p className="font-bold text-sm tracking-tight">Vidyarthi Mitra AI</p>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-pulse" />
-                <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider">Ready To Help</p>
+              <p className="font-bold text-base tracking-tight leading-tight">Vidyarthi Mitra AI</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                <p className="text-[11px] text-white/90 font-medium tracking-wide">Online — Ask me anything</p>
               </div>
             </div>
+            {isDesktopViewport() && <Grip className="w-4 h-4 text-white/40 ml-2" />}
           </div>
 
           <div className="flex items-center gap-1.5">
-            <button type="button" onClick={clearChat} title="Clear Chat" className="rounded-full p-2 hover:bg-white/10 transition-colors">
-              <Trash2 className="w-4 h-4" />
+            <button 
+              type="button" 
+              onClick={() => handleTranslate('en')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+                language === 'en' ? 'bg-[#9B2A02] border-transparent' : 'border border-white/30 bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              EN
             </button>
-            <button type="button" onClick={() => setMinimized(true)} className="rounded-full p-2 hover:bg-white/10 transition-colors">
-              <Minimize2 className="w-4 h-4" />
+            <button 
+              type="button" 
+              onClick={() => handleTranslate('hi')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+                language === 'hi' ? 'bg-[#9B2A02] border-transparent' : 'border border-white/30 bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              HI
             </button>
-            <button type="button" onClick={closeChat} className="rounded-full p-2 hover:bg-white/10 transition-colors">
+            <button 
+              type="button" 
+              onClick={() => handleTranslate('mr')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors mr-1 ${
+                language === 'mr' ? 'bg-[#9B2A02] border-transparent' : 'border border-white/30 bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              MR
+            </button>
+            <button type="button" onClick={closeChat} className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -284,6 +486,17 @@ export default function AiChatWidget() {
           </button>
         </div>
       </div>
+
+      {isDesktopViewport() && (
+        <button
+          type="button"
+          aria-label="Resize chat"
+          onPointerDown={startResize}
+          className="absolute bottom-2 right-2 h-6 w-6 cursor-se-resize rounded-full text-slate-400 transition-colors hover:bg-light-card hover:text-primary dark:hover:bg-dark-bg"
+        >
+          <Maximize2 className="mx-auto h-3.5 w-3.5" />
+        </button>
+      )}
     </motion.div>
   );
 }

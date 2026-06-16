@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, select: false },
   googleId: String,
   avatar: String,
-  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
 
   // Multi-provider auth
   phone: { type: String, unique: true, sparse: true },

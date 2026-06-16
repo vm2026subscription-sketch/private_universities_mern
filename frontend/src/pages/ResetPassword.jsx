@@ -35,7 +35,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 pb-20 md:pb-0">
       <div className="card p-8 w-full max-w-md">
         <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-5">
           <Lock className="w-6 h-6" />

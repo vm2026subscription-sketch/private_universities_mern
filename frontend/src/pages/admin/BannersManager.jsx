@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Pencil, Trash2, Plus, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
+import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, CheckboxField, FormActions } from './components/FormFields';
 
 const emptyForm = () => ({ title: '', subtitle: '', imageUrl: '', link: '', linkText: '', position: 'hero', page: 'home', isActive: true, priority: 0, startDate: '', endDate: '', backgroundColor: '', textColor: '' });
 
 export default function BannersManager() {
+  const { canDelete } = useRole();
   const [banners, setBanners] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
@@ -90,7 +92,7 @@ export default function BannersManager() {
         actions={(b) => (
           <>
             <button onClick={() => edit(b)} className="p-1.5 rounded-lg hover:bg-light-card dark:hover:bg-dark-card"><Pencil className="w-4 h-4" /></button>
-            <button onClick={() => del(b._id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500"><Trash2 className="w-4 h-4" /></button>
+            {canDelete && <button onClick={() => del(b._id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500"><Trash2 className="w-4 h-4" /></button>}
           </>
         )}
       />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, Accessibility, X } from 'lucide-react';
+import { Volume2, Accessibility, X, MessageSquarePlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
 import { toast } from 'react-hot-toast';
@@ -35,7 +35,7 @@ const AccessibilityWidget = ({ inline = false }) => {
   useEffect(() => {
     const html = document.documentElement;
 
-    html.classList.remove('access-bw', 'access-remove-green', 'access-high-contrast');
+    html.classList.remove('access-bw', 'access-remove-green', 'access-high-contrast', 'access-low-contrast');
     html.classList.remove('access-text-small', 'access-text-medium', 'access-text-large');
     html.classList.remove('access-spacing-small', 'access-spacing-medium', 'access-spacing-large');
 
@@ -183,28 +183,43 @@ const AccessibilityWidget = ({ inline = false }) => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className={`bg-white dark:bg-dark-card rounded-2xl shadow-2xl p-4 w-64 border border-slate-100 dark:border-dark-border flex flex-col gap-2 relative z-10 ${
-              inline ? 'absolute right-0 top-full mt-3' : 'mt-3'
+            className={`bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-72 border border-slate-100 dark:border-dark-border flex flex-col z-[120] overflow-hidden ${
+              inline ? 'absolute right-0 top-full mt-3' : 'absolute bottom-full left-0 mb-4'
             }`}
+            style={{ maxHeight: inline ? 'calc(100vh - 90px)' : 'calc(100vh - 120px)' }}
           >
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-dark-border pb-3 mb-2">
-              <div>
+            {/* Header - Fixed at top */}
+            <div className="flex items-start justify-between border-b border-slate-100 dark:border-dark-border p-4 bg-white dark:bg-dark-card z-20 shrink-0">
+              <div className="pr-2">
                 <p className="text-sm font-black text-slate-900 dark:text-white">Accessibility</p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Personalize reading and visibility</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Personalize reading</p>
               </div>
-              <button
-                type="button"
-                onClick={handleSpeak}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                  isSpeaking
-                    ? 'bg-accent text-white shadow-[0_0_15px_rgba(245,158,11,0.25)]'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-                title={isSpeaking ? 'Turn off Click-to-Speak' : 'Turn on Click-to-Speak'}
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleSpeak}
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 ${
+                    isSpeaking
+                      ? 'bg-accent text-white shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                  title={isSpeaking ? 'Turn off Click-to-Speak' : 'Turn on Click-to-Speak'}
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-red-500"
+                  title="Close Menu"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+
+            {/* Scrollable Content */}
+            <div className="space-y-3 p-4 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
 
             <div className="flex flex-col gap-2 border-b pb-2 mb-2">
               <span className="text-[10px] uppercase font-bold text-slate-400 px-2 tracking-wider">
@@ -224,6 +239,12 @@ const AccessibilityWidget = ({ inline = false }) => {
                 onClick={() => toggleFilter('color', 'high-contrast')}
               >
                 High Contrast
+              </MenuButton>
+              <MenuButton
+                active={activeFilters.color === 'low-contrast'}
+                onClick={() => toggleFilter('color', 'low-contrast')}
+              >
+                Low Contrast
               </MenuButton>
             </div>
 
@@ -276,7 +297,7 @@ const AccessibilityWidget = ({ inline = false }) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <span className="text-[10px] uppercase font-bold text-slate-400 px-2 tracking-wider">
+              <span className="text-[10px] uppercase font-bold text-slate-400 px-2 tracking-wider mt-1">
                 Language (Bhashini)
               </span>
               <select
@@ -291,6 +312,8 @@ const AccessibilityWidget = ({ inline = false }) => {
                 ))}
               </select>
             </div>
+            </div>
+
           </motion.div>
         )}
       </AnimatePresence>

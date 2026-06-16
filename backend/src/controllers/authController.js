@@ -8,14 +8,22 @@ const { getSafeUser } = require('../utils/userSerializer');
 const ADMIN_EMAIL = 'vidyarthimitrauniversity@gmail.com';
 const MIN_PASSWORD_LENGTH = 6;
 
-const getAdminEmail = () => (process.env.ADMIN_EMAIL || ADMIN_EMAIL).toLowerCase();
-const getClientUrl = () => process.env.CLIENT_URL || 'http://localhost:5173';
+const getAdminEmails = () =>
+  (process.env.ADMIN_EMAIL || ADMIN_EMAIL)
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+const getAdminEmail = () => getAdminEmails()[0];
+const isAdminEmail = (email) => getAdminEmails().includes(normalizeEmail(email));
+const getClientUrl = () =>
+  (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
 const normalizeEmail = (email = '') => String(email).trim().toLowerCase();
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const isProduction = () => process.env.NODE_ENV === 'production';
 
 const ensureAdminRole = async (user) => {
-  if (user?.email?.toLowerCase() === getAdminEmail() && user.role !== 'admin') {
+  if (isAdminEmail(user?.email) && user.role !== 'admin' && user.role !== 'superadmin') {
     user.role = 'admin';
     await user.save();
   }
@@ -84,7 +92,8 @@ exports.register = async (req, res) => {
       if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
     }
 
-    const role = normalizedEmail === getAdminEmail() ? 'admin' : 'user';
+    const isAdmin = isAdminEmail(normalizedEmail);
+    const role = isAdmin ? 'admin' : 'user';
     const userData = {
       name: normalizedName,
       email: normalizedEmail,
@@ -92,7 +101,7 @@ exports.register = async (req, res) => {
       role,
       authProvider: 'local',
       status: 'active',
-      isEmailVerified: false,
+      isEmailVerified: isAdmin, // admin auto-verified
       phone: phone || undefined,
       countryCode: phone ? countryCode || '+91' : '+91',
     };
@@ -113,9 +122,22 @@ exports.register = async (req, res) => {
       user.status = 'active';
       user.phone = userData.phone;
       user.countryCode = userData.countryCode;
-      user.isEmailVerified = false;
+      user.isEmailVerified = isAdmin;
     } else {
       user = new User(userData);
+    }
+
+    // Admin gets token directly, regular users need email verification
+    if (isAdmin) {
+      await user.save();
+      await updateLoginTracking(user);
+      const token = generateToken(user._id);
+      return res.status(existingUser ? 200 : 201).json({
+        success: true,
+        message: 'Admin account ready.',
+        token,
+        user: getSafeUser(user),
+      });
     }
 
     const code = setVerificationCode(user);
@@ -174,6 +196,14 @@ exports.login = async (req, res) => {
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+    // Admin / superadmin logs in directly without OTP
+    if (user.role === 'admin' || user.role === 'superadmin') {
+      await ensureAdminRole(user);
+      await updateLoginTracking(user);
+      const token = generateToken(user._id);
+      return res.json({ success: true, token, user: getSafeUser(user) });
+    }
 
     const result = await otpService.sendOtp({
       identifier: user.email,

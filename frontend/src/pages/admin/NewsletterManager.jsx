@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Trash2, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
+import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 
 export default function NewsletterManager() {
+  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState({ total: 0, active: 0 });
 
@@ -30,7 +32,7 @@ export default function NewsletterManager() {
         { key: 'subscribedAt', label: 'Subscribed', render: s => new Date(s.subscribedAt).toLocaleDateString() },
       ]} searchFields={['email']} searchPlaceholder="Search subscribers..."
         actions={(s) => (
-          <button onClick={() => del(s._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
+          canDelete && <button onClick={() => del(s._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>
         )}
       />
     </div>

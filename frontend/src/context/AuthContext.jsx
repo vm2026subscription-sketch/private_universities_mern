@@ -40,6 +40,9 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
+    if (data.token && data.user) {
+      setAuthSession(data.token, data.user);
+    }
     return data;
   };
 

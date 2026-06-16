@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award } from 'lucide-react';
+import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap, Loader2 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -9,6 +10,8 @@ import { toast } from 'react-hot-toast';
 import { calculateFitScore } from '../utils/fitScore';
 import UniversityLogo from '../components/common/UniversityLogo';
 import { getUniversityDisplayType } from '../utils/universityType';
+import { generateBrochure } from '../utils/brochureGenerator';
+
 
 const states = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -25,6 +28,7 @@ export default function Universities() {
   const { user } = useAuth();
   const [universities, setUniversities] = useState([]);
   const [savedIds, setSavedIds] = useState([]);
+  const [downloadingId, setDownloadingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState('ranking');
   const [page, setPage] = useState(1);
@@ -89,6 +93,28 @@ export default function Universities() {
     }
   };
 
+  const handleDownloadBrochure = async (university) => {
+    try {
+      setDownloadingId(university._id);
+      // Fetch full university data so the brochure has all details
+      const { data } = await api.get(`/universities/${university.slug || university._id}`);
+      const fullData = data?.data || university;
+      generateBrochure(fullData);
+      toast.success('Brochure downloaded!');
+    } catch (error) {
+      console.error('Brochure download failed:', error);
+      // Fall back to generating with whatever data we already have
+      try {
+        generateBrochure(university);
+        toast.success('Brochure downloaded!');
+      } catch (pdfErr) {
+        toast.error('Failed to generate brochure. Please try again.');
+      }
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
@@ -112,16 +138,20 @@ export default function Universities() {
 
   const toggleFilter = (key, value) => {
     setFilters(f => {
-      // All filters are now single select
       const currentValues = f[key];
       const isSelected = currentValues.includes(value);
-      return { ...f, [key]: isSelected ? [] : [value] };
+      // Multi-select: toggle value in/out of array
+      return { ...f, [key]: isSelected ? currentValues.filter(v => v !== value) : [...currentValues, value] };
     });
     setPage(1);
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20 md:pb-8">
+      <Helmet>
+        <title>Universities in India | Fees, Rankings & Admissions 2026 | VidyarthiMitra</title>
+        <meta name="description" content="Explore 500+ private and deemed universities in India. Compare fees, NAAC grades, NIRF rankings, placements and admission process." />
+      </Helmet>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-serif font-bold text-primary">Universities</h1>
         <div className="flex items-center gap-3">
@@ -152,11 +182,10 @@ export default function Universities() {
                   {states.map(s => (
                     <label key={s} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
                       <input 
-                        type="radio" 
-                        name="state"
+                        type="checkbox" 
                         checked={filters.state.includes(s)} 
                         onChange={() => toggleFilter('state', s)} 
-                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
+                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded"
                       />
                       <span className={`text-sm font-bold transition-colors ${filters.state.includes(s) ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{s}</span>
                     </label>
@@ -190,11 +219,10 @@ export default function Universities() {
                   {naacGrades.map(g => (
                     <label key={g} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
                       <input 
-                        type="radio" 
-                        name="naacGrade"
+                        type="checkbox"
                         checked={filters.naacGrade.includes(g)} 
                         onChange={() => toggleFilter('naacGrade', g)} 
-                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
+                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded"
                       />
                       <span className={`text-sm font-bold transition-colors ${filters.naacGrade.includes(g) ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{g}</span>
                     </label>
@@ -214,7 +242,14 @@ export default function Universities() {
 
         <div className="flex-1">
           <p className="text-sm text-light-muted mb-4">{total} universities found</p>
-          {loading ? <CardSkeleton /> : (
+          {loading ? <CardSkeleton /> : universities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <GraduationCap className="w-16 h-16 text-light-muted opacity-20 mb-4" />
+              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">No Universities Found</h3>
+              <p className="text-sm text-light-muted max-w-sm">Try changing your filters or search term.</p>
+              <button onClick={() => setFilters({ state: [], type: 'both', naacGrade: [], city: '' })} className="btn-primary mt-6">Clear Filters</button>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {universities.map(u => {
                  const isSaved = savedIds.includes(u._id);
@@ -223,13 +258,33 @@ export default function Universities() {
                  const displayType = getUniversityDisplayType(u);
                  
                   return (
-                    <motion.div 
-                      key={u._id} 
+                    <motion.div
+                      key={u._id}
                       layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="group relative h-full min-h-[380px] [perspective:1500px]"
                     >
+                      {/* Bookmark — outside flip so always visible */}
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleBookmark(u._id); }}
+                        className={`absolute top-5 right-5 z-30 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-90 ${isSaved ? 'bg-primary text-white' : 'bg-white/90 backdrop-blur-md text-slate-400 hover:text-primary hover:bg-white'}`}
+                      >
+                        <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
+                      </button>
+
+                      {/* Download Brochure */}
+                       <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDownloadBrochure(u); }}
+                          disabled={downloadingId === u._id}
+                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-primary hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                          title="Download University Brochure (PDF)"
+                        >
+                          {downloadingId === u._id
+                            ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            : <Download className="w-4 h-4" />}
+                        </button>
+
                       <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
                         {/* Front Face */}
                         <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-lg flex flex-col overflow-hidden">
@@ -241,14 +296,6 @@ export default function Universities() {
                               </div>
                             )}
                           </div>
-
-                          {/* Bookmark Button */}
-                          <button 
-                            onClick={(e) => { e.preventDefault(); handleBookmark(u._id); }}
-                            className={`absolute top-5 right-5 z-20 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-90 ${isSaved ? 'bg-primary text-white' : 'bg-white/90 backdrop-blur-md text-slate-400 hover:text-primary hover:bg-white'}`}
-                          >
-                            <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
-                          </button>
                           
                           <div className="p-6 pt-16 flex flex-col h-full relative">
                             <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 blur-[40px] rounded-full" />
@@ -282,21 +329,12 @@ export default function Universities() {
                               </div>
 
                               <div className="flex items-center gap-3">
-                                <Link 
+                                <Link
                                   to={`/universities/${u.slug}`}
                                   className="flex-1 py-3 bg-slate-900 dark:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
                                 >
                                   View Details
                                 </Link>
-                                {u.links?.brochureLink && (
-                                  <button 
-                                    onClick={(e) => { e.preventDefault(); window.open(u.links.brochureLink, '_blank'); }}
-                                    className="w-12 h-12 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white rounded-xl flex items-center justify-center transition-all shrink-0 active:scale-95"
-                                    title="Download Brochure"
-                                  >
-                                    <Download className="w-4 h-4" />
-                                  </button>
-                                )}
                               </div>
                             </div>
                           </div>
