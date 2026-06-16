@@ -3,7 +3,7 @@ import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, Globe, Phone, Mail, BookOpen, Users, Award, 
   Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2, ArrowRight, ExternalLink,
-  Edit, Trash2, Save, X
+  Edit, Trash2, Save, X, ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
@@ -63,6 +63,10 @@ export default function UniversityDetail() {
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const isAdmin = user?.role === 'admin';
+
+  // Application tracking states
+  const [isTracked, setIsTracked] = useState(false);
+  const [trackLoading, setTrackLoading] = useState(false);
 
   // Edit & Delete states
   const [isEditing, setIsEditing] = useState(false);
