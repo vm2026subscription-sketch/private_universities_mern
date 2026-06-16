@@ -803,6 +803,14 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
     } else {
       console.log('⚠️ No Universities sheet found');
     }
+     // Seed map with ALL existing universities so courses can match pre-existing ones
+    const allUnis = await University.find({}, 'name universityCode').session(session);
+    allUnis.forEach(u => {
+      universityMap.set(u.name.toLowerCase(), u);
+      if (u.universityCode) universityMap.set(u.universityCode.toLowerCase(), u);
+    });
+    console.log(`   🌐 Seeded universityMap with ${allUnis.length} total universities`);
+
 
     // ========== 2. PROCESS COURSES SHEET (Hardened Header Detection) ==========
     const courseSheetName = workbook.SheetNames.find(s => 
