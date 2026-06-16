@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
-  ChevronRight, Award, Users, CheckCircle2, Sparkles, Building2
+  ChevronRight, CheckCircle2, Sparkles, Building2, Pencil, Trash2,
+  AlertTriangle, Save, Loader2
 } from 'lucide-react';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
+import { useAuth } from '../context/AuthContext'; // adjust import path as needed
 
 const ALL_STATES = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -18,9 +20,320 @@ const ALL_STATES = [
   'Uttarakhand', 'West Bengal'
 ];
 
+const CATEGORY_OPTIONS = ['UG', 'PG', 'Diploma', 'PhD', 'Certificate'];
+const STREAM_OPTIONS = [
+  'Engineering', 'Management', 'Commerce', 'Medical & Health Sciences',
+  'Law', 'Design & Architecture', 'Science', 'Arts & Humanities', 'Education', 'Others'
+];
+
+// ─── Edit Modal ──────────────────────────────────────────────────────────────
+
+function EditCourseModal({ course, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    name: course.name || '',
+    baseCourse: course.baseCourse || course.name || '',
+    specializationName: course.specializationName || '',
+    category: course.category || 'UG',
+    stream: course.stream || 'Others',
+    duration: course.duration || '',
+    totalSeats: course.totalSeats ?? '',
+    feesPerYear: course.feesPerYear ?? '',
+    eligibility: course.eligibility || '',
+    entranceExams: (course.entranceExams || []).join(', '),
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const handleSubmit = async () => {
+    if (!form.baseCourse.trim()) { setError('Base Course is required.'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      const payload = {
+        ...form,
+        name: form.specializationName
+          ? `${form.baseCourse} in ${form.specializationName}`
+          : form.baseCourse,
+        totalSeats: form.totalSeats !== '' ? Number(form.totalSeats) : null,
+        feesPerYear: form.feesPerYear !== '' ? Number(form.feesPerYear) : null,
+        entranceExams: form.entranceExams
+          ? form.entranceExams.split(',').map((s) => s.trim()).filter(Boolean)
+          : [],
+      };
+      const { data } = await api.put(`/admin/courses/${course._id}`, payload);
+      if (data.success !== false) {
+        onSaved(data.data || data);
+      } else {
+        setError(data.message || 'Failed to save.');
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message || 'Something went wrong.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative w-full max-w-2xl bg-white dark:bg-dark-card rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-dark-border shrink-0">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Edit Course</p>
+            <h2 className="text-xl font-serif font-black text-slate-800 dark:text-white truncate max-w-sm">
+              {course.name}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-slate-100 dark:bg-dark-border flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto custom-scrollbar p-8 space-y-5 flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Field label="Base Course *">
+              <input
+                value={form.baseCourse}
+                onChange={set('baseCourse')}
+                className="modal-input"
+                placeholder="e.g. B.Tech, MBA"
+              />
+            </Field>
+            <Field label="Specialization">
+              <input
+                value={form.specializationName}
+                onChange={set('specializationName')}
+                className="modal-input"
+                placeholder="e.g. Computer Science"
+              />
+            </Field>
+            <Field label="Degree Level">
+              <select value={form.category} onChange={set('category')} className="modal-input">
+                {CATEGORY_OPTIONS.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </Field>
+            <Field label="Stream">
+              <select value={form.stream} onChange={set('stream')} className="modal-input">
+                {STREAM_OPTIONS.map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </Field>
+            <Field label="Duration">
+              <input
+                value={form.duration}
+                onChange={set('duration')}
+                className="modal-input"
+                placeholder="e.g. 4 Years"
+              />
+            </Field>
+            <Field label="Total Seats">
+              <input
+                type="number"
+                value={form.totalSeats}
+                onChange={set('totalSeats')}
+                className="modal-input"
+                placeholder="e.g. 60"
+                min={0}
+              />
+            </Field>
+            <Field label="Fees Per Year (₹)">
+              <input
+                type="number"
+                value={form.feesPerYear}
+                onChange={set('feesPerYear')}
+                className="modal-input"
+                placeholder="e.g. 150000"
+                min={0}
+              />
+            </Field>
+            <Field label="Entrance Exams">
+              <input
+                value={form.entranceExams}
+                onChange={set('entranceExams')}
+                className="modal-input"
+                placeholder="JEE, CAT (comma separated)"
+              />
+            </Field>
+          </div>
+          <Field label="Eligibility">
+            <textarea
+              value={form.eligibility}
+              onChange={set('eligibility')}
+              className="modal-input resize-none"
+              rows={3}
+              placeholder="Eligibility criteria..."
+            />
+          </Field>
+
+          {error && (
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-bold">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {error}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-8 py-5 border-t border-slate-100 dark:border-dark-border shrink-0">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 rounded-2xl font-black text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-dark-border transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-2xl font-black text-sm shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-60"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      </motion.div>
+
+      <style>{`
+        .modal-input {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: rgb(248 250 252);
+          border: 1.5px solid rgb(226 232 240);
+          border-radius: 0.875rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          outline: none;
+          transition: border-color 0.15s;
+          color: inherit;
+        }
+        .dark .modal-input {
+          background: rgb(30 41 59 / 0.5);
+          border-color: rgb(51 65 85);
+          color: white;
+        }
+        .modal-input:focus {
+          border-color: var(--color-primary, #6366f1);
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+// ─── Delete Confirmation Dialog ───────────────────────────────────────────────
+
+function DeleteConfirmDialog({ course, onClose, onDeleted }) {
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError('');
+    try {
+      await api.delete(`/admin/courses/${course._id}`);
+      onDeleted(course._id);
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message || 'Delete failed.');
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative w-full max-w-md bg-white dark:bg-dark-card rounded-[2rem] shadow-2xl p-8"
+      >
+        <div className="flex flex-col items-center text-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+            <Trash2 className="w-8 h-8 text-red-500" />
+          </div>
+          <div>
+            <h3 className="text-xl font-serif font-black text-slate-800 dark:text-white mb-1">Delete Course?</h3>
+            <p className="text-sm font-bold text-slate-400">
+              <span className="text-slate-600 dark:text-slate-300">"{course.name}"</span> will be permanently removed. This cannot be undone.
+            </p>
+          </div>
+
+          {error && (
+            <div className="w-full flex items-center gap-3 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-bold">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 w-full pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-2xl font-black text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 dark:bg-dark-border dark:hover:bg-slate-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 text-white rounded-2xl font-black text-sm hover:bg-red-600 active:scale-95 transition-all disabled:opacity-60"
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Main Courses Page ────────────────────────────────────────────────────────
+
 export default function Courses() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Try to get isAdmin from your auth context; adjust the import/hook as needed.
+  // Falls back gracefully if the hook isn't wired up yet.
+  let isAdmin = false;
+  try {
+    const auth = useAuth();
+    isAdmin = auth?.user?.role == 'admin' || auth?.isAdmin || false;
+  } catch (_) {}
+
   const selectedCategory = searchParams.get('category') || 'All';
   const selectedState = searchParams.get('state') || 'All';
   const selectedStream = searchParams.get('stream') || 'All';
@@ -38,6 +351,10 @@ export default function Courses() {
   const [totalCount, setTotalCount] = useState(0);
   const [visibleCount, setVisibleCount] = useState(24);
 
+  // Edit / Delete modal state
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [deletingCourse, setDeletingCourse] = useState(null);
+
   const normalizeText = (...values) =>
     values
       .flat()
@@ -47,7 +364,6 @@ export default function Courses() {
       .join(' ')
       .toLowerCase();
 
-  // Fetch streams for the "Study Goal" section
   useEffect(() => {
     const fetchStreams = async () => {
       try {
@@ -72,7 +388,6 @@ export default function Courses() {
         if (universityId) queryParams.append('universityId', universityId);
 
         if (selectedCourse) {
-          // Fetch specific colleges for the selected base course
           queryParams.append('baseCourse', selectedCourse);
           queryParams.append('limit', '100');
           const { data } = await api.get(`/courses?${queryParams.toString()}`);
@@ -81,11 +396,9 @@ export default function Courses() {
             setTotalCount(data.pagination?.total || data.data.length);
           }
         } else {
-          // Fetch high-performance grouped courses
           const { data } = await api.get(`/courses/grouped?${queryParams.toString()}`);
           if (active) {
             setCourses(data.data || []);
-            // Set totalCount to the number of unique programs (groups)
             setTotalCount(data.data?.length || 0);
           }
         }
@@ -99,12 +412,27 @@ export default function Courses() {
     return () => { active = false; };
   }, [selectedCategory, universityId, selectedState, selectedCourse, selectedStream]);
 
-  // Reset pagination when filters change
   useEffect(() => {
     setVisibleCount(24);
   }, [selectedCategory, selectedState, selectedStream, search, selectedCourse, selectedSpec]);
 
-  // Grouped results are already coming from the backend now
+  // ── Optimistic handlers ────────────────────────────────────────────────────
+
+  const handleCourseSaved = useCallback((updated) => {
+    setCourses((prev) =>
+      prev.map((c) => (c._id === updated._id ? { ...c, ...updated } : c))
+    );
+    setEditingCourse(null);
+  }, []);
+
+  const handleCourseDeleted = useCallback((deletedId) => {
+    setCourses((prev) => prev.filter((c) => c._id !== deletedId));
+    setTotalCount((prev) => Math.max(0, prev - 1));
+    setDeletingCourse(null);
+  }, []);
+
+  // ── Derived data ───────────────────────────────────────────────────────────
+
   const courseGroups = useMemo(() => {
     if (selectedCourse) return [];
     return courses
@@ -121,15 +449,12 @@ export default function Courses() {
 
   const filteredCourseGroups = useMemo(() => {
     let filtered = courseGroups;
-
-    // Filter by specialization if active
     if (selectedSpec !== 'All') {
       filtered = filtered.filter(group => 
         group.specializations?.includes(selectedSpec) || 
         group.specializationName === selectedSpec
       );
     }
-
     const query = search.trim().toLowerCase();
     if (!query) return filtered;
     return filtered.filter((group) => (
@@ -137,9 +462,7 @@ export default function Courses() {
     ));
   }, [courseGroups, search, selectedSpec]);
 
-  const visibleCourseGroups = useMemo(() => {
-    return filteredCourseGroups.slice(0, visibleCount);
-  }, [filteredCourseGroups, visibleCount]);
+  const visibleCourseGroups = useMemo(() => filteredCourseGroups.slice(0, visibleCount), [filteredCourseGroups, visibleCount]);
 
   const handleStateChange = (state) => {
     const params = new URLSearchParams(searchParams);
@@ -157,7 +480,6 @@ export default function Courses() {
 
   const handleStreamChange = (stream) => {
     const params = new URLSearchParams(searchParams);
-    // Clear stale course/category/specialization params when switching streams
     params.delete('course');
     params.delete('category');
     params.delete('specialization');
@@ -187,22 +509,20 @@ export default function Courses() {
   const filteredColleges = useMemo(() => {
     if (!selectedCourse) return [];
     let filtered = courses;
-    
     if (selectedSpec !== 'All') {
       filtered = filtered.filter(c => c.specializationName === selectedSpec);
     }
-
     const query = search.trim().toLowerCase();
     if (!query) return filtered;
-    return filtered.filter((course) => {
-      return normalizeText(
+    return filtered.filter((course) =>
+      normalizeText(
         course.universityId?.name,
         course.universityId?.city,
         course.universityId?.state,
         course.specializationName,
         course.name
-      ).includes(query);
-    });
+      ).includes(query)
+    );
   }, [courses, selectedCourse, search, selectedSpec]);
 
   const visibleColleges = useMemo(() => filteredColleges.slice(0, visibleCount), [filteredColleges, visibleCount]);
@@ -213,9 +533,36 @@ export default function Courses() {
     return ALL_STATES.filter((state) => state.toLowerCase().includes(query));
   }, [stateSearch]);
 
+  // ── Card action buttons (admin only) ──────────────────────────────────────
+
+  const AdminActions = ({ item }) => {
+    if (!isAdmin || !selectedCourse) return null;
+    return (
+      <div
+        className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={() => setEditingCourse(item)}
+          title="Edit course"
+          className="w-9 h-9 rounded-full bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border shadow-md flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary transition-colors"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setDeletingCourse(item)}
+          title="Delete course"
+          className="w-9 h-9 rounded-full bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border shadow-md flex items-center justify-center text-slate-500 hover:text-red-500 hover:border-red-400 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
-      {/* Professional Compact Hero */}
+      {/* Hero */}
       <div className="relative mb-6 shrink-0 rounded-[3rem] overflow-hidden bg-slate-900 text-white shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-indigo-500/20" />
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
@@ -287,10 +634,9 @@ export default function Courses() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-10 items-start flex-1">
-        {/* Advanced Sidebar Filter */}
+        {/* Sidebar */}
         <aside className={`${showFilters ? 'fixed inset-0 z-[150] bg-white dark:bg-dark-bg p-6 overflow-y-auto' : 'hidden'} lg:block lg:w-80 shrink-0 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)] lg:overflow-y-auto custom-scrollbar`}>
           <div className="space-y-6 pb-10 lg:pb-4">
-            {/* Mobile Close Button */}
             {showFilters && (
               <div className="flex items-center justify-between mb-8 lg:hidden">
                 <h3 className="text-xl font-black">Filters</h3>
@@ -303,17 +649,14 @@ export default function Courses() {
               </div>
             )}
 
-            {/* Stream/Goal Selection */}
+            {/* Stream Filter */}
             <div className="bg-slate-50/50 dark:bg-dark-card/50 backdrop-blur-xl p-7 rounded-[2.5rem] border border-slate-200/60 dark:border-dark-border shadow-sm">
               <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2.5">
                 <Building2 className="w-4 h-4 text-primary" /> Academic Stream
               </h4>
               <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 <button 
-                  onClick={() => {
-                    handleStreamChange('All');
-                    if(showFilters) setShowFilters(false);
-                  }}
+                  onClick={() => { handleStreamChange('All'); if(showFilters) setShowFilters(false); }}
                   className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[13px] font-black transition-all ${selectedStream === 'All' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
                 >
                   All Streams <ChevronRight className="w-4 h-4 opacity-50" />
@@ -321,10 +664,7 @@ export default function Courses() {
                 {streams.map((s) => (
                   <button 
                     key={s.stream}
-                    onClick={() => {
-                      handleStreamChange(s.stream);
-                      if(showFilters) setShowFilters(false);
-                    }}
+                    onClick={() => { handleStreamChange(s.stream); if(showFilters) setShowFilters(false); }}
                     className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[13px] font-black transition-all ${selectedStream === s.stream ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
                   >
                     <span className="truncate">{s.stream}</span>
@@ -344,7 +684,6 @@ export default function Courses() {
                   {selectedState === 'All' ? '37 Regions' : '1 Active'}
                 </div>
               </div>
-              
               <div className="mb-4">
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -357,13 +696,9 @@ export default function Courses() {
                   />
                 </div>
               </div>
-
               <div className="space-y-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 <button 
-                  onClick={() => {
-                    handleStateChange('All');
-                    if(showFilters) setShowFilters(false);
-                  }}
+                  onClick={() => { handleStateChange('All'); if(showFilters) setShowFilters(false); }}
                   className={`state-item w-full text-left px-5 py-3 rounded-xl text-[12px] font-bold transition-all ${selectedState === 'All' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 text-slate-400 dark:hover:bg-dark-border'}`}
                 >
                   All Regions
@@ -371,10 +706,7 @@ export default function Courses() {
                 {filteredStates.map((state) => (
                   <button 
                     key={state}
-                    onClick={() => {
-                      handleStateChange(state);
-                      if(showFilters) setShowFilters(false);
-                    }}
+                    onClick={() => { handleStateChange(state); if(showFilters) setShowFilters(false); }}
                     className={`state-item w-full text-left px-5 py-3 rounded-xl text-[12px] font-bold transition-all ${selectedState === state ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 text-slate-400 dark:hover:bg-dark-border'}`}
                   >
                     {state}
@@ -392,10 +724,7 @@ export default function Courses() {
                 {['All', 'UG', 'PG', 'Diploma', 'PhD'].map((cat) => (
                   <button 
                     key={cat}
-                    onClick={() => {
-                      handleCategoryChange(cat);
-                      if(showFilters) setShowFilters(false);
-                    }}
+                    onClick={() => { handleCategoryChange(cat); if(showFilters) setShowFilters(false); }}
                     className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-[13px] font-black transition-all ${selectedCategory === cat ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 dark:bg-primary' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
                   >
                     <div className={`w-2.5 h-2.5 rounded-full ${selectedCategory === cat ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-dark-border'}`} />
@@ -407,7 +736,7 @@ export default function Courses() {
           </div>
         </aside>
 
-        {/* Dynamic Content Area */}
+        {/* Content Area */}
         <div className="flex-1 w-full pb-20">
           {(selectedCourse || selectedCategory !== 'All') ? (
             <motion.div 
@@ -449,32 +778,31 @@ export default function Courses() {
                 </button>
               </div>
 
-              {/* Sub-Filter for Specializations */}
               {availableSpecs.length > 0 && (
                 <div className="relative z-10 mt-12 pt-8 border-t border-white/10">
-                   <div className="flex items-center justify-between mb-4">
-                     <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Browse by Specialization</h4>
-                     {selectedSpec !== 'All' && (
-                       <button onClick={() => handleSpecChange('All')} className="text-[10px] font-black text-white/30 hover:text-white underline">Clear Selection</button>
-                     )}
-                   </div>
-                   <div className="flex flex-wrap gap-2 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                     <button 
-                       onClick={() => handleSpecChange('All')}
-                       className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all ${selectedSpec === 'All' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
-                     >
-                       All Specs
-                     </button>
-                     {availableSpecs.map(spec => (
-                       <button 
-                         key={spec}
-                         onClick={() => handleSpecChange(spec)}
-                         className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all ${selectedSpec === spec ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
-                       >
-                         {spec}
-                       </button>
-                     ))}
-                   </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Browse by Specialization</h4>
+                    {selectedSpec !== 'All' && (
+                      <button onClick={() => handleSpecChange('All')} className="text-[10px] font-black text-white/30 hover:text-white underline">Clear Selection</button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+                    <button 
+                      onClick={() => handleSpecChange('All')}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all ${selectedSpec === 'All' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                    >
+                      All Specs
+                    </button>
+                    {availableSpecs.map(spec => (
+                      <button 
+                        key={spec}
+                        onClick={() => handleSpecChange(spec)}
+                        className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all ${selectedSpec === spec ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                      >
+                        {spec}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -490,7 +818,6 @@ export default function Courses() {
                   {totalCount} RESULTS
                 </div>
               </div>
-              
               <button 
                 onClick={() => setShowFilters(true)}
                 className="lg:hidden flex items-center gap-3 px-6 py-3 bg-primary text-white rounded-2xl font-black text-xs shadow-xl shadow-primary/20 active:scale-95 transition-all"
@@ -530,6 +857,29 @@ export default function Courses() {
                       whileHover={{ y: -8 }}
                       className="group relative bg-white dark:bg-dark-card rounded-[3rem] p-1 border border-light-border dark:border-dark-border shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500"
                     >
+                      {/* Admin edit/delete buttons — only shown in college (selectedCourse) view */}
+                      {isAdmin && selectedCourse && (
+                        <div
+                          className="absolute top-5 right-5 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => setEditingCourse(item)}
+                            title="Edit course"
+                            className="w-9 h-9 rounded-full bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border shadow-md flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary transition-colors"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeletingCourse(item)}
+                            title="Delete course"
+                            className="w-9 h-9 rounded-full bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border shadow-md flex items-center justify-center text-slate-500 hover:text-red-500 hover:border-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
                       <div className="p-8 space-y-8">
                         <div className="flex justify-between items-start">
                           <div className="space-y-4">
@@ -548,32 +898,36 @@ export default function Courses() {
                                 </span>
                               )}
                             </div>
-                            <h3 className="text-2xl md:text-3xl font-serif font-black leading-tight group-hover:text-primary transition-colors cursor-pointer"
-                                onClick={() => {
-                                  if (!selectedCourse) {
-                                    const params = new URLSearchParams(searchParams);
-                                    params.set('course', item.name || '');
-                                    setSearchParams(params);
-                                  } else {
-                                    const routeParam = item.universityId?.slug || item.universityId?._id;
-                                    if (routeParam) {
-                                      navigate(`/universities/${routeParam}`, { state: { activeTab: 1 } });
-                                    }
-                                  }
-                                }}>
+                            <h3
+                              className="text-2xl md:text-3xl font-serif font-black leading-tight group-hover:text-primary transition-colors cursor-pointer"
+                              onClick={() => {
+                                if (!selectedCourse) {
+                                  const params = new URLSearchParams(searchParams);
+                                  params.set('course', item.name || '');
+                                  setSearchParams(params);
+                                } else {
+                                  const routeParam = item.universityId?.slug || item.universityId?._id;
+                                  if (routeParam) navigate(`/universities/${routeParam}`, { state: { activeTab: 1 } });
+                                }
+                              }}
+                            >
                               {selectedCourse ? item.universityId?.name : item.name}
                             </h3>
                             <div className="flex items-center gap-2 text-sm font-bold text-slate-400">
                               <MapPin className="w-4 h-4 text-primary" /> 
-                              {selectedCourse ? `${item.universityId?.city}, ${item.universityId?.state}` : `${item.collegeCount} Participating Institutions`}
+                              {selectedCourse
+                                ? `${item.universityId?.city}, ${item.universityId?.state}`
+                                : `${item.collegeCount} Participating Institutions`}
                             </div>
                           </div>
                           <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 dark:bg-dark-border/20 flex items-center justify-center p-3 shrink-0 group-hover:rotate-6 group-hover:scale-110 transition-all duration-500 shadow-inner">
-                             {selectedCourse ? (
-                               item.universityId?.logoUrl ? <img src={item.universityId.logoUrl} alt="" className="w-full h-full object-contain" /> : <div className="text-2xl font-black text-primary">{item.universityId?.name?.[0]}</div>
-                             ) : (
-                               <div className="text-primary"><GraduationCap className="w-10 h-10" /></div>
-                             )}
+                            {selectedCourse ? (
+                              item.universityId?.logoUrl
+                                ? <img src={item.universityId.logoUrl} alt="" className="w-full h-full object-contain" />
+                                : <div className="text-2xl font-black text-primary">{item.universityId?.name?.[0]}</div>
+                            ) : (
+                              <div className="text-primary"><GraduationCap className="w-10 h-10" /></div>
+                            )}
                           </div>
                         </div>
 
@@ -584,7 +938,7 @@ export default function Courses() {
                               <span className="text-emerald-500">{item.specializationName || 'General'}</span>
                             </div>
                             <div className="h-1 w-full bg-slate-50 dark:bg-dark-border/30 rounded-full overflow-hidden">
-                               <div className="h-full bg-primary w-2/3" />
+                              <div className="h-full bg-primary w-2/3" />
                             </div>
                           </div>
                         )}
@@ -604,22 +958,20 @@ export default function Courses() {
 
                         <div className="flex items-center justify-between pt-2">
                           <div className="flex items-center gap-3">
-                             <div className="flex -space-x-3">
-                               {[1,2,3,4].map(i => (
-                                 <div key={i} className="w-8 h-8 rounded-full border-4 border-white dark:border-dark-card bg-slate-100 dark:bg-dark-border flex items-center justify-center text-[10px] font-black overflow-hidden shadow-sm">
-                                   {i === 4 ? <span className="text-primary">+</span> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-indigo-500/20" />}
-                                 </div>
-                               ))}
-                             </div>
-                             <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest hidden sm:block">A-Grade Accreditation</span>
+                            <div className="flex -space-x-3">
+                              {[1,2,3,4].map(i => (
+                                <div key={i} className="w-8 h-8 rounded-full border-4 border-white dark:border-dark-card bg-slate-100 dark:bg-dark-border flex items-center justify-center text-[10px] font-black overflow-hidden shadow-sm">
+                                  {i === 4 ? <span className="text-primary">+</span> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-indigo-500/20" />}
+                                </div>
+                              ))}
+                            </div>
+                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest hidden sm:block">A-Grade Accreditation</span>
                           </div>
                           <button 
                             onClick={() => {
                               if (selectedCourse) {
                                 const routeParam = item.universityId?.slug || item.universityId?._id;
-                                if (routeParam) {
-                                  navigate(`/universities/${routeParam}`, { state: { activeTab: 1 } });
-                                }
+                                if (routeParam) navigate(`/universities/${routeParam}`, { state: { activeTab: 1 } });
                               } else {
                                 const params = new URLSearchParams(searchParams);
                                 params.set('course', item.name || '');
@@ -640,7 +992,8 @@ export default function Courses() {
                 </AnimatePresence>
               </div>
 
-              {((!selectedCourse && visibleCourseGroups.length < filteredCourseGroups.length) || (selectedCourse && visibleColleges.length < filteredColleges.length)) && (
+              {((!selectedCourse && visibleCourseGroups.length < filteredCourseGroups.length) ||
+                (selectedCourse && visibleColleges.length < filteredColleges.length)) && (
                 <div className="py-20 text-center">
                   <motion.button 
                     whileHover={{ scale: 1.05 }}
@@ -656,6 +1009,26 @@ export default function Courses() {
           )}
         </div>
       </div>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {editingCourse && (
+          <EditCourseModal
+            key="edit"
+            course={editingCourse}
+            onClose={() => setEditingCourse(null)}
+            onSaved={handleCourseSaved}
+          />
+        )}
+        {deletingCourse && (
+          <DeleteConfirmDialog
+            key="delete"
+            course={deletingCourse}
+            onClose={() => setDeletingCourse(null)}
+            onDeleted={handleCourseDeleted}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
