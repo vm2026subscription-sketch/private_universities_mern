@@ -31,6 +31,7 @@ app.use(compression());
 
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'https://university.vidyarthimitra.org',
   'https://www.university.vidyarthimitra.org',
   'https://private-universities-mern.vercel.app',
