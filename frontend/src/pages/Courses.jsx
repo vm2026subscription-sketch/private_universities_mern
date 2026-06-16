@@ -1,15 +1,21 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useDeferredValue } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
   ChevronRight, CheckCircle2, Sparkles, Building2, Pencil, Trash2,
-  AlertTriangle, Save, Loader2
+  AlertTriangle, Save, Loader2, Award
 } from 'lucide-react';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext'; // adjust import path as needed
+import { readSessionCache, writeSessionCache } from '../utils/pageCache';
+
+const STREAMS_CACHE_KEY = 'vm_courses_streams_v1';
+const STREAMS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 mins
+const COURSE_RESULTS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 mins
+const getCourseResultsCacheKey = (queryStr) => `vm_courses_results_${queryStr}_v1`;
 
 const ALL_STATES = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
@@ -915,7 +921,8 @@ export default function Courses() {
                         </div>
                       )}
 
-                      <div className="p-8 space-y-8">
+                      {selectedCourse ? (
+                        <div className="p-8 space-y-8">
                         <div className="flex justify-between items-start">
                           <div className="space-y-4">
                             <div className="flex flex-wrap items-center gap-2">
@@ -1021,8 +1028,8 @@ export default function Courses() {
                           </div>
                         </div>
                       ) : (
-                        /* ── PREMIUM COURSE GROUP CARD ── */
-                        <div
+                        <>
+                          <div
                           className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 cursor-pointer hover:bg-slate-50/40 dark:hover:bg-dark-border/20 transition-colors"
                           onClick={() => { const params = new URLSearchParams(searchParams); params.set('course', item.name || ''); setSearchParams(params); }}
                         >
@@ -1061,7 +1068,7 @@ export default function Courses() {
                               </div>
                             )}
                           </div>
-                        )}
+                          </div>
 
                         <div className="flex items-center justify-between pt-2">
                           <div className="flex items-center gap-3">
@@ -1093,7 +1100,8 @@ export default function Courses() {
                             </div>
                           </button>
                         </div>
-                      )}
+                      </>
+                    )}
                     </motion.div>
                   ))}
                 </AnimatePresence>

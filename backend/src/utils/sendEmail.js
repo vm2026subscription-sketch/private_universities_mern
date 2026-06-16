@@ -50,7 +50,10 @@ const getSmtpPassword = () => {
   return rawPassword;
 };
 
-let smtpTransporter;
+let smtpTransporter = null;
+
+// In development, you can force all emails to this address
+const forwardToAdmin = process.env.FORWARD_EMAILS_TO_ADMIN === 'true';
 
 const getSmtpTransporter = () => {
   if (smtpTransporter) {
@@ -105,14 +108,24 @@ const sendEmail = async ({ to, subject, html }) => {
   const resendFrom = getResendFrom();
   const resendErrors = [];
 
+  let recipient = to;
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  if (isDevelopment && forwardToAdmin) {
+    const adminEmail = getAdminEmails()[0] || process.env.SMTP_USER;
+    if (adminEmail) {
+      recipient = adminEmail;
+      console.log(`📧 [DEV MODE - FORWARDED TO ADMIN] Original recipient: ${to}`);
+    }
+  }
+
   if (hasResendConfig()) {
     const usingBlockedTestSender =
       isResendTestSender(resendFrom) &&
-      !canUseResendTestSender(to);
+      !canUseResendTestSender(recipient);
 
     if (!usingBlockedTestSender) {
       try {
-        await sendViaResend({ to, subject, html });
+        await sendViaResend({ to: recipient, subject, html });
         return;
       } catch (error) {
         resendErrors.push(`Resend failed: ${error.message}`);
@@ -126,7 +139,7 @@ const sendEmail = async ({ to, subject, html }) => {
 
   if (hasSmtpConfig()) {
     try {
-      await sendViaSmtp({ to, subject, html });
+      await sendViaSmtp({ to: recipient, subject, html });
       return;
     } catch (error) {
       throw new Error(

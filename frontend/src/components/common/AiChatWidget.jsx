@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bot, Grip, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2 } from 'lucide-react';
+import { Bot, Grip, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2, Mic, MicOff, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -77,6 +77,142 @@ export default function AiChatWidget() {
   const scrollRef = useRef(null);
   const dragStateRef = useRef(null);
   const resizeStateRef = useRef(null);
+  const [isListening, setIsListening] = useState(false);
+  const [currentlySpeaking, setCurrentlySpeaking] = useState(null);
+  const recognitionRef = useRef(null);
+  const initialInputRef = useRef('');
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = true;
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (event) => {
+        let accumulatedTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          accumulatedTranscript += event.results[i][0].transcript;
+        }
+        
+        const base = initialInputRef.current ? initialInputRef.current.trim() : '';
+        const transcript = accumulatedTranscript.trim();
+        setInput(base ? base + ' ' + transcript : transcript);
+      };
+
+      rec.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          toast.error('Microphone access denied. Please allow microphone permissions.');
+        } else if (event.error !== 'aborted') {
+          toast.error(`Speech recognition error: ${event.error}`);
+        }
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+  }, []);
+
+  // Update speech recognition language when selected language changes
+  useEffect(() => {
+    if (recognitionRef.current) {
+      let recLang = 'en-IN';
+      if (language === 'hi') recLang = 'hi-IN';
+      else if (language === 'mr') recLang = 'mr-IN';
+      recognitionRef.current.lang = recLang;
+    }
+  }, [language]);
+
+  // Cleanup speech/recognition when chat closes or unmounts
+  useEffect(() => {
+    if (!isOpen) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setCurrentlySpeaking(null);
+      if (isListening && recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    }
+  }, [isOpen, isListening]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      toast.error('Speech recognition is not supported in this browser.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      initialInputRef.current = input;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        setCurrentlySpeaking(null);
+      }
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        console.error('Speech recognition start failed', err);
+      }
+    }
+  };
+
+  const speakMessage = (text) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      toast.error('Text-to-speech is not supported in this browser.');
+      return;
+    }
+
+    if (currentlySpeaking === text) {
+      window.speechSynthesis.cancel();
+      setCurrentlySpeaking(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    if (language === 'hi') {
+      utterance.lang = 'hi-IN';
+    } else if (language === 'mr') {
+      utterance.lang = 'mr-IN';
+    } else {
+      utterance.lang = 'en-IN';
+    }
+
+    utterance.onend = () => {
+      setCurrentlySpeaking(null);
+    };
+
+    utterance.onerror = () => {
+      setCurrentlySpeaking(null);
+    };
+
+    setCurrentlySpeaking(text);
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleTranslate = async (targetLang) => {
     if (language === targetLang) return;
@@ -412,9 +548,25 @@ export default function AiChatWidget() {
                       : 'bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-tl-none'
                   }`}
                 >
-                  {message.content}
-                  <div className={`text-[9px] mt-1.5 opacity-50 font-medium ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <p className="whitespace-pre-line">{message.content}</p>
+                  <div className="flex items-center justify-between mt-1.5 gap-2">
+                    <span className={`text-[9px] opacity-50 font-medium ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {message.role === 'assistant' && (
+                      <button
+                        type="button"
+                        onClick={() => speakMessage(message.content)}
+                        className={`transition-colors p-1 rounded hover:bg-light-card dark:hover:bg-dark-bg shrink-0 ${
+                          currentlySpeaking === message.content
+                            ? 'text-primary animate-pulse'
+                            : 'text-slate-400 hover:text-primary'
+                        }`}
+                        title={currentlySpeaking === message.content ? 'Stop speaking' : 'Read message aloud'}
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -461,8 +613,20 @@ export default function AiChatWidget() {
                 }
               }}
               placeholder="Ask anything..."
-              className="w-full bg-light-card dark:bg-dark-bg border-none rounded-2xl px-4 py-3.5 pr-12 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none min-h-[52px] max-h-32"
+              className="w-full bg-light-card dark:bg-dark-bg border-none rounded-2xl px-4 py-3.5 pr-24 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none min-h-[52px] max-h-32"
             />
+            <button
+              type="button"
+              onClick={toggleListening}
+              className={`absolute right-12 bottom-1.5 w-9 h-9 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-light-border dark:border-dark-border ${
+                isListening
+                  ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/20 border-transparent'
+                  : 'bg-light-card dark:bg-dark-bg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              title={isListening ? 'Stop listening' : 'Start voice typing'}
+            >
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
             <button
               type="submit"
               disabled={loading || !input.trim()}
