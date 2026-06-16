@@ -4,32 +4,58 @@ const { Resend } = require('resend');
 const DEFAULT_RESEND_FROM = 'Vidyarthi Mitra <onboarding@resend.dev>';
 
 const hasResendConfig = () => Boolean(process.env.RESEND_API_KEY);
-const hasSmtpConfig = () => Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
-const getResendFrom = () => process.env.RESEND_FROM || DEFAULT_RESEND_FROM;
-const isResendTestSender = (fromAddress) => /onboarding@resend\.dev/i.test(fromAddress || '');
-const normalizeAddress = (value) => String(value || '').trim().toLowerCase();
+
+const hasSmtpConfig = () =>
+  Boolean(
+    process.env.SMTP_HOST &&
+      process.env.SMTP_USER &&
+      process.env.SMTP_PASS
+  );
+
+const getResendFrom = () =>
+  process.env.RESEND_FROM || DEFAULT_RESEND_FROM;
+
+const isResendTestSender = (fromAddress) =>
+  /onboarding@resend\.dev/i.test(fromAddress || '');
+
+const normalizeAddress = (value) =>
+  String(value || '').trim().toLowerCase();
+
 const getAdminEmails = () =>
   String(process.env.ADMIN_EMAIL || '')
     .split(',')
     .map(normalizeAddress)
     .filter(Boolean);
+
 const getAllowedResendTestRecipients = () =>
-  [...new Set([normalizeAddress(process.env.SMTP_USER), ...getAdminEmails()])].filter(Boolean);
+  [
+    ...new Set([
+      normalizeAddress(process.env.SMTP_USER),
+      ...getAdminEmails(),
+    ]),
+  ].filter(Boolean);
+
 const canUseResendTestSender = (toAddress) =>
-  getAllowedResendTestRecipients().includes(normalizeAddress(toAddress));
+  getAllowedResendTestRecipients().includes(
+    normalizeAddress(toAddress)
+  );
+
 const getSmtpPassword = () => {
   const rawPassword = String(process.env.SMTP_PASS || '');
+
   if (/smtp\.gmail\.com/i.test(process.env.SMTP_HOST || '')) {
     return rawPassword.replace(/\s+/g, '');
   }
+
   return rawPassword;
 };
 
-// In development, you can force all emails to this address
-const forwardToAdmin = process.env.FORWARD_EMAILS_TO_ADMIN === 'true';
+let smtpTransporter;
 
 const getSmtpTransporter = () => {
-  if (smtpTransporter) return smtpTransporter;
+  if (smtpTransporter) {
+    return smtpTransporter;
+  }
 
   smtpTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -41,31 +67,38 @@ const getSmtpTransporter = () => {
     },
   });
 
-  // 2. In development, optionally forward all emails to admin email
-  let recipient = to;
-  if (isDevelopment && forwardToAdmin) {
-    recipient = adminEmail;
-    console.log(`📧 [DEV MODE - FORWARDED TO ADMIN] Original recipient: ${to}`);
-  }
+  return smtpTransporter;
+};
 
 const sendViaResend = async ({ to, subject, html }) => {
-  const { Resend } = require('resend');
   const resend = new Resend(process.env.RESEND_API_KEY);
   const from = getResendFrom();
 
-  const { error } = await resend.emails.send({ from, to, subject, html });
-  if (error) throw new Error(error.message);
+  const { error } = await resend.emails.send({
+    from,
+    to,
+    subject,
+    html,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  console.log(`✅ Email sent via Resend to ${to}`);
 };
 
 const sendViaSmtp = async ({ to, subject, html }) => {
   const transporter = getSmtpTransporter();
+
   await transporter.sendMail({
     from: `"Vidyarthi Mitra" <${process.env.SMTP_USER}>`,
-    to: recipient,
+    to,
     subject,
     html,
   });
-  console.log(`✅ Email sent via SMTP to ${recipient}`);
+
+  console.log(`✅ Email sent via SMTP to ${to}`);
 };
 
 const sendEmail = async ({ to, subject, html }) => {
@@ -73,7 +106,9 @@ const sendEmail = async ({ to, subject, html }) => {
   const resendErrors = [];
 
   if (hasResendConfig()) {
-    const usingBlockedTestSender = isResendTestSender(resendFrom) && !canUseResendTestSender(to);
+    const usingBlockedTestSender =
+      isResendTestSender(resendFrom) &&
+      !canUseResendTestSender(to);
 
     if (!usingBlockedTestSender) {
       try {
@@ -95,7 +130,9 @@ const sendEmail = async ({ to, subject, html }) => {
       return;
     } catch (error) {
       throw new Error(
-        [...resendErrors, `SMTP failed: ${error.message}`].filter(Boolean).join(' ')
+        [...resendErrors, `SMTP failed: ${error.message}`]
+          .filter(Boolean)
+          .join(' ')
       );
     }
   }
