@@ -154,6 +154,7 @@
                     <Route path="newsletter" element={<NewsletterManager />} />
                     <Route path="settings" element={<SiteSettingsManager />} />
                     <Route path="audit-logs" element={<AuditLogViewer />} />
+                    <Route path="data-import" element={<ExcelUploader />} />
                   </Route>
 
                   <Route path="/admin-legacy" element={<Navigate to="/admin" replace />} />
