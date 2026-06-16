@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
+import api from '../../services/api';
 
 const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
   const [file, setFile] = useState(null);
@@ -33,7 +34,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
     formData.append('file', fileToCheck);
 
     try {
-      const response = await axios.post('/api/admin/upload/sheets', formData, {
+      const response = await api.post('/api/admin/upload/sheets', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setSheetNames(response.data.sheets);
@@ -56,7 +57,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
     formData.append('uploadType', type);
 
     try {
-      const response = await axios.post('/api/admin/upload/preview', formData, {
+      const response = await api.post('/api/admin/upload/preview', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
@@ -83,7 +84,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
     formData.append('uploadType', type);
 
     try {
-      const response = await axios.post('/api/admin/upload/confirm', formData, {
+      const response = await api.post('/api/admin/upload/confirm', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
@@ -108,7 +109,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
     formData.append('mode', uploadMode);
 
     try {
-      const response = await axios.post('/api/admin/upload/bulk', formData, {
+      const response = await api.post('/api/admin/upload/bulk', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
