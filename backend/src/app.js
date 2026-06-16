@@ -118,7 +118,7 @@ app.use('/api/v1/news', newsRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/admin', adminRoutes);
-app.use('/api/admin/upload', uploadExcelRoutes);
+// app.use('/api/admin/upload', uploadExcelRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
 app.use('/api/v1', publicRoutes);
