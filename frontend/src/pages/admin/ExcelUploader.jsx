@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
-import api from '../../services/api';
+import api from '../../utils/api';  
 
 const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
   const [file, setFile] = useState(null);
