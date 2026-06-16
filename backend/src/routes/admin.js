@@ -35,7 +35,16 @@ router.delete('/universities/:id', superadmin, adminCtrl.deleteUniversity);
 // Courses
 router.post('/courses', adminCtrl.createCourse);
 router.put('/courses/:id', adminCtrl.updateCourse);
-router.delete('/courses/:id', superadmin, adminCtrl.deleteCourse);
+router.delete('/courses/:id', adminCtrl.deleteCourse);
+// const router = require('express').Router();
+// const { protect, admin } = require('../middleware/auth');
+const { updateCourse, deleteCourse } = require('../controllers/courseController');
+
+
+
+// router.put('/courses/:id', protect, admin, updateCourse);
+// router.delete('/courses/:id', protect, admin, deleteCourse);
+
 
 // Exams
 router.post('/exams', adminCtrl.createExam);
@@ -99,5 +108,8 @@ router.delete('/newsletter/subscribers/:id', superadmin, newsletterCtrl.removeSu
 
 // Audit Logs
 router.get('/audit-logs', auditCtrl.getLogs);
+
+
+
 
 module.exports = router;

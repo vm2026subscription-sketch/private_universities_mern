@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useLocation, Link } from 'react-router-dom';
-import {
-  MapPin, Globe, Phone, Mail, BookOpen, Users, Award,
-  Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2, ArrowRight, ExternalLink, ClipboardList
+import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
+import { 
+  MapPin, Globe, Phone, Mail, BookOpen, Users, Award, 
+  Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2, ArrowRight, ExternalLink,
+  Edit, Trash2, Save, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
@@ -52,6 +53,7 @@ const formatCourseFee = (course) => {
 export default function UniversityDetail() {
   const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [uni, setUni] = useState(null);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 0);
   const [loading, setLoading] = useState(true);
@@ -60,8 +62,13 @@ export default function UniversityDetail() {
 
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
-  const [isTracked, setIsTracked] = useState(false);
-  const [trackLoading, setTrackLoading] = useState(false);
+  const isAdmin = user?.role === 'admin';
+
+  // Edit & Delete states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -71,6 +78,7 @@ export default function UniversityDetail() {
       .then(({ data }) => {
         const u = data.data;
         setUni(u);
+        setEditForm(u); // populate edit form
         if (u) {
           const prev = JSON.parse(localStorage.getItem('vm_recent') || '[]');
           const filtered = prev.filter(r => r._id !== u._id);
@@ -137,6 +145,43 @@ export default function UniversityDetail() {
     }
   };
 
+  // Edit handlers
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      await api.put(`/admin/universities/${uni._id}`, editForm);
+      toast.success('University updated successfully');
+      setIsEditing(false);
+      // Refresh data
+      const { data } = await api.get(`/universities/${slug}`);
+      setUni(data.data);
+      setEditForm(data.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Update failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setSaving(true);
+    try {
+      await api.delete(`/admin/universities/${uni._id}`);
+      toast.success('University deleted');
+      navigate('/universities');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Delete failed');
+    } finally {
+      setSaving(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   if (loading) return <div className="max-w-7xl mx-auto px-4 py-12 text-center">Loading...</div>;
   if (!uni) return <div className="max-w-7xl mx-auto px-4 py-12 text-center text-slate-500">University not found. Connect to backend to load data.</div>;
 
@@ -179,6 +224,25 @@ export default function UniversityDetail() {
             </div>
 
             <div className="flex gap-3 justify-center">
+              {/* Admin Edit & Delete Buttons */}
+              {isAdmin && !isEditing && (
+                <>
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="p-4 rounded-2xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all shadow-lg"
+                    title="Edit University"
+                  >
+                    <Edit className="w-6 h-6" />
+                  </button>
+                  <button 
+                    onClick={() => setShowDeleteModal(true)}
+                    className="p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all shadow-lg"
+                    title="Delete University"
+                  >
+                    <Trash2 className="w-6 h-6" />
+                  </button>
+                </>
+              )}
               <button 
                 onClick={handleBookmark}
                 className={`p-4 rounded-2xl transition-all shadow-lg ${isSaved ? 'bg-primary text-white shadow-primary/30' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 shadow-slate-200/50'}`}
@@ -211,6 +275,34 @@ export default function UniversityDetail() {
             </div>
           </div>
 
+          {/* Edit Form (conditionally shown) */}
+          {isEditing && (
+            <div className="mt-10 pt-8 border-t border-slate-100 dark:border-white/10">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Edit className="w-5 h-5 text-primary" /> Edit University Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input name="name" value={editForm.name || ''} onChange={handleEditChange} className="input-field" placeholder="University Name" />
+                <input name="state" value={editForm.state || ''} onChange={handleEditChange} className="input-field" placeholder="State" />
+                <input name="city" value={editForm.city || ''} onChange={handleEditChange} className="input-field" placeholder="City" />
+                <input name="establishedYear" value={editForm.establishedYear || ''} onChange={handleEditChange} className="input-field" placeholder="Established Year" />
+                <input name="naacGrade" value={editForm.naacGrade || ''} onChange={handleEditChange} className="input-field" placeholder="NAAC Grade" />
+                <input name="nirfRank" value={editForm.nirfRank || ''} onChange={handleEditChange} className="input-field" placeholder="NIRF Rank" />
+                <input name="website" value={editForm.website || ''} onChange={handleEditChange} className="input-field" placeholder="Website" />
+                <input name="email" value={editForm.email || ''} onChange={handleEditChange} className="input-field" placeholder="Email" />
+                <input name="phone" value={editForm.phone || ''} onChange={handleEditChange} className="input-field" placeholder="Phone" />
+                <textarea name="description" value={editForm.description || ''} onChange={handleEditChange} className="input-field col-span-2" rows="4" placeholder="Description" />
+              </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 rounded-xl text-sm font-bold">Cancel</button>
+                <button onClick={handleSaveEdit} disabled={saving} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold flex items-center gap-2">
+                  {saving ? 'Saving...' : <><Save className="w-4 h-4" /> Save Changes</>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Stats Grid - unchanged */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mt-12 pt-10 border-t border-slate-50 dark:border-white/5">
             {[
               { icon: Users, label: 'Students', value: formatMetric(uni.stats?.totalStudents, uni.stats?.totalStudentsLabel) },
@@ -243,7 +335,7 @@ export default function UniversityDetail() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - unchanged */}
         <div className="flex overflow-x-auto gap-2 mb-10 pb-2 no-scrollbar">
           {tabs.map((t, i) => (
             <button 
@@ -258,7 +350,7 @@ export default function UniversityDetail() {
           ))}
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content - unchanged */}
         <div className="bg-white dark:bg-dark-card rounded-[3rem] p-10 border border-slate-100 dark:border-white/5 shadow-sm mb-20 min-h-[500px]">
           <AnimatePresence mode="wait">
             <motion.div
@@ -529,6 +621,44 @@ export default function UniversityDetail() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-dark-card rounded-3xl max-w-md w-full p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-red-600">Delete University</h3>
+                <button onClick={() => setShowDeleteModal(false)} className="p-1 rounded-full hover:bg-slate-100">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 mb-2">
+                Are you sure you want to delete <strong className="text-red-600">{uni.name}</strong>?
+              </p>
+              <p className="text-sm text-slate-400 mb-6">This action cannot be undone. All associated courses and data will also be removed.</p>
+              <div className="flex justify-end gap-3">
+                <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-sm font-bold">Cancel</button>
+                <button onClick={handleDelete} disabled={saving} className="px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-bold flex items-center gap-2">
+                  {saving ? 'Deleting...' : <><Trash2 className="w-4 h-4" /> Delete Permanently</>}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

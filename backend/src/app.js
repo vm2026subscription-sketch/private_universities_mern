@@ -6,6 +6,9 @@ const rateLimit = require('express-rate-limit');
 const passport = require('passport');
 const mongoose = require('mongoose');
 
+const uploadExcelRoutes = require('./routes/uploadExcel');
+
+
 const passportConfig = require('./config/passport');
 
 const authRoutes = require('./routes/auth');
@@ -109,6 +112,9 @@ app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
 app.use('/api/v1', publicRoutes);
 
+
+app.use('/api/admin/upload', uploadExcelRoutes);
 app.use(errorHandler);
+
 
 module.exports = app;

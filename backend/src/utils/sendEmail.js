@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const DEFAULT_RESEND_FROM = 'Vidyarthi Mitra <onboarding@resend.dev>';
 
@@ -24,7 +25,8 @@ const getSmtpPassword = () => {
   return rawPassword;
 };
 
-let smtpTransporter = null;
+// In development, you can force all emails to this address
+const forwardToAdmin = process.env.FORWARD_EMAILS_TO_ADMIN === 'true';
 
 const getSmtpTransporter = () => {
   if (smtpTransporter) return smtpTransporter;
@@ -39,8 +41,12 @@ const getSmtpTransporter = () => {
     },
   });
 
-  return smtpTransporter;
-};
+  // 2. In development, optionally forward all emails to admin email
+  let recipient = to;
+  if (isDevelopment && forwardToAdmin) {
+    recipient = adminEmail;
+    console.log(`📧 [DEV MODE - FORWARDED TO ADMIN] Original recipient: ${to}`);
+  }
 
 const sendViaResend = async ({ to, subject, html }) => {
   const { Resend } = require('resend');
@@ -55,10 +61,11 @@ const sendViaSmtp = async ({ to, subject, html }) => {
   const transporter = getSmtpTransporter();
   await transporter.sendMail({
     from: `"Vidyarthi Mitra" <${process.env.SMTP_USER}>`,
-    to,
+    to: recipient,
     subject,
     html,
   });
+  console.log(`✅ Email sent via SMTP to ${recipient}`);
 };
 
 const sendEmail = async ({ to, subject, html }) => {
