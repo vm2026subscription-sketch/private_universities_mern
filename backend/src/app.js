@@ -7,8 +7,6 @@ const passport = require('passport');
 const mongoose = require('mongoose');
 
 const uploadExcelRoutes = require('./routes/uploadExcel');
-
-
 const passportConfig = require('./config/passport');
 
 const authRoutes = require('./routes/auth');
@@ -24,17 +22,35 @@ const uploadRoutes = require('./routes/upload');
 const bhashiniRoutes = require('./routes/bhashini');
 
 const errorHandler = require('./middleware/errorHandler');
-
 const compression = require('compression');
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(compression());
 
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
-  .split(',')
-  .map((u) => u.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://university.vidyarthimitra.org',
+  'https://www.university.vidyarthimitra.org',
+  'https://private-universities-mern.vercel.app',
+  'https://private-universities-mern-git-main-vidyarthimitras-projects.vercel.app',
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow non-browser requests like curl/postman/server-to-server
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
 
 const googleAuthConfigured = Boolean(
   process.env.GOOGLE_CLIENT_ID &&
@@ -43,15 +59,8 @@ const googleAuthConfigured = Boolean(
 );
 
 app.use(helmet());
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      callback(null, false);
-    },
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -111,10 +120,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
 app.use('/api/v1', publicRoutes);
-
-
 app.use('/api/admin/upload', uploadExcelRoutes);
 app.use(errorHandler);
-
 
 module.exports = app;
