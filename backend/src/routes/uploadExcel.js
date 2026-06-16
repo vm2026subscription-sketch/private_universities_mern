@@ -163,9 +163,10 @@ const STREAM_CANONICAL = {
   'engineering': 'Engineering', 'technology': 'Engineering',
   'management': 'Management', 'business': 'Management',
   'commerce': 'Commerce', 'medical': 'Medical & Health Sciences',
-  'pharmacy': 'Medical & Health Sciences', 'law': 'Law',
-  'design': 'Design & Architecture', 'science': 'Science',
-  'arts': 'Arts & Humanities', 'education': 'Education',
+  'pharmacy': 'Medical & Health Sciences', 'nursing': 'Medical & Health Sciences',
+  'law': 'Law', 'design': 'Design & Architecture', 'science': 'Science',
+  'arts': 'Arts & Humanities', 'humanities': 'Arts & Humanities',
+  'education': 'Education',
 };
 
 function canonicalStream(raw) {
@@ -198,7 +199,7 @@ const DEFAULT_ELIGIBILITY = 'Check official brochure';
 // ========== HEADER DETECTION ==========
 
 const UNI_ANCHORS = ['university name', 'university code', 'state', 'city'];
-const COURSE_ANCHORS = ['university name', 'base course', 'stream', 'course level'];
+const COURSE_ANCHORS = ['university name', 'base course', 'stream', 'course level', 'course name', 'degree level'];
 
 function findHeaderRow(rows, anchors) {
   for (let i = 0; i < Math.min(rows.length, 20); i++) {
@@ -247,18 +248,18 @@ function parseUniversity(row) {
     segment,
     institutionKind,
     type,
-    establishedYear: toInt(row['Established Year']),
+    establishedYear: toInt(row['Established Year'] || row['Year Established']),
     naacGrade: clean(row['NAAC Grade'] || row['NAAC']),
-    nirfRank: toNIRF(row['NIRF Rank'] || row['NIRF']),
+    nirfRank: toNIRF(row['NIRF Rank'] || row['NIRF'] || row['NIRF Ranking']),
     description: clean(row['Description']),
-    website: clean(row['Website']),
+    website: clean(row['Website'] || row['Official Website']),
     logoUrl: clean(row['Logo URL']),
     bannerImageUrl: clean(row['Banner Image URL']),
-    email: clean(row['Email']),
-    phone: clean(row['Phone']),
-    address: clean(row['Address']),
+    email: clean(row['Email'] || row['Contact Email']),
+    phone: clean(row['Phone'] || row['Contact Phone']),
+    address: clean(row['Address'] || row['Full Address']),
     approvals: {
-      ugc: toBool(row['Approval: UGC']),
+      ugc: toBool(row['Approval: UGC'] || row['UGC Approval']),
       aicte: toBool(row['Approval: AICTE']),
       nmc: toBool(row['Approval: NMC']),
       bci: toBool(row['Approval: BCI']),
@@ -267,10 +268,10 @@ function parseUniversity(row) {
     },
     stats: {
       totalStudents: toInt(row['Total Students']),
-      campusSizeAcres: toFloat(row['Campus Acres']),
-      avgPackageLPA: toPackageLPA(row['Avg Package LPA']),
-      highestPackageLPA: toPackageLPA(row['Highest Package LPA']),
-      placementPercentage: toPercent(row['Placement %']),
+      campusSizeAcres: toFloat(row['Campus Acres'] || row['Campus Size']),
+      avgPackageLPA: toPackageLPA(row['Avg Package LPA'] || row['Avg Package']),
+      highestPackageLPA: toPackageLPA(row['Highest Package LPA'] || row['Highest Package']),
+      placementPercentage: toPercent(row['Placement %'] || row['Placement']),
       totalCoursesCount: 0,
       avgFees: null,
       rating: 0
@@ -295,15 +296,15 @@ function parseUniversity(row) {
 }
 
 function parseCourse(row) {
-  const base = clean(row['Base Course'] || row['Course']);
+  const base = clean(row['Base Course'] || row['Course'] || row['Course Name']);
   if (!base) return null;
 
   const uniName = clean(row['University Name'] || row['University']);
   const spec = clean(row['Specialization']);
-  const level = canonicalLevel(row['Course Level'] || row['Level']);
-  const stream = canonicalStream(row['Stream']);
+  const level = canonicalLevel(row['Course Level'] || row['Level'] || row['Degree Level']);
+  const stream = canonicalStream(row['Stream'] || row['Specialization']);
 
-  const feesRaw = row['Fees Per Year'] || row['Annual Fees'] || row['Fees'];
+  const feesRaw = row['Fees Per Year'] || row['Annual Fees'] || row['Fees'] || row['Fee Per Year'];
   const fees = toInt(feesRaw);
   const seats = toInt(row['Total Seats'] || row['Seats']);
 
@@ -319,7 +320,7 @@ function parseCourse(row) {
     duration: clean(row['Duration (Years)'] || row['Duration']),
     totalSeats: seats,
     feesPerYear: fees,
-    entranceExams: toExamList(row['Entrance Exams']),
+    entranceExams: toExamList(row['Entrance Exams'] || row['Entrance Exam']),
     eligibility: clean(row['Eligibility']) || DEFAULT_ELIGIBILITY,
     specializations: spec ? [{ name: spec, seats, feesPerYear: fees }] : []
   };
@@ -563,7 +564,8 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
             );
             results.updated++;
           } else if (!existing) {
-            saved = await University.create([university], { session });
+            const createdArr = await University.create([university], { session });
+            saved = createdArr[0];
             results.created++;
           } else {
             results.skipped++;
@@ -634,7 +636,8 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
             );
             results.updated++;
           } else if (!existing) {
-            saved = await Course.create([courseData], { session });
+            const createdArr = await Course.create([courseData], { session });
+            saved = createdArr[0];
             results.created++;
           } else {
             results.skipped++;
@@ -781,7 +784,8 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
               results.universities.updated++;
               console.log(`   ✅ Updated: ${university.name}`);
             } else if (!existing) {
-              saved = await University.create([university], { session });
+              const createdArr = await University.create([university], { session });
+              saved = createdArr[0];
               results.universities.created++;
               console.log(`   ✅ Created: ${university.name}`);
             } else {
