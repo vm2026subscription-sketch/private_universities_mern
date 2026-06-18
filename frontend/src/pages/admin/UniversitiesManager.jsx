@@ -13,6 +13,8 @@ import {
   Copy,
   CheckCircle2,
   AlertCircle,
+  StarOff,
+  Star,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -292,7 +294,7 @@ const statCards = (items) => [
 ];
 
 export default function UniversitiesManager() {
-  const { canDelete } = useRole();
+  const { canDelete, isSuperAdmin } = useRole();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
@@ -303,6 +305,10 @@ export default function UniversitiesManager() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeFormTab, setActiveFormTab] = useState('general');
   const [bulkCourseText, setBulkCourseText] = useState('');
+
+  const formTabs = useMemo(() => {
+    return isSuperAdmin ? FORM_TABS : FORM_TABS.filter((tab) => tab.id !== 'sponsorship');
+  }, [isSuperAdmin]);
 
   const load = async () => {
     setLoading(true);
@@ -325,6 +331,7 @@ export default function UniversitiesManager() {
     if (filterType === 'draft' || filterType === 'published' || filterType === 'needs_review') {
       return items.filter((item) => (item.status || 'published') === filterType);
     }
+    if (filterType === 'sponsored') return items.filter((item) => !!item.isSponsored);
     if (filterType === 'normal') return items.filter((item) => getSegment(item) === 'normal');
     if (filterType === 'foreign') return items.filter((item) => getSegment(item) === 'foreign');
     if (filterType === 'twinning') return items.filter((item) => getSegment(item) === 'twinning');
@@ -654,6 +661,19 @@ export default function UniversitiesManager() {
     }
   };
 
+  const removeSponsorship = async (university) => {
+    if (!window.confirm(`Remove sponsorship from "${university.name}"? This will reset their tier to None.`)) return;
+    try {
+      await api.patch(`/admin/universities/${university._id}/sponsorship`, {
+        isSponsored: false,
+      });
+      toast.success(`Sponsorship removed from ${university.name}`);
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to remove sponsorship');
+    }
+  };
+
   const handleToggleRow = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]));
   };
@@ -698,7 +718,20 @@ export default function UniversitiesManager() {
           </div>
           <div>
             <p className="font-semibold text-light-text dark:text-dark-text">{university.name}</p>
-            <p className="text-xs text-light-muted">{university.universityCode || 'No code set'}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs text-light-muted">{university.universityCode || 'No code set'}</p>
+              {university.isSponsored && (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                  university.sponsorTier === 'platinum' ? 'bg-purple-500/10 text-purple-500' :
+                  university.sponsorTier === 'gold'     ? 'bg-amber-500/10 text-amber-500' :
+                  university.sponsorTier === 'silver'   ? 'bg-slate-400/10 text-slate-400' :
+                                                          'bg-orange-500/10 text-orange-500'
+                }`}>
+                  <Star className="w-2.5 h-2.5" />
+                  {university.sponsorTier}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       ),
@@ -821,7 +854,7 @@ export default function UniversitiesManager() {
 
           {/* Form Tabs Navigation */}
           <div className="flex flex-wrap border-b border-light-border dark:border-dark-border gap-2 pb-2">
-            {FORM_TABS.map((tab) => (
+            {formTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -1263,10 +1296,11 @@ export default function UniversitiesManager() {
                           value={form.sponsorTier}
                           onChange={(event) => upd('sponsorTier', event.target.value)}
                           options={[
-                            { value: 'none', label: 'None' },
-                            { value: 'bronze', label: 'Bronze' },
-                            { value: 'silver', label: 'Silver' },
-                            { value: 'gold', label: 'Gold' }
+                            { value: 'none',     label: 'None' },
+                            { value: 'bronze',   label: '🥉 Bronze  — ₹15,000/mo — 20 leads' },
+                            { value: 'silver',   label: '🥈 Silver  — ₹30,000/mo — 50 leads' },
+                            { value: 'gold',     label: '🥇 Gold    — ₹60,000/mo — 120 leads' },
+                            { value: 'platinum', label: '👑 Platinum — ₹1,20,000/mo — 300 leads' },
                           ]}
                         />
                       </FormField>
@@ -1297,9 +1331,10 @@ export default function UniversitiesManager() {
                     When active, this university will rank ahead of organic listings in searches.
                   </p>
                   <ul className="text-xs text-light-muted dark:text-dark-muted list-disc list-inside space-y-1">
-                    <li><strong>Gold Tier:</strong> Appears near the very top of lists and homepage.</li>
-                    <li><strong>Silver Tier:</strong> Priority placement under Gold. Includes full media views.</li>
-                    <li><strong>Bronze Tier:</strong> Basic visibility boost above organic.</li>
+                    <li><strong>👑 Platinum:</strong> Slot #1 in all searches. 300 leads/mo. Homepage hero + state takeover.</li>
+                    <li><strong>🥇 Gold:</strong> Top-3 placement in state. 120 leads/mo. Homepage Featured Section.</li>
+                    <li><strong>🥈 Silver:</strong> Priority placement under Gold. 50 leads/mo. Full media views.</li>
+                    <li><strong>🥉 Bronze:</strong> Basic visibility boost above organic. 20 leads/mo.</li>
                   </ul>
                 </div>
               </div>
@@ -1309,7 +1344,7 @@ export default function UniversitiesManager() {
           {/* Form Wizard Navigation Buttons & Submit Actions */}
           <div className="sticky bottom-4 z-10 rounded-[1.75rem] border border-light-border dark:border-dark-border bg-white/95 dark:bg-dark-card/95 p-4 shadow-2xl backdrop-blur">
             <div className="mb-3 flex flex-wrap gap-3 text-xs font-bold uppercase tracking-[0.18em] text-light-muted dark:text-dark-muted">
-              {FORM_TABS.map((tab) => (
+              {formTabs.map((tab) => (
                 <div key={tab.id} className="inline-flex items-center gap-2">
                   {validationSummary[tab.id]?.complete ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
@@ -1327,8 +1362,8 @@ export default function UniversitiesManager() {
               <button
                 type="button"
                 onClick={() => {
-                  const idx = FORM_TABS.findIndex((tab) => tab.id === activeFormTab);
-                  if (idx > 0) setActiveFormTab(FORM_TABS[idx - 1].id);
+                  const idx = formTabs.findIndex((tab) => tab.id === activeFormTab);
+                  if (idx > 0) setActiveFormTab(formTabs[idx - 1].id);
                 }}
                 disabled={activeFormTab === 'general'}
                 className="btn-outline text-sm py-2 px-4 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -1338,10 +1373,10 @@ export default function UniversitiesManager() {
               <button
                 type="button"
                 onClick={() => {
-                  const idx = FORM_TABS.findIndex((tab) => tab.id === activeFormTab);
-                  if (idx < FORM_TABS.length - 1) setActiveFormTab(FORM_TABS[idx + 1].id);
+                  const idx = formTabs.findIndex((tab) => tab.id === activeFormTab);
+                  if (idx < formTabs.length - 1) setActiveFormTab(formTabs[idx + 1].id);
                 }}
-                disabled={activeFormTab === 'courses'}
+                disabled={formTabs.length > 0 && activeFormTab === formTabs[formTabs.length - 1].id}
                 className="btn-outline text-sm py-2 px-4 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
@@ -1403,6 +1438,7 @@ export default function UniversitiesManager() {
               { label: 'Twinning', value: 'twinning' },
               { label: 'Drafts', value: 'draft' },
               { label: 'Published', value: 'published' },
+              { label: '⭐ Sponsored', value: 'sponsored' },
             ].map((filter) => (
               <button
                 key={filter.value}
@@ -1457,6 +1493,15 @@ export default function UniversitiesManager() {
               <button onClick={() => edit(university)} className="p-2 rounded-xl hover:bg-light-card dark:hover:bg-dark-card">
                 <Pencil className="w-4 h-4" />
               </button>
+              {isSuperAdmin && university.isSponsored && (
+                <button
+                  onClick={() => removeSponsorship(university)}
+                  className="p-2 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-500"
+                  title="Remove Sponsorship"
+                >
+                  <StarOff className="w-4 h-4" />
+                </button>
+              )}
               {canDelete && (
                 <button onClick={() => del(university._id)} className="p-2 rounded-xl hover:bg-red-50 text-red-500">
                   <Trash2 className="w-4 h-4" />

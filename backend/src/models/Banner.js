@@ -13,7 +13,12 @@ const bannerSchema = new mongoose.Schema({
   startDate: Date,
   endDate: Date,
   backgroundColor: String,
-  textColor: String
+  textColor: String,
+  // Monetization tracking
+  universityId: { type: mongoose.Schema.Types.ObjectId, ref: 'University', default: null },
+  impressions: { type: Number, default: 0 },
+  clicks: { type: Number, default: 0 },
+  ctr: { type: Number, default: 0 }
 }, { timestamps: true });
 
 bannerSchema.index({ position: 1, isActive: 1, priority: -1 });

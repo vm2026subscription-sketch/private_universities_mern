@@ -50,6 +50,7 @@
   const NewsletterManager = lazy(() => import('./pages/admin/NewsletterManager'));
   const SiteSettingsManager = lazy(() => import('./pages/admin/SiteSettingsManager'));
   const AuditLogViewer = lazy(() => import('./pages/admin/AuditLogViewer'));
+  const PartnerDashboard = lazy(() => import('./pages/admin/PartnerDashboard'));
   const AiChatWidget = lazy(() => import('./components/common/AiChatWidget'));
 
   function PageLoader() {
@@ -157,6 +158,7 @@
                     <Route path="settings" element={<SiteSettingsManager />} />
                     <Route path="audit-logs" element={<AuditLogViewer />} />
                     <Route path="data-import" element={<ExcelUploader />} />
+                    <Route path="partner/:universityId" element={<PartnerDashboard />} />
                   </Route>
 
                   <Route path="/admin-legacy" element={<Navigate to="/admin" replace />} />

@@ -107,7 +107,7 @@ const universitySchema = new mongoose.Schema({
   phone: String,
   email: String,
   isSponsored: { type: Boolean, default: false },
-  sponsorTier: { type: String, enum: ['bronze', 'silver', 'gold', 'none'], default: 'none' },
+  sponsorTier: { type: String, enum: ['bronze', 'silver', 'gold', 'platinum', 'none'], default: 'none' },
   sponsorPriority: { type: Number, default: 0 },
   sponsorExpiry: Date
 }, { timestamps: true });

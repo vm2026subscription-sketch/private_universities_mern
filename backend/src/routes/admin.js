@@ -112,6 +112,11 @@ router.get('/audit-logs', auditCtrl.getLogs);
 // SaaS monetization admin routes
 const leadCtrl = require('../controllers/leadController');
 router.get('/leads', leadCtrl.getLeads);
+router.get('/leads/export-csv', leadCtrl.exportLeadsCSV);
 router.get('/saas-analytics', leadCtrl.getSaaSAnalytics);
+router.get('/partner-analytics/:universityId', leadCtrl.getPartnerAnalytics);
+
+// Superadmin-only: quick sponsorship patch (grant/revoke without full edit)
+router.patch('/universities/:id/sponsorship', superadmin, adminCtrl.patchSponsorship);
 
 module.exports = router;

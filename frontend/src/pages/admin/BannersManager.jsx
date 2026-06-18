@@ -52,6 +52,24 @@ export default function BannersManager() {
     { key: 'page', label: 'Page' },
     { key: 'isActive', label: 'Status', render: b => b.isActive ? <span className="badge badge-green">Active</span> : <span className="badge badge-orange">Inactive</span> },
     { key: 'priority', label: 'Priority' },
+    {
+      key: 'impressions',
+      label: 'Impressions',
+      render: b => <span className="font-semibold text-blue-500">{(b.impressions || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'clicks',
+      label: 'Clicks',
+      render: b => <span className="font-semibold text-green-500">{(b.clicks || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'ctr',
+      label: 'CTR',
+      render: b => {
+        const ctr = b.impressions > 0 ? ((b.clicks / b.impressions) * 100).toFixed(2) : '0.00';
+        return <span className="font-semibold text-amber-500">{ctr}%</span>;
+      }
+    },
   ];
 
   return (

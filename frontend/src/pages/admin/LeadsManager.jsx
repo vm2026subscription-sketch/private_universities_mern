@@ -1,13 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Mail, Building2, TrendingUp, Eye, FileText, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Building2, TrendingUp, Eye, FileText, CheckCircle, Download, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import DataTable from './components/DataTable';
 
 export default function LeadsManager() {
+  const navigate = useNavigate();
   const [leads, setLeads] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const handleCSVExport = () => {
+    const link = document.createElement('a');
+    link.href = '/api/v1/admin/leads/export-csv';
+    link.click();
+  };
 
   const loadData = async () => {
     try {
@@ -128,8 +136,15 @@ export default function LeadsManager() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-2">
                     <span className="font-bold text-primary text-sm">{item.leadCount} leads</span>
+                    <button
+                      onClick={() => navigate(`/admin/partner/${item._id}`)}
+                      className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      title="View Partner Dashboard"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))
@@ -172,14 +187,23 @@ export default function LeadsManager() {
 
       {/* Main Leads Table */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <h3 className="text-lg font-bold">Leads Registry</h3>
-          <button 
-            onClick={loadData}
-            className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-all"
-          >
-            Refresh List
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCSVExport}
+              className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20 border border-green-500/20 transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </button>
+            <button 
+              onClick={loadData}
+              className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-all"
+            >
+              Refresh List
+            </button>
+          </div>
         </div>
         <DataTable
           data={leads}

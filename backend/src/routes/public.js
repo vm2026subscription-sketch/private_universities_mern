@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const { getPublicSettings } = require('../controllers/siteSettingController');
-const { getActiveBanners } = require('../controllers/bannerController');
+const { getActiveBanners, trackClick } = require('../controllers/bannerController');
 const { getApproved, submitPublic } = require('../controllers/testimonialController');
 const { getBySlug } = require('../controllers/pageController');
 const { getPublished } = require('../controllers/faqController');
@@ -13,6 +13,7 @@ const { protect } = require('../middleware/auth');
 // Public routes
 router.get('/site-settings', getPublicSettings);
 router.get('/banners', getActiveBanners);
+router.get('/banners/click/:id', trackClick);
 router.get('/testimonials', getApproved);
 router.post('/testimonials', submitPublic);
 router.get('/pages/:slug', getBySlug);

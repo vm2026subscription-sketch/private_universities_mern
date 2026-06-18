@@ -286,6 +286,14 @@ exports.createUniversity = async (req, res) => {
       });
     }
 
+    // Only superadmin can set sponsorship fields on creation
+    if (req.user?.role !== 'superadmin') {
+      payload.isSponsored = false;
+      payload.sponsorTier = 'none';
+      payload.sponsorPriority = 0;
+      payload.sponsorExpiry = undefined;
+    }
+
     const university = await University.create(payload);
     if (hasCoursesField) {
       await syncUniversityCourses(university, courses);
@@ -309,12 +317,22 @@ exports.updateUniversity = async (req, res) => {
       });
     }
 
+    const existing = await University.findById(req.params.id);
+    if (!existing) return res.status(404).json({ success: false, message: 'University not found' });
+
+    // Only superadmin can modify sponsorship fields
+    if (req.user?.role !== 'superadmin') {
+      payload.isSponsored = existing.isSponsored;
+      payload.sponsorTier = existing.sponsorTier;
+      payload.sponsorPriority = existing.sponsorPriority;
+      payload.sponsorExpiry = existing.sponsorExpiry;
+    }
+
     let university = await University.findByIdAndUpdate(req.params.id, payload, {
       new: true,
       runValidators: true,
     });
 
-    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
     if (hasCoursesField) {
       await syncUniversityCourses(university, courses);
       university = await University.findById(university._id);
@@ -334,6 +352,38 @@ exports.deleteUniversity = async (req, res) => {
     await Course.deleteMany({ universityId: req.params.id });
 
     res.json({ success: true, message: 'University deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Superadmin-only: quickly grant/revoke/update sponsorship fields
+exports.patchSponsorship = async (req, res) => {
+  try {
+    const { isSponsored, sponsorTier, sponsorPriority, sponsorExpiry } = req.body;
+
+    const update = {};
+
+    if (typeof isSponsored === 'boolean') update.isSponsored = isSponsored;
+    if (sponsorTier !== undefined) update.sponsorTier = sponsorTier;
+    if (sponsorPriority !== undefined) update.sponsorPriority = Number(sponsorPriority) || 0;
+    if (sponsorExpiry !== undefined) update.sponsorExpiry = sponsorExpiry ? new Date(sponsorExpiry) : null;
+
+    // When revoking, force-reset all tier fields
+    if (isSponsored === false) {
+      update.sponsorTier = 'none';
+      update.sponsorPriority = 0;
+      update.sponsorExpiry = null;
+    }
+
+    const university = await University.findByIdAndUpdate(req.params.id, update, {
+      new: true,
+      runValidators: true,
+    }).select('name slug isSponsored sponsorTier sponsorPriority sponsorExpiry');
+
+    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+
+    res.json({ success: true, data: university });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
