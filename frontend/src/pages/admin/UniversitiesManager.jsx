@@ -303,8 +303,52 @@ export default function UniversitiesManager() {
   const [saving, setSaving] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [selectedIds, setSelectedIds] = useState([]);
-  const [activeFormTab, setActiveFormTab] = useState('general');
   const [bulkCourseText, setBulkCourseText] = useState('');
+
+  // Quick Sponsorship Modal states
+  const [sponsorModalUni, setSponsorModalUni] = useState(null);
+  const [sponsorModalForm, setSponsorModalForm] = useState({
+    isSponsored: false,
+    sponsorTier: 'none',
+    sponsorPriority: 0,
+    sponsorExpiry: '',
+  });
+  const [sponsorModalSaving, setSponsorModalSaving] = useState(false);
+
+  const openSponsorModal = (university) => {
+    setSponsorModalUni(university);
+    setSponsorModalForm({
+      isSponsored: !!university.isSponsored,
+      sponsorTier: university.sponsorTier || 'none',
+      sponsorPriority: university.sponsorPriority || 0,
+      sponsorExpiry: university.sponsorExpiry ? university.sponsorExpiry.slice(0, 10) : '',
+    });
+  };
+
+  const closeSponsorModal = () => {
+    setSponsorModalUni(null);
+  };
+
+  const saveQuickSponsorship = async (e) => {
+    e.preventDefault();
+    if (!sponsorModalUni) return;
+    setSponsorModalSaving(true);
+    try {
+      await api.patch(`/admin/universities/${sponsorModalUni._id}/sponsorship`, {
+        isSponsored: sponsorModalForm.isSponsored,
+        sponsorTier: sponsorModalForm.sponsorTier,
+        sponsorPriority: Number(sponsorModalForm.sponsorPriority) || 0,
+        sponsorExpiry: sponsorModalForm.sponsorExpiry || null,
+      });
+      toast.success(`Sponsorship updated for ${sponsorModalUni.name}`);
+      closeSponsorModal();
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update sponsorship');
+    } finally {
+      setSponsorModalSaving(false);
+    }
+  };
 
   const formTabs = useMemo(() => {
     return isSuperAdmin ? FORM_TABS : FORM_TABS.filter((tab) => tab.id !== 'sponsorship');
@@ -1493,13 +1537,15 @@ export default function UniversitiesManager() {
               <button onClick={() => edit(university)} className="p-2 rounded-xl hover:bg-light-card dark:hover:bg-dark-card">
                 <Pencil className="w-4 h-4" />
               </button>
-              {isSuperAdmin && university.isSponsored && (
+              {isSuperAdmin && (
                 <button
-                  onClick={() => removeSponsorship(university)}
-                  className="p-2 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-500"
-                  title="Remove Sponsorship"
+                  onClick={() => openSponsorModal(university)}
+                  className={`p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/10 ${
+                    university.isSponsored ? 'text-amber-500 font-bold' : 'text-light-muted dark:text-dark-muted'
+                  }`}
+                  title="Manage Sponsorship"
                 >
-                  <StarOff className="w-4 h-4" />
+                  <Star className="w-4 h-4 fill-current" />
                 </button>
               )}
               {canDelete && (
@@ -1511,6 +1557,87 @@ export default function UniversitiesManager() {
           )}
         />
       </div>
+
+      {/* Quick Sponsorship Settings Modal */}
+      {sponsorModalUni && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
+          <div className="card w-full max-w-md bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={closeSponsorModal}
+              className="absolute top-4 right-4 p-2 rounded-xl hover:bg-light-card dark:hover:bg-dark-card text-light-muted dark:text-dark-muted transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="text-lg font-black text-light-text dark:text-dark-text mb-2">
+              ⭐ Sponsorship Settings
+            </h3>
+            <p className="text-xs text-light-muted dark:text-dark-muted mb-6">
+              Quickly manage sponsorship status for <strong>{sponsorModalUni.name}</strong>.
+            </p>
+
+            <form onSubmit={saveQuickSponsorship} className="space-y-4">
+              <CheckboxField
+                label="Enable Active Sponsorship"
+                checked={sponsorModalForm.isSponsored}
+                onChange={(e) => setSponsorModalForm(p => ({ ...p, isSponsored: e.target.checked }))}
+              />
+
+              {sponsorModalForm.isSponsored && (
+                <>
+                  <FormField label="Sponsorship Tier">
+                    <SelectInput
+                      value={sponsorModalForm.sponsorTier}
+                      onChange={(e) => setSponsorModalForm(p => ({ ...p, sponsorTier: e.target.value }))}
+                      options={[
+                        { value: 'none',     label: 'None' },
+                        { value: 'bronze',   label: '🥉 Bronze  — ₹15,000/mo' },
+                        { value: 'silver',   label: '🥈 Silver  — ₹30,000/mo' },
+                        { value: 'gold',     label: '🥇 Gold    — ₹60,000/mo' },
+                        { value: 'platinum', label: '👑 Platinum — ₹1,20,000/mo' },
+                      ]}
+                    />
+                  </FormField>
+
+                  <FormField label="Sponsor Priority">
+                    <TextInput
+                      type="number"
+                      value={sponsorModalForm.sponsorPriority}
+                      onChange={(e) => setSponsorModalForm(p => ({ ...p, sponsorPriority: e.target.value }))}
+                      placeholder="e.g. 10, 50, 100"
+                    />
+                  </FormField>
+
+                  <FormField label="Sponsorship Expiry Date">
+                    <TextInput
+                      type="date"
+                      value={sponsorModalForm.sponsorExpiry}
+                      onChange={(e) => setSponsorModalForm(p => ({ ...p, sponsorExpiry: e.target.value }))}
+                    />
+                  </FormField>
+                </>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-light-border dark:border-dark-border">
+                <button
+                  type="button"
+                  onClick={closeSponsorModal}
+                  className="rounded-xl border border-light-border dark:border-dark-border px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-light-muted dark:text-dark-muted hover:bg-light-card dark:hover:bg-dark-card transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sponsorModalSaving}
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white hover:bg-primary/95 transition-all shadow-md shadow-primary/10 disabled:opacity-50"
+                >
+                  {sponsorModalSaving ? 'Saving...' : 'Save Settings'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
