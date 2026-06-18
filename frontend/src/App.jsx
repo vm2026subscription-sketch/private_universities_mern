@@ -36,6 +36,7 @@
   const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
   const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
   const UsersManager = lazy(() => import('./pages/admin/UsersManager'));
+  const LeadsManager = lazy(() => import('./pages/admin/LeadsManager'));
   const UniversitiesManager = lazy(() => import('./pages/admin/UniversitiesManager'));
   const CoursesManager = lazy(() => import('./pages/admin/CoursesManager'));
   const ExamsManager = lazy(() => import('./pages/admin/ExamsManager'));
@@ -141,6 +142,7 @@
                   <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
                     <Route index element={<AdminOverview />} />
                     <Route path="universities" element={<UniversitiesManager />} />
+                    <Route path="leads" element={<LeadsManager />} />
                     <Route path="courses" element={<CoursesManager />} />
                     <Route path="exams" element={<ExamsManager />} />
                     <Route path="news" element={<NewsManager />} />

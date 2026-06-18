@@ -246,13 +246,24 @@ exports.getUniversities = async (req, res) => {
       filter._id = { $in: uniIds };
     }
 
-    let sortObj = { nirfRank: 1 };
-    if (sort === 'fees_asc' || sort === 'fees_desc') sortObj = null;
-    else if (sort === 'package') sortObj = { 'stats.avgPackageLPA': -1 };
-    else if (sort === 'name') sortObj = { name: 1 };
-    else if (sort === 'established') sortObj = { establishedYear: 1 };
+    let sortObj = {
+      isSponsored: -1,
+      sponsorPriority: -1
+    };
 
-    const LIST_FIELDS = 'name slug state city type segment institutionKind establishedYear naacGrade nirfRank logoUrl links.brochureLink description stats views approvals';
+    if (sort === 'fees_asc' || sort === 'fees_desc') {
+      sortObj = null;
+    } else if (sort === 'package') {
+      sortObj['stats.avgPackageLPA'] = -1;
+    } else if (sort === 'name') {
+      sortObj.name = 1;
+    } else if (sort === 'established') {
+      sortObj.establishedYear = 1;
+    } else {
+      sortObj.nirfRank = 1;
+    }
+
+    const LIST_FIELDS = 'name slug state city type segment institutionKind establishedYear naacGrade nirfRank logoUrl links.brochureLink description stats views approvals isSponsored sponsorTier sponsorPriority sponsorExpiry';
 
     let universities;
     let total;
@@ -263,6 +274,18 @@ exports.getUniversities = async (req, res) => {
         select: 'feesPerYear specializations.feesPerYear'
       });
       const sortedUniversities = allUniversities.sort((a, b) => {
+        // Prepend sponsorship sorting
+        const aSponsored = a.isSponsored && (!a.sponsorExpiry || new Date(a.sponsorExpiry) > new Date());
+        const bSponsored = b.isSponsored && (!b.sponsorExpiry || new Date(b.sponsorExpiry) > new Date());
+
+        if (aSponsored && !bSponsored) return -1;
+        if (!aSponsored && bSponsored) return 1;
+        if (aSponsored && bSponsored) {
+          if ((b.sponsorPriority || 0) !== (a.sponsorPriority || 0)) {
+            return (b.sponsorPriority || 0) - (a.sponsorPriority || 0);
+          }
+        }
+
         const aMinFees = collectCourseFees(a.courses)?.min ?? Number.MAX_SAFE_INTEGER;
         const bMinFees = collectCourseFees(b.courses)?.min ?? Number.MAX_SAFE_INTEGER;
         return sort === 'fees_desc' ? bMinFees - aMinFees : aMinFees - bMinFees;
@@ -383,7 +406,13 @@ exports.searchUniversities = async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.json({ success: true, data: [] });
-    const universities = await University.find({ $and: [{ $text: { $search: q } }, PUBLISHED_UNIVERSITY_FILTER] }, { score: { $meta: 'textScore' } }).sort({ score: { $meta: 'textScore' } }).limit(10).select('name city state type slug logoUrl');
+    const universities = await University.find(
+      { $and: [{ $text: { $search: q } }, PUBLISHED_UNIVERSITY_FILTER] },
+      { score: { $meta: 'textScore' } }
+    )
+      .sort({ isSponsored: -1, sponsorPriority: -1, score: { $meta: 'textScore' } })
+      .limit(10)
+      .select('name city state type slug logoUrl isSponsored sponsorTier sponsorPriority sponsorExpiry');
     res.json({ success: true, data: universities });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

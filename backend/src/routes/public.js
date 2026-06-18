@@ -7,6 +7,7 @@ const { getPublished } = require('../controllers/faqController');
 const { submit } = require('../controllers/contactController');
 const { subscribe, unsubscribe } = require('../controllers/newsletterController');
 const { getUserNotifications, markAsRead, markAllRead } = require('../controllers/notificationController');
+const { submitLead } = require('../controllers/leadController');
 const { protect } = require('../middleware/auth');
 
 // Public routes
@@ -19,6 +20,7 @@ router.get('/faqs', getPublished);
 router.post('/contact', submit);
 router.post('/newsletter/subscribe', subscribe);
 router.post('/newsletter/unsubscribe', unsubscribe);
+router.post('/leads/submit', submitLead);
 
 // Protected user notification routes
 router.get('/notifications', protect, getUserNotifications);

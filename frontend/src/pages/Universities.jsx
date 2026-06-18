@@ -11,6 +11,7 @@ import { calculateFitScore } from '../utils/fitScore';
 import UniversityLogo from '../components/common/UniversityLogo';
 import { getUniversityDisplayType } from '../utils/universityType';
 import { generateBrochure } from '../utils/brochureGenerator';
+import LeadCaptureModal from '../components/university/LeadCaptureModal';
 
 
 const states = [
@@ -34,6 +35,9 @@ export default function Universities() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [selectedUni, setSelectedUni] = useState(null);
+  const [leadType, setLeadType] = useState('apply');
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const initialSearch = searchParams.get('search') || '';
@@ -287,12 +291,17 @@ export default function Universities() {
 
                       <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
                         {/* Front Face */}
-                        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-lg flex flex-col overflow-hidden">
+                        <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border shadow-lg flex flex-col overflow-hidden ${u.isSponsored ? 'border-amber-400/60 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent' : 'border-slate-100 dark:border-white/5'}`}>
                           {/* Top Badges */}
-                          <div className="absolute top-5 left-5 z-20 flex gap-2">
+                          <div className="absolute top-5 left-5 z-20 flex flex-wrap gap-2">
                             {displayType && (
                               <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-slate-100">
                                 {displayType}
+                              </div>
+                            )}
+                            {u.isSponsored && (
+                              <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-amber-400/20 flex items-center gap-1">
+                                ⭐ {u.sponsorTier || 'Premium'} Partner
                               </div>
                             )}
                           </div>
@@ -335,6 +344,20 @@ export default function Universities() {
                                 >
                                   View Details
                                 </Link>
+                                {u.isSponsored && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setSelectedUni(u);
+                                      setLeadModalOpen(true);
+                                      setLeadType('apply');
+                                    }}
+                                    className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+                                  >
+                                    Apply Now
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -375,6 +398,12 @@ export default function Universities() {
 
         </div>
       </div>
+      <LeadCaptureModal 
+        isOpen={leadModalOpen} 
+        onClose={() => setLeadModalOpen(false)} 
+        university={selectedUni} 
+        leadType={leadType} 
+      />
     </div>
   );
 }

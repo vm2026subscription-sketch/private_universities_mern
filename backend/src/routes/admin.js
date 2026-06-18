@@ -109,7 +109,9 @@ router.delete('/newsletter/subscribers/:id', superadmin, newsletterCtrl.removeSu
 // Audit Logs
 router.get('/audit-logs', auditCtrl.getLogs);
 
-
-
+// SaaS monetization admin routes
+const leadCtrl = require('../controllers/leadController');
+router.get('/leads', leadCtrl.getLeads);
+router.get('/saas-analytics', leadCtrl.getSaaSAnalytics);
 
 module.exports = router;

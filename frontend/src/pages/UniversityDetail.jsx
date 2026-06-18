@@ -12,6 +12,8 @@ import { toast } from 'react-hot-toast';
 import { Helmet } from 'react-helmet-async';
 import QASection from '../components/QASection';
 import UniversityLogo from '../components/common/UniversityLogo';
+import { generateBrochure } from '../utils/brochureGenerator';
+import LeadCaptureModal from '../components/university/LeadCaptureModal';
 
 const tabs = ['Overview', 'Courses', 'Admissions', 'Placements', 'Campus', 'Scholarships', 'Q&A', 'News'];
 
@@ -73,6 +75,10 @@ export default function UniversityDetail() {
   const [editForm, setEditForm] = useState({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Lead modal states
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [leadType, setLeadType] = useState('apply');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -186,6 +192,16 @@ export default function UniversityDetail() {
     }
   };
 
+  const handleDownloadBrochure = async () => {
+    try {
+      generateBrochure(uni);
+      toast.success('Brochure downloaded successfully!');
+    } catch (error) {
+      console.error('Failed to download brochure:', error);
+      toast.error('Failed to generate brochure');
+    }
+  };
+
   if (loading) return <div className="max-w-7xl mx-auto px-4 py-12 text-center">Loading...</div>;
   if (!uni) return <div className="max-w-7xl mx-auto px-4 py-12 text-center text-slate-500">University not found. Connect to backend to load data.</div>;
 
@@ -267,15 +283,24 @@ export default function UniversityDetail() {
               >
                 <ClipboardList className="w-6 h-6" />
               </button>
-              {uni.website && (
-                <a 
-                  href={uni.website?.startsWith('http') ? uni.website : `https://${uni.website}`} 
-                  target="_blank" rel="noreferrer"
-                  className="bg-gradient-to-br from-primary to-primary-light text-white font-black text-sm px-8 py-4 rounded-2xl shadow-xl shadow-primary/30 hover:scale-105 transition-all border border-accent/20"
-                >
-                  APPLY NOW
-                </a>
-              )}
+              <button 
+                onClick={() => {
+                  setLeadType('brochure');
+                  setLeadModalOpen(true);
+                }}
+                className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-text dark:text-dark-text font-black text-xs uppercase tracking-widest px-6 py-4 rounded-2xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+              >
+                Download Brochure
+              </button>
+              <button 
+                onClick={() => {
+                  setLeadType('apply');
+                  setLeadModalOpen(true);
+                }}
+                className="bg-gradient-to-br from-primary to-primary-light text-white font-black text-xs uppercase tracking-widest px-8 py-4 rounded-2xl shadow-xl shadow-primary/30 hover:scale-105 transition-all border border-accent/20"
+              >
+                APPLY NOW
+              </button>
             </div>
           </div>
 
@@ -663,6 +688,18 @@ export default function UniversityDetail() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <LeadCaptureModal 
+        isOpen={leadModalOpen} 
+        onClose={() => setLeadModalOpen(false)} 
+        university={uni} 
+        leadType={leadType}
+        onSuccess={() => {
+          if (leadType === 'brochure') {
+            handleDownloadBrochure();
+          }
+        }}
+      />
     </div>
   );
 }

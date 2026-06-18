@@ -14,6 +14,7 @@ const navItems = [
   { label: 'Exams', icon: FileText, path: '/admin/exams' },
   { label: 'News', icon: Newspaper, path: '/admin/news' },
   { label: 'Users', icon: Users, path: '/admin/users', superadminOnly: true },
+  { label: 'Leads', icon: MessageSquareQuote, path: '/admin/leads' },
   { divider: true, label: 'CMS' },
   { label: 'Banners', icon: Image, path: '/admin/banners' },
   { label: 'Testimonials', icon: MessageSquareQuote, path: '/admin/testimonials' },

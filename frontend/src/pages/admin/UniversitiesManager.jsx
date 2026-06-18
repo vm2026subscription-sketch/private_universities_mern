@@ -106,6 +106,7 @@ const FORM_TABS = [
   { id: 'stats', label: '3. Approvals & Stats' },
   { id: 'highlights', label: '4. Highlights & Links' },
   { id: 'courses', label: '5. Course Catalog' },
+  { id: 'sponsorship', label: '6. Sponsorship' },
 ];
 
 const SUGGESTED_FACILITIES = ['Hostel', 'Library', 'Labs', 'Sports Complex', 'Wi-Fi', 'Medical Room', 'Transport', 'Auditorium'];
@@ -168,6 +169,10 @@ const emptyForm = () => ({
   address: '',
   phone: '',
   email: '',
+  isSponsored: false,
+  sponsorTier: 'none',
+  sponsorPriority: 0,
+  sponsorExpiry: '',
   approvals: { ugc: false, aicte: false, nmc: false, bci: false, coa: false, pci: false },
   stats: { totalStudents: '', campusSizeAcres: '', avgPackageLPA: '', highestPackageLPA: '', placementPercentage: '' },
   highlightsText: '',
@@ -422,6 +427,7 @@ export default function UniversitiesManager() {
       stats: { complete: false, requiredMissing: [] },
       highlights: { complete: false, requiredMissing: [] },
       courses: { complete: false, requiredMissing: [] },
+      sponsorship: { complete: true, requiredMissing: [] },
     };
 
     if (!form.name?.trim()) tabState.general.requiredMissing.push('University name');
@@ -466,6 +472,10 @@ export default function UniversitiesManager() {
         address: form.address || undefined,
         phone: form.phone || undefined,
         email: form.email || undefined,
+        isSponsored: !!form.isSponsored,
+        sponsorTier: form.sponsorTier || 'none',
+        sponsorPriority: Number(form.sponsorPriority) || 0,
+        sponsorExpiry: form.sponsorExpiry || undefined,
         approvals: { ...form.approvals },
         stats: {
           totalStudents: toPayloadValue(form.stats.totalStudents),
@@ -570,6 +580,10 @@ export default function UniversitiesManager() {
       address: university.address || '',
       phone: university.phone || '',
       email: university.email || '',
+      isSponsored: !!university.isSponsored,
+      sponsorTier: university.sponsorTier || 'none',
+      sponsorPriority: university.sponsorPriority || 0,
+      sponsorExpiry: university.sponsorExpiry ? university.sponsorExpiry.slice(0, 10) : '',
       approvals: {
         ugc: !!university.approvals?.ugc,
         aicte: !!university.approvals?.aicte,
@@ -1219,6 +1233,75 @@ export default function UniversitiesManager() {
                     </FormField>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Tab 6: Sponsorship */}
+          <div className={activeFormTab === 'sponsorship' ? 'space-y-6' : 'hidden'}>
+            <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-6 space-y-6 bg-white dark:bg-dark-card shadow-sm">
+              <h4 className="text-lg font-black text-light-text dark:text-dark-text flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-amber-500" />
+                Sponsorship Settings (Phase 1 SaaS MVP)
+              </h4>
+              <p className="text-sm text-light-muted dark:text-dark-muted">
+                Configure monetization, visibility boosts, and search placements for this partner university.
+              </p>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <CheckboxField
+                    label="Enable Active Sponsorship"
+                    checked={form.isSponsored}
+                    onChange={(event) => upd('isSponsored', event.target.checked)}
+                  />
+                  
+                  {form.isSponsored && (
+                    <>
+                      <FormField label="Sponsorship Tier">
+                        <SelectInput
+                          value={form.sponsorTier}
+                          onChange={(event) => upd('sponsorTier', event.target.value)}
+                          options={[
+                            { value: 'none', label: 'None' },
+                            { value: 'bronze', label: 'Bronze' },
+                            { value: 'silver', label: 'Silver' },
+                            { value: 'gold', label: 'Gold' }
+                          ]}
+                        />
+                      </FormField>
+
+                      <FormField label="Sponsor Priority (Higher = ranks above lower)">
+                        <TextInput
+                          type="number"
+                          value={form.sponsorPriority}
+                          onChange={(event) => upd('sponsorPriority', event.target.value)}
+                          placeholder="e.g. 10, 50, 100"
+                        />
+                      </FormField>
+
+                      <FormField label="Sponsorship Expiry Date">
+                        <TextInput
+                          type="date"
+                          value={form.sponsorExpiry}
+                          onChange={(event) => upd('sponsorExpiry', event.target.value)}
+                        />
+                      </FormField>
+                    </>
+                  )}
+                </div>
+
+                <div className="p-5 bg-amber-500/5 border border-dashed border-amber-500/30 rounded-2xl space-y-3">
+                  <p className="text-sm font-black text-amber-600 dark:text-amber-400">⚡ Search Priority Boosting</p>
+                  <p className="text-xs text-light-muted dark:text-dark-muted">
+                    When active, this university will rank ahead of organic listings in searches.
+                  </p>
+                  <ul className="text-xs text-light-muted dark:text-dark-muted list-disc list-inside space-y-1">
+                    <li><strong>Gold Tier:</strong> Appears near the very top of lists and homepage.</li>
+                    <li><strong>Silver Tier:</strong> Priority placement under Gold. Includes full media views.</li>
+                    <li><strong>Bronze Tier:</strong> Basic visibility boost above organic.</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>

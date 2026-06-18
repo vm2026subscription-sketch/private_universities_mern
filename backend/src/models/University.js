@@ -105,7 +105,11 @@ const universitySchema = new mongoose.Schema({
   }],
   address: String,
   phone: String,
-  email: String
+  email: String,
+  isSponsored: { type: Boolean, default: false },
+  sponsorTier: { type: String, enum: ['bronze', 'silver', 'gold', 'none'], default: 'none' },
+  sponsorPriority: { type: Number, default: 0 },
+  sponsorExpiry: Date
 }, { timestamps: true });
 
 universitySchema.pre('validate', function(next) {
@@ -130,6 +134,7 @@ universitySchema.index({ segment: 1, institutionKind: 1 });
 universitySchema.index({ status: 1, segment: 1, institutionKind: 1 });
 universitySchema.index({ type: 1, nirfRank: 1 });
 universitySchema.index({ state: 1, nirfRank: 1 });
+universitySchema.index({ isSponsored: -1, sponsorPriority: -1 });
 universitySchema.index({ state: 1, 'stats.avgPackageLPA': -1 });
 
 module.exports = mongoose.model('University', universitySchema);
