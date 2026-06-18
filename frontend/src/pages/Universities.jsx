@@ -144,7 +144,9 @@ export default function Universities() {
     setFilters(f => {
       const currentValues = f[key];
       const isSelected = currentValues.includes(value);
-      // Multi-select: toggle value in/out of array
+      if (key === 'state') {
+        return { ...f, state: isSelected ? [] : [value] };
+      }
       return { ...f, [key]: isSelected ? currentValues.filter(v => v !== value) : [...currentValues, value] };
     });
     setPage(1);
