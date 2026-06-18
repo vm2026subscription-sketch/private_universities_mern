@@ -629,7 +629,7 @@ export default function UniversitiesManager() {
   };
 
   const del = async (id) => {
-    if (!confirm('Delete this university and all its courses?')) return;
+    if (!window.confirm('Delete this university and all its courses?')) return;
     try {
       await api.delete(`/admin/universities/${id}`);
       toast.success('University deleted');
@@ -654,16 +654,19 @@ export default function UniversitiesManager() {
 
   const handleBulkDelete = async () => {
     if (!selectedIds.length) return;
-    if (!confirm(`Delete ${selectedIds.length} selected universities and their linked courses?`)) return;
+    if (!window.confirm(`Delete ${selectedIds.length} selected universities and their linked courses?`)) return;
 
-    try {
-      await Promise.all(selectedIds.map((id) => api.delete(`/admin/universities/${id}`)));
-      toast.success(`${selectedIds.length} universities deleted`);
-      setSelectedIds([]);
-      load();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Bulk delete failed');
-    }
+    const results = await Promise.allSettled(
+      selectedIds.map((id) => api.delete(`/admin/universities/${id}`))
+    );
+    const failed = results.filter((result) => result.status === 'rejected').length;
+    const succeeded = results.length - failed;
+
+    if (succeeded) toast.success(`${succeeded} universit${succeeded === 1 ? 'y' : 'ies'} deleted`);
+    if (failed) toast.error(`${failed} could not be deleted (check your permissions)`);
+
+    setSelectedIds([]);
+    load();
   };
 
   const columns = [

@@ -338,7 +338,8 @@ export default function Courses() {
   let isAdmin = false;
   try {
     const auth = useAuth();
-    isAdmin = auth?.user?.role == 'admin' || auth?.isAdmin || false;
+    const role = auth?.user?.role;
+    isAdmin = role === 'admin' || role === 'superadmin' || auth?.isAdmin || false;
   } catch (_) {}
 
   const selectedCategory = searchParams.get('category') || 'All';
@@ -446,18 +447,42 @@ export default function Courses() {
 
   // ── Optimistic handlers ────────────────────────────────────────────────────
 
-  const handleCourseSaved = useCallback((updated) => {
-    setCourses((prev) =>
-      prev.map((c) => (c._id === updated._id ? { ...c, ...updated } : c))
-    );
-    setEditingCourse(null);
+  // Clears cached course result pages so stale data isn't shown after a mutation.
+  const clearCourseResultCaches = useCallback(() => {
+    try {
+      const keys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith('vm_courses_results_')) keys.push(k);
+      }
+      keys.forEach((k) => sessionStorage.removeItem(k));
+    } catch (_) { /* sessionStorage unavailable — ignore */ }
   }, []);
+
+  const handleCourseSaved = useCallback((updated) => {
+    if (!updated || !updated._id) { setEditingCourse(null); return; }
+    setCourses((prev) =>
+      prev.map((c) =>
+        c._id === updated._id
+          ? {
+              ...c,
+              ...updated,
+              // Keep richer nested university fields if the update response omitted any.
+              universityId: { ...(c.universityId || {}), ...(updated.universityId || {}) },
+            }
+          : c
+      )
+    );
+    clearCourseResultCaches();
+    setEditingCourse(null);
+  }, [clearCourseResultCaches]);
 
   const handleCourseDeleted = useCallback((deletedId) => {
     setCourses((prev) => prev.filter((c) => c._id !== deletedId));
     setTotalCount((prev) => Math.max(0, prev - 1));
+    clearCourseResultCaches();
     setDeletingCourse(null);
-  }, []);
+  }, [clearCourseResultCaches]);
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
@@ -896,7 +921,7 @@ export default function Courses() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.97 }}
                       transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.3) }}
-                      className="group bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/40 transition-all duration-300 overflow-hidden"
+                      className="group relative bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/40 transition-all duration-300 overflow-hidden"
                     >
                       {/* Admin edit/delete buttons — only shown in college (selectedCourse) view */}
                       {isAdmin && selectedCourse && (
