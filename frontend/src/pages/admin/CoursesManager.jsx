@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Pencil, Trash2, Plus, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
-import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, FormActions } from './components/FormFields';
 
@@ -31,17 +30,25 @@ const STREAM_OPTIONS = ['Engineering', 'Medical', 'Management', 'Law', 'Design',
 const LEVEL_OPTIONS = ['UG', 'PG', 'Diploma', 'PhD'];
 
 export default function CoursesManager() {
-  const { canDelete } = useRole();
   const [items, setItems] = useState([]);
   const [universities, setUniversities] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
-  const load = () => api.get('/admin/content').then((response) => {
-    setItems(response.data.data?.courses || []);
-    setUniversities(response.data.data?.universities || []);
-  }).catch(() => toast.error('Failed to load courses'));
+  const load = () => {
+    setLoading(true);
+    return api.get('/admin/content')
+      .then((response) => {
+        setItems(response.data.data?.courses || []);
+        setUniversities(response.data.data?.universities || []);
+      })
+      .catch((error) => toast.error(error.response?.data?.message || 'Failed to load courses'))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     load();
@@ -51,12 +58,16 @@ export default function CoursesManager() {
 
   const save = async (event) => {
     event.preventDefault();
+    if (!form.universityId) { toast.error('Please select a university'); return; }
+    if (!form.baseCourse.trim()) { toast.error('Base Course is required'); return; }
+
+    setSaving(true);
     try {
       const payload = {
         universityId: form.universityId,
         stream: form.stream,
         category: form.category,
-        baseCourse: form.baseCourse,
+        baseCourse: form.baseCourse.trim(),
         specializationName: form.specializationName || undefined,
         duration: toPayloadValue(form.duration),
         totalSeats: toPayloadValue(form.totalSeats),
@@ -76,9 +87,11 @@ export default function CoursesManager() {
       setForm(emptyForm());
       setEditId(null);
       setShowForm(false);
-      load();
+      await load();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save course');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -101,10 +114,25 @@ export default function CoursesManager() {
   };
 
   const del = async (id) => {
-    if (!confirm('Delete this course?')) return;
-    await api.delete(`/admin/courses/${id}`);
-    toast.success('Course deleted');
-    load();
+    if (!window.confirm('Delete this course? This cannot be undone.')) return;
+    setDeletingId(id);
+    // Optimistic removal with rollback on failure.
+    const snapshot = items;
+    setItems((prev) => prev.filter((course) => course._id !== id));
+    try {
+      await api.delete(`/admin/courses/${id}`);
+      toast.success('Course deleted');
+      if (editId === id) {
+        setEditId(null);
+        setShowForm(false);
+        setForm(emptyForm());
+      }
+    } catch (error) {
+      setItems(snapshot); // rollback
+      toast.error(error.response?.data?.message || 'Failed to delete course');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -170,19 +198,20 @@ export default function CoursesManager() {
           <FormField label="Entrance Exams (one per line)">
             <TextArea value={form.entranceExamsText} onChange={(event) => upd('entranceExamsText', event.target.value)} className="min-h-[80px]" />
           </FormField>
-          <FormActions onCancel={() => { setShowForm(false); setEditId(null); }} isEditing={!!editId} />
+          <FormActions onCancel={() => { setShowForm(false); setEditId(null); }} isEditing={!!editId} saving={saving} />
         </form>
       )}
 
       <DataTable
         data={items}
+        loading={loading}
         columns={[
           { key: 'baseCourse', label: 'Base Course', render: (course) => <span className="font-medium">{course.baseCourse || course.name}</span> },
           { key: 'specializationName', label: 'Specialization', render: (course) => course.specializationName || '-' },
           { key: 'stream', label: 'Stream', render: (course) => <span className="badge badge-blue">{course.stream || 'Other'}</span> },
           { key: 'category', label: 'Level', render: (course) => <span className="badge badge-orange">{course.category || 'UG'}</span> },
           { key: 'universityId', label: 'University', render: (course) => course.universityId?.name || '-' },
-          { key: 'duration', label: 'Duration', render: (course) => course.duration ? `${course.duration} yr` : '-' },
+          { key: 'duration', label: 'Duration', render: (course) => (course.duration ? `${course.duration} yr` : '-') },
           {
             key: 'feesPerYear',
             label: 'Fees/Year',
@@ -193,8 +222,17 @@ export default function CoursesManager() {
         searchPlaceholder="Search courses..."
         actions={(course) => (
           <>
-            <button onClick={() => edit(course)} className="p-1.5 rounded-lg hover:bg-light-card"><Pencil className="w-4 h-4" /></button>
-            {canDelete && <button onClick={() => del(course._id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="w-4 h-4" /></button>}
+            <button onClick={() => edit(course)} className="p-1.5 rounded-lg hover:bg-light-card" title="Edit course">
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => del(course._id)}
+              disabled={deletingId === course._id}
+              className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 disabled:opacity-50"
+              title="Delete course"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </>
         )}
       />
