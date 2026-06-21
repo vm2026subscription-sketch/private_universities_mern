@@ -181,14 +181,7 @@ export default function Home() {
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
   const displaySponsored = useMemo(() => {
-    const list = universities.length > 0 ? universities : mockUniversities;
-    const sponsoredList = list.filter(u => u.isSponsored);
-    if (sponsoredList.length > 0) return sponsoredList;
-    return list.slice(0, 3).map((u, idx) => ({
-      ...u,
-      isSponsored: true,
-      sponsorTier: idx === 0 ? 'Gold' : idx === 1 ? 'Silver' : 'Bronze'
-    }));
+    return universities.filter(u => u.isSponsored);
   }, [universities]);
 
   const getUniversityPath = (university) => {
