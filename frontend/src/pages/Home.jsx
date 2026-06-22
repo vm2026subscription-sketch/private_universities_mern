@@ -328,9 +328,6 @@ export default function Home() {
 
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 overflow-x-hidden">
-      {/* Sponsored hero banner slider — admin-managed ad placement */}
-      <HeroBannerSlider page="home" />
-
       {/* Hero Section - Shiksha-style rotating campus background */}
       <section className="relative h-[600px] md:h-[85vh] flex items-center justify-center overflow-hidden">
         {/* Rotating Campus Background */}
@@ -544,6 +541,9 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Sponsored hero banner slider — admin-managed ad placement */}
+      <HeroBannerSlider page="home" />
 
       {/* Top Recruiters */}
       <section className="bg-white/50 dark:bg-dark-card/50 py-16 border-y border-slate-100 dark:border-white/5 overflow-hidden">
