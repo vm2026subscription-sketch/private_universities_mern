@@ -69,6 +69,7 @@ router.post('/site-settings/bulk', settingsCtrl.bulkUpsertSettings);
 router.delete('/site-settings/:id', superadmin, settingsCtrl.deleteSetting);
 
 // Banners
+router.get('/banners/analytics', bannerCtrl.getAnalytics);
 router.get('/banners', bannerCtrl.getBanners);
 router.post('/banners', bannerCtrl.createBanner);
 router.put('/banners/:id', bannerCtrl.updateBanner);

@@ -4,7 +4,7 @@ import { useRole } from '../../hooks/useRole';
 import {
   LayoutDashboard, Building2, BookOpen, FileText, Newspaper,
   Users, Image, MessageSquareQuote, FileEdit, HelpCircle,
-  Mail, Bell, Send, Settings, Shield, Menu, X, ChevronLeft, FileSpreadsheet
+  Mail, Bell, Send, Settings, Shield, Menu, X, ChevronLeft, FileSpreadsheet, BarChart3
 } from 'lucide-react';
 
 const navItems = [
@@ -15,8 +15,10 @@ const navItems = [
   { label: 'News', icon: Newspaper, path: '/admin/news' },
   { label: 'Users', icon: Users, path: '/admin/users', superadminOnly: true },
   { label: 'Leads', icon: MessageSquareQuote, path: '/admin/leads' },
-  { divider: true, label: 'CMS' },
+  { divider: true, label: 'Advertising' },
   { label: 'Banners', icon: Image, path: '/admin/banners' },
+  { label: 'Ad Analytics', icon: BarChart3, path: '/admin/banner-analytics' },
+  { divider: true, label: 'CMS' },
   { label: 'Testimonials', icon: MessageSquareQuote, path: '/admin/testimonials' },
   { label: 'Pages', icon: FileEdit, path: '/admin/pages' },
   { label: 'FAQs', icon: HelpCircle, path: '/admin/faqs' },

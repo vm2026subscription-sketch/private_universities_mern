@@ -220,10 +220,10 @@ export default function PartnerDashboard() {
           <div className={`mt-4 p-4 rounded-xl border ${tier.border} ${tier.bg}`}>
             <p className={`text-xs font-black uppercase tracking-widest ${tier.color}`}>{tier.icon} {tier.label} Tier Benefits</p>
             <ul className="mt-2 space-y-1 text-xs text-light-muted dark:text-dark-muted">
-              {university.sponsorTier === 'platinum' && <><li>✓ Slot #1 in all matches</li><li>✓ 300 leads/mo included</li><li>✓ Homepage hero showcase</li><li>✓ CRM webhook support</li></>}
-              {university.sponsorTier === 'gold'     && <><li>✓ Top 3 state placement</li><li>✓ 120 leads/mo included</li><li>✓ Homepage featured section</li></>}
-              {university.sponsorTier === 'silver'   && <><li>✓ Medium ranking boost</li><li>✓ 50 leads/mo included</li><li>✓ Video/photo gallery</li></>}
-              {university.sponsorTier === 'bronze'   && <><li>✓ Basic visibility boost</li><li>✓ 20 leads/mo included</li><li>✓ Verified badge</li></>}
+              {university.sponsorTier === 'platinum' && <><li>✓ Slot #1 in all listings</li><li>✓ Hero banner slider placement</li><li>✓ Homepage sponsored showcase</li><li>✓ Sticky bottom & sidebar ads</li></>}
+              {university.sponsorTier === 'gold'     && <><li>✓ Top 3 state placement</li><li>✓ Homepage sponsored section</li><li>✓ Sidebar ad placement</li></>}
+              {university.sponsorTier === 'silver'   && <><li>✓ Medium ranking boost</li><li>✓ Sidebar ad placement</li><li>✓ Video/photo gallery</li></>}
+              {university.sponsorTier === 'bronze'   && <><li>✓ Basic visibility boost</li><li>✓ Verified badge</li></>}
               {(!university.sponsorTier || university.sponsorTier === 'none') && <li>No sponsorship active</li>}
             </ul>
           </div>

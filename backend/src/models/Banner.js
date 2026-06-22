@@ -6,7 +6,7 @@ const bannerSchema = new mongoose.Schema({
   imageUrl: String,
   link: String,
   linkText: String,
-  position: { type: String, enum: ['hero', 'sidebar', 'popup', 'ticker', 'footer'], default: 'hero' },
+  position: { type: String, enum: ['hero', 'sponsored', 'sidebar', 'popup', 'ticker', 'footer'], default: 'hero' },
   page: { type: String, default: 'home' },
   isActive: { type: Boolean, default: true },
   priority: { type: Number, default: 0 },

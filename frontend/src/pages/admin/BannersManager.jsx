@@ -6,24 +6,30 @@ import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, CheckboxField, FormActions } from './components/FormFields';
 
-const emptyForm = () => ({ title: '', subtitle: '', imageUrl: '', link: '', linkText: '', position: 'hero', page: 'home', isActive: true, priority: 0, startDate: '', endDate: '', backgroundColor: '', textColor: '' });
+const emptyForm = () => ({ title: '', subtitle: '', imageUrl: '', link: '', linkText: '', position: 'hero', page: 'home', isActive: true, priority: 0, startDate: '', endDate: '', backgroundColor: '', textColor: '', universityId: '' });
 
 export default function BannersManager() {
   const { canDelete } = useRole();
   const [banners, setBanners] = useState([]);
+  const [universities, setUniversities] = useState([]);
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
   const load = () => api.get('/admin/banners').then(r => setBanners(r.data.data || [])).catch(() => toast.error('Failed to load'));
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    api.get('/admin/content')
+      .then(r => setUniversities(r.data.data?.universities || []))
+      .catch(() => {});
+  }, []);
 
   const upd = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
   const save = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...form, priority: Number(form.priority) || 0 };
+      const payload = { ...form, priority: Number(form.priority) || 0, universityId: form.universityId || null };
       if (form.startDate) payload.startDate = form.startDate;
       else delete payload.startDate;
       if (form.endDate) payload.endDate = form.endDate;
@@ -36,7 +42,7 @@ export default function BannersManager() {
   };
 
   const edit = (b) => {
-    setForm({ ...b, startDate: b.startDate ? b.startDate.slice(0,10) : '', endDate: b.endDate ? b.endDate.slice(0,10) : '' });
+    setForm({ ...b, universityId: (b.universityId && b.universityId._id) || b.universityId || '', startDate: b.startDate ? b.startDate.slice(0,10) : '', endDate: b.endDate ? b.endDate.slice(0,10) : '' });
     setEditId(b._id); setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -91,9 +97,16 @@ export default function BannersManager() {
             <FormField label="Link URL"><TextInput value={form.link} onChange={e => upd('link', e.target.value)} /></FormField>
             <FormField label="Link Text"><TextInput value={form.linkText} onChange={e => upd('linkText', e.target.value)} /></FormField>
             <FormField label="Position">
-              <SelectInput value={form.position} onChange={e => upd('position', e.target.value)} options={[{value:'hero',label:'Hero'},{value:'sidebar',label:'Sidebar'},{value:'popup',label:'Popup'},{value:'ticker',label:'Ticker'},{value:'footer',label:'Footer'}]} />
+              <SelectInput value={form.position} onChange={e => upd('position', e.target.value)} options={[{value:'hero',label:'Hero Slider'},{value:'sponsored',label:'Sponsored University'},{value:'sidebar',label:'Sidebar'},{value:'footer',label:'Sticky Bottom'},{value:'popup',label:'Popup'},{value:'ticker',label:'Ticker'}]} />
             </FormField>
             <FormField label="Page"><TextInput value={form.page} onChange={e => upd('page', e.target.value)} /></FormField>
+            <FormField label="Linked University (for Sponsored)">
+              <SelectInput
+                value={form.universityId || ''}
+                onChange={e => upd('universityId', e.target.value)}
+                options={[{ value: '', label: '— None —' }, ...universities.map(u => ({ value: u._id, label: u.name }))]}
+              />
+            </FormField>
             <FormField label="Priority"><TextInput type="number" value={form.priority} onChange={e => upd('priority', e.target.value)} /></FormField>
             <FormField label="Start Date"><TextInput type="date" value={form.startDate} onChange={e => upd('startDate', e.target.value)} /></FormField>
             <FormField label="End Date"><TextInput type="date" value={form.endDate} onChange={e => upd('endDate', e.target.value)} /></FormField>

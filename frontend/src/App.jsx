@@ -9,6 +9,7 @@
   import Navbar from './components/layout/Navbar';
   import Footer from './components/layout/Footer';
   import MobileNav from './components/layout/MobileNav';
+  import StickyBottomBanner from './components/ads/StickyBottomBanner';
   import ExcelUploader from "./pages/admin/ExcelUploader";
 
   const Home = lazy(() => import('./pages/Home'));
@@ -42,6 +43,7 @@
   const ExamsManager = lazy(() => import('./pages/admin/ExamsManager'));
   const NewsManager = lazy(() => import('./pages/admin/NewsManager'));
   const BannersManager = lazy(() => import('./pages/admin/BannersManager'));
+  const BannerAnalytics = lazy(() => import('./pages/admin/BannerAnalytics'));
   const TestimonialsManager = lazy(() => import('./pages/admin/TestimonialsManager'));
   const PagesManager = lazy(() => import('./pages/admin/PagesManager'));
   const FAQManager = lazy(() => import('./pages/admin/FAQManager'));
@@ -125,6 +127,7 @@
         </Routes>
         <Footer />
         <MobileNav />
+        <StickyBottomBanner page="home" />
         <DeferredAiChatWidget />
       </div>
     );
@@ -149,6 +152,7 @@
                     <Route path="news" element={<NewsManager />} />
                     <Route path="users" element={<UsersManager />} />
                     <Route path="banners" element={<BannersManager />} />
+                    <Route path="banner-analytics" element={<BannerAnalytics />} />
                     <Route path="testimonials" element={<TestimonialsManager />} />
                     <Route path="pages" element={<PagesManager />} />
                     <Route path="faqs" element={<FAQManager />} />

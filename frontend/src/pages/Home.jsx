@@ -13,6 +13,9 @@ import api from '../utils/api';
 import { useAiChat } from '../context/AiChatContext';
 import UniversityLogo from '../components/common/UniversityLogo';
 import LeadCaptureModal from '../components/university/LeadCaptureModal';
+import HeroBannerSlider from '../components/ads/HeroBannerSlider';
+import SponsoredUniversities from '../components/ads/SponsoredUniversities';
+import SidebarAds from '../components/ads/SidebarAds';
 import { toast } from 'react-hot-toast';
 
 const mockUniversities = [
@@ -180,10 +183,6 @@ export default function Home() {
   const featuredUniversity = featuredUniversities[currentSlide % featuredUniversities.length];
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
-  const displaySponsored = useMemo(() => {
-    return universities.filter(u => u.isSponsored);
-  }, [universities]);
-
   const getUniversityPath = (university) => {
     const routeParam = university?.slug || university?._id;
     return routeParam ? `/universities/${routeParam}` : '/universities';
@@ -329,6 +328,9 @@ export default function Home() {
 
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 overflow-x-hidden">
+      {/* Sponsored hero banner slider — admin-managed ad placement */}
+      <HeroBannerSlider page="home" />
+
       {/* Hero Section - Shiksha-style rotating campus background */}
       <section className="relative h-[600px] md:h-[85vh] flex items-center justify-center overflow-hidden">
         {/* Rotating Campus Background */}
@@ -594,80 +596,8 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* Featured Partners Section */}
-      {displaySponsored.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 py-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <p className="text-primary font-black text-xs uppercase tracking-[0.3em] mb-2">💎 Premium Admissions</p>
-              <h2 className="text-2xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">Featured University Partners</h2>
-            </div>
-            <Link to="/universities" className="text-primary font-bold text-sm hover:underline">View All Partners →</Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {displaySponsored.map((u) => (
-              <div 
-                key={u._id || u.slug}
-                className="relative bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-950/10 rounded-[2.5rem] p-6 border-2 border-amber-400/50 shadow-2xl flex flex-col justify-between group overflow-hidden"
-              >
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/10 blur-[40px] rounded-full group-hover:scale-110 transition-transform" />
-                
-                <div>
-                  <div className="flex items-center justify-between gap-4 mb-4">
-                    <div className="w-16 h-16 bg-white rounded-2xl shadow-md border border-slate-50 p-2 flex items-center justify-center overflow-hidden shrink-0">
-                      <UniversityLogo logoUrl={u.logoUrl || u.logo} name={u.name} />
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center gap-1">
-                        ⭐ {u.sponsorTier || 'Premium'} Partner
-                      </span>
-                      {u.naacGrade && (
-                        <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full">
-                          NAAC {u.naacGrade}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                    {u.name}
-                  </h3>
-
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mt-2 mb-6">
-                    <MapPin className="w-3.5 h-3.5 text-primary" />
-                    {u.city && u.city !== 'Unknown' ? `${u.city}, ${u.state || ''}` : u.state || 'India'}
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-4 border-t border-amber-400/10">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                    <span>Avg Package:</span>
-                    <span className="font-black text-slate-900 dark:text-white">INR {u.stats?.avgPackageLPA || u.stats?.avgPackageLPALabel || '5.5'} LPA</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    <Link
-                      to={getUniversityPath(u)}
-                      className="py-3 bg-slate-900 dark:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 text-center"
-                    >
-                      View Details
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setSelectedUni(u);
-                        setLeadModalOpen(true);
-                        setLeadType('apply');
-                      }}
-                      className="py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
-                    >
-                      Apply Now
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Featured Sponsored Universities — driven by admin ad banners */}
+      <SponsoredUniversities page="home" />
 
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 py-16 grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -893,6 +823,9 @@ export default function Home() {
         </div>
 
         <div className="lg:col-span-4 space-y-10">
+          {/* Sidebar advertisements — admin-managed ad placement */}
+          <SidebarAds page="home" />
+
           <section className="bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-2xl">
             <div className="p-6 bg-gradient-to-r from-primary to-orange-400 text-white flex items-center justify-between">
               <h2 className="font-black text-lg">Alerts</h2>
