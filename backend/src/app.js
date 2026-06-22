@@ -29,24 +29,27 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(compression());
 
-const allowedOrigins = [
+const BASE_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://university.vidyarthimitra.org',
-  'https://www.university.vidyarthimitra.org',
+  'https://privateuniversity.vidyarthimitra.org',
+  'https://www.privateuniversity.vidyarthimitra.org',
   'https://private-universities-mern.vercel.app',
   'https://private-universities-mern-git-main-vidyarthimitras-projects.vercel.app',
 ];
 
+const allowedOrigins = [
+  ...BASE_ORIGINS,
+  ...(process.env.CLIENT_URL || '')
+    .split(',')
+    .map((u) => u.trim())
+    .filter(Boolean),
+];
+
 const corsOptions = {
   origin: (origin, callback) => {
-    // allow non-browser requests like curl/postman/server-to-server
     if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
@@ -118,11 +121,11 @@ app.use('/api/v1/news', newsRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/admin', adminRoutes);
-// app.use('/api/admin/upload', uploadExcelRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
 app.use('/api/v1', publicRoutes);
 app.use('/api/v1/admin/upload', uploadExcelRoutes);
+
 app.use(errorHandler);
 
 module.exports = app;
