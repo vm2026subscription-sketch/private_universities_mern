@@ -303,6 +303,7 @@ export default function UniversitiesManager() {
   const [saving, setSaving] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [selectedIds, setSelectedIds] = useState([]);
+  const [activeFormTab, setActiveFormTab] = useState('general');
   const [bulkCourseText, setBulkCourseText] = useState('');
 
   // Quick Sponsorship Modal states
