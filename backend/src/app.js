@@ -34,6 +34,8 @@ const BASE_ORIGINS = [
   'http://localhost:5174',
   'https://privateuniversity.vidyarthimitra.org',
   'https://www.privateuniversity.vidyarthimitra.org',
+  'https://university.vidyarthimitra.org',
+  'https://www.university.vidyarthimitra.org',
   'https://private-universities-mern.vercel.app',
   'https://private-universities-mern-git-main-vidyarthimitras-projects.vercel.app',
 ];
