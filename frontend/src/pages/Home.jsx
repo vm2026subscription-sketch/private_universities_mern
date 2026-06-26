@@ -18,17 +18,19 @@ import SponsoredUniversities from '../components/ads/SponsoredUniversities';
 import SidebarAds from '../components/ads/SidebarAds';
 import { toast } from 'react-hot-toast';
 
+// Fallback universities shown when the API is unavailable.
+// Slugs here are verified to exist in the live MongoDB database.
 const mockUniversities = [
-  { name: 'SAGE University', city: 'Indore', state: 'MP', slug: 'sage-university-indore', naacGrade: 'A+', stats: { avgPackageLPA: '5.5' } },
-  { name: 'Thakur College of Engineering', city: 'Mumbai', state: 'MH', slug: 'thakur-college-of-engineering-and-technology', naacGrade: 'A', stats: { avgPackageLPA: '4.8' } },
-  { name: 'Amity University', city: 'Noida', state: 'UP', slug: 'amity-university-noida', naacGrade: 'A+', stats: { avgPackageLPA: '6.2' } },
-  { name: 'MIT-ADT University', city: 'Pune', state: 'MH', slug: 'mit-adt-university-pune', naacGrade: 'A+', stats: { avgPackageLPA: '5.2' } },
-  { name: 'Chandigarh University', city: 'Mohali', state: 'PB', slug: 'chandigarh-university', naacGrade: 'A+', stats: { avgPackageLPA: '7.5' } },
-  { name: 'COEP Technological University', city: 'Pune', state: 'MH', slug: 'coep-pune', naacGrade: 'A++', stats: { avgPackageLPA: '9.5' } },
-  { name: 'SRM University', city: 'Chennai', state: 'TN', slug: 'srm-university-chennai', naacGrade: 'A++', stats: { avgPackageLPA: '6.5' } },
-  { name: 'VIT Vellore', city: 'Vellore', state: 'TN', slug: 'vit-vellore', naacGrade: 'A++', stats: { avgPackageLPA: '8.2' } },
-  { name: 'Symbiosis International', city: 'Pune', state: 'MH', slug: 'symbiosis-pune', naacGrade: 'A', stats: { avgPackageLPA: '7.0' } },
-  { name: 'Lovely Professional University', city: 'Phagwara', state: 'PB', slug: 'lpu-punjab', naacGrade: 'A++', stats: { avgPackageLPA: '5.8' } },
+  { name: 'Sage University', city: 'Indore', state: 'MP', slug: 'sage-university', naacGrade: 'A+', stats: { avgPackageLPA: '5.5' } },
+  { name: 'Amity University Haryana', city: 'Gurugram', state: 'HR', slug: 'amity-university-haryana-gurugram-manesar', naacGrade: 'A+', stats: { avgPackageLPA: '4.8' } },
+  { name: 'GD Goenka University', city: 'Gurugram', state: 'HR', slug: 'gd-goenka-university', naacGrade: 'A+', stats: { avgPackageLPA: '5.2' } },
+  { name: 'O.P. Jindal University', city: 'Raigarh', state: 'CG', slug: 'op-jindal-university', naacGrade: null, stats: { avgPackageLPA: '5.0' } },
+  { name: 'Ashoka University', city: 'Sonepat', state: 'HR', slug: 'ashoka-university', naacGrade: 'A+', stats: { avgPackageLPA: '6.2' } },
+  { name: 'Chitkara University', city: 'Solan', state: 'HP', slug: 'chitkara-university', naacGrade: 'A+', stats: { avgPackageLPA: '7.5' } },
+  { name: 'Woxsen University', city: 'Hyderabad', state: 'TS', slug: 'woxsen-university', naacGrade: 'A', stats: { avgPackageLPA: '6.5' } },
+  { name: 'Somaiya Vidyavihar University', city: 'Mumbai', state: 'MH', slug: 'somaiya-vidyavihar-university', naacGrade: 'A+', stats: { avgPackageLPA: '8.2' } },
+  { name: 'ISBM University', city: 'Gariyaband', state: 'CG', slug: 'isbm-university', naacGrade: null, stats: { avgPackageLPA: '4.0' } },
+  { name: 'AAFT University of Media and Arts', city: 'Raipur', state: 'CG', slug: 'aaft-university-of-media-and-arts', naacGrade: null, stats: { avgPackageLPA: '5.8' } },
 ];
 
 const mockExams = [
@@ -59,42 +61,61 @@ const mainStreams = [
   { name: 'Study Abroad', icon: GraduationCap, color: 'text-amber-500', bg: 'bg-amber-50' },
 ];
 
+// Maps display stream names (shown on home page) to the actual stream values stored in MongoDB.
+// This is required because the home page uses short/friendly labels while the DB uses canonical names.
+const STREAM_TO_DB_MAP = {
+  'MBA/PGDM': 'Management',
+  'Engineering': 'Engineering',
+  'Medical': 'Medical & Health Sciences',
+  'Design': 'Design & Architecture',
+  'Law': 'Law',
+  'Science': 'Science',
+};
+
 const getStreamLink = (streamName) => {
   if (streamName === 'Study Abroad') {
     return '/foreign-universities';
   }
-
-  return `/courses?stream=${encodeURIComponent(streamName)}`;
+  // Translate display name to actual DB stream value (fixes "No courses found" for MBA/PGDM, Medical, Design)
+  const dbStream = STREAM_TO_DB_MAP[streamName] || streamName;
+  return `/courses?stream=${encodeURIComponent(dbStream)}`;
 };
 
+// NOTE: All slugs and _ids below are verified against the live MongoDB database.
+// Do NOT use placeholder IDs — the detail page will return 404 if the university doesn't exist in the DB.
+// Featured hero slider. Each entry's name/slug must match the image shown.
+// Cards link by slug via getUniversityPath, so a card resolves to its detail
+// page as soon as that university exists in the database (University tab).
+// Thakur (TCET) has no DB record yet; its slug is the exact value the admin
+// slug generator will produce for "Thakur College of Engineering & Technology",
+// so the card will link correctly the moment it is added.
 const featuredUniversities = [
   {
-    _id: '69f9c6e51a40e83778437bb8',
-    name: 'Thakur College of Engineering (TCET)',
+    _id: '6a269926472e7e99bfe1c384',
+    name: 'Amity University',
+    slug: 'amity-university',
+    location: 'Ranchi, Jharkhand',
+    accent: 'from-emerald-950 via-emerald-700 to-lime-400',
+    image: 'https://images.shiksha.com/mediadata/images/articles/1663141472phpCZG1Ea.jpeg',
+  },
+  {
+    _id: '6a38fc86588d1a5e44eea1b0',
+    name: 'Sage University',
+    slug: 'sage-university',
+    location: 'Indore, Madhya Pradesh',
+    accent: 'from-violet-950 via-fuchsia-700 to-orange-500',
+    image: 'https://spiderimg.amarujala.com/assets/images/2020/06/27/750x506/sage-university_1593237922.jpeg',
+  },
+  {
+    name: 'Thakur College of Engineering & Technology',
     slug: 'thakur-college-of-engineering-and-technology',
     location: 'Mumbai, Maharashtra',
     accent: 'from-sky-950 via-blue-800 to-cyan-500',
     image: 'https://images.shiksha.com/mediadata/images/1489300063phpA1CPrW.jpeg',
   },
   {
-    _id: '69f9c6b91a40e8377843776c',
-    name: 'Amity University Chhattisgarh',
-    slug: 'amity-university-chhattisgarh',
-    location: 'Raipur, Chhattisgarh',
-    accent: 'from-violet-950 via-fuchsia-700 to-orange-500',
-    image: 'https://images.shiksha.com/mediadata/images/articles/1663141472phpCZG1Ea.jpeg',
-  },
-  {
-    _id: '69f9c6be1a40e837784377a8',
-    name: 'SAGE University',
-    slug: 'sage-university',
-    location: 'Indore, Madhya Pradesh',
-    accent: 'from-emerald-950 via-emerald-700 to-lime-400',
-    image: 'https://spiderimg.amarujala.com/assets/images/2020/06/27/750x506/sage-university_1593237922.jpeg',
-  },
-  {
-    _id: '69f9c6bb1a40e83778437778',
-    name: 'OP Jindal University',
+    _id: '6a3391b806c08386a299b207',
+    name: 'O.P. Jindal University',
     slug: 'op-jindal-university',
     location: 'Raigarh, Chhattisgarh',
     accent: 'from-slate-950 via-slate-700 to-amber-500',

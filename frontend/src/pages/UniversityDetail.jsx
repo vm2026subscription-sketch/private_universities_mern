@@ -61,6 +61,7 @@ export default function UniversityDetail() {
   const [loading, setLoading] = useState(true);
   const [similarUnis, setSimilarUnis] = useState([]);
   const [logoFailed, setLogoFailed] = useState(false);
+  const [error, setError] = useState(null);
 
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
@@ -87,23 +88,35 @@ export default function UniversityDetail() {
     api.get(`/universities/${slug}`)
       .then(({ data }) => {
         const u = data.data;
+        if (!u) {
+          console.error(`[UniversityDetail] API returned no data for slug: "${slug}"`);
+          setError('University not found');
+          setUni(null);
+          return;
+        }
+        setError(null);
         setUni(u);
         setEditForm(u); // populate edit form
-        if (u) {
-          const prev = JSON.parse(localStorage.getItem('vm_recent') || '[]');
-          const filtered = prev.filter(r => r._id !== u._id);
-          const entry = { _id: u._id, name: u.name, slug: u.slug, state: u.state, city: u.city, type: getDisplayType(u), naacGrade: u.naacGrade, nirfRank: u.nirfRank };
-          localStorage.setItem('vm_recent', JSON.stringify([entry, ...filtered].slice(0, 10)));
+        const prev = JSON.parse(localStorage.getItem('vm_recent') || '[]');
+        const filtered = prev.filter(r => r._id !== u._id);
+        const entry = { _id: u._id, name: u.name, slug: u.slug, state: u.state, city: u.city, type: getDisplayType(u), naacGrade: u.naacGrade, nirfRank: u.nirfRank };
+        localStorage.setItem('vm_recent', JSON.stringify([entry, ...filtered].slice(0, 10)));
 
-          if (u._id) {
-            api.get(`/universities/${u._id}/similar`)
-              .then(res => setSimilarUnis(res.data.data))
-              .catch(() => {});
-          }
+        if (u._id) {
+          api.get(`/universities/${u._id}/similar`)
+            .then(res => setSimilarUnis(res.data.data))
+            .catch(() => {});
         }
       })
       .catch((err) => {
-        console.error('Failed to fetch university details:', err);
+        const status = err?.response?.status;
+        console.error(`[UniversityDetail] Failed to load university "${slug}" (HTTP ${status ?? 'network error'}):`, err?.response?.data?.message || err.message);
+        if (status === 404) {
+          setError('University not found');
+        } else {
+          setError('Connect to backend to load data');
+        }
+        setUni(null);
       })
       .finally(() => setLoading(false));
   }, [slug]);
@@ -203,7 +216,36 @@ export default function UniversityDetail() {
   };
 
   if (loading) return <div className="max-w-7xl mx-auto px-4 py-12 text-center">Loading...</div>;
-  if (!uni) return <div className="max-w-7xl mx-auto px-4 py-12 text-center text-slate-500">University not found. Connect to backend to load data.</div>;
+  if (!uni) return (
+    <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+      <div className="bg-white dark:bg-dark-card rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-white/5 p-14 max-w-xl mx-auto">
+        <p className="text-5xl mb-6">🎓</p>
+        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-3">
+          {error === 'Connect to backend to load data' ? 'Connection Error' : 'University Not Found'}
+        </h2>
+        <p className="text-slate-500 font-medium mb-8">
+          {error === 'Connect to backend to load data'
+            ? 'Cannot connect to the backend server. Please make sure the backend is running and try again.'
+            : "The university you're looking for doesn't exist or may have been removed. Please check the URL or browse all universities."}
+        </p>
+        {error === 'Connect to backend to load data' ? (
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 bg-primary text-white font-black text-xs uppercase tracking-widest px-8 py-4 rounded-2xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        ) : (
+          <a
+            href="/universities"
+            className="inline-flex items-center gap-2 bg-primary text-white font-black text-xs uppercase tracking-widest px-8 py-4 rounded-2xl shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
+          >
+            Browse All Universities
+          </a>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">

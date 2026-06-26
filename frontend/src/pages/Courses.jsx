@@ -344,7 +344,13 @@ export default function Courses() {
 
   const selectedCategory = searchParams.get('category') || 'All';
   const selectedState = searchParams.get('state') || 'All';
-  const selectedStream = searchParams.get('stream') || 'All';
+  const rawStream = searchParams.get('stream') || 'All';
+  const STREAM_TO_DB_MAP = {
+    'MBA/PGDM': 'Management',
+    'Medical': 'Medical & Health Sciences',
+    'Design': 'Design & Architecture',
+  };
+  const selectedStream = STREAM_TO_DB_MAP[rawStream] || rawStream;
   const selectedCourse = searchParams.get('course') || '';
   const selectedSpec = searchParams.get('specialization') || 'All';
   const universityId = searchParams.get('universityId');

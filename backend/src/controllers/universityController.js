@@ -325,7 +325,7 @@ exports.getUniversities = async (req, res) => {
 exports.getUniversity = async (req, res) => {
   try {
     const { id } = req.params;
-    let university = await University.findOne({ slug: id, ...PUBLISHED_UNIVERSITY_FILTER }).populate('courses');
+    let university = await University.findOne({ slug: { $regex: new RegExp('^' + escapeRegExp(id) + '$', 'i') }, ...PUBLISHED_UNIVERSITY_FILTER }).populate('courses');
     
     if (!university && mongoose.Types.ObjectId.isValid(id)) {
       university = await University.findOne({ _id: id, ...PUBLISHED_UNIVERSITY_FILTER }).populate('courses');

@@ -207,17 +207,29 @@ exports.getDashboard = async (req, res) => {
 
 exports.getContentData = async (req, res) => {
   try {
-    const [universities, courses, exams, news] = await Promise.all([
+    const [universities, courses, exams, news, courseCounts] = await Promise.all([
       University.find().sort({ updatedAt: -1 }).populate('courses'),
       Course.find().sort({ updatedAt: -1 }).populate('universityId', 'name slug'),
       Exam.find().sort({ updatedAt: -1 }),
       News.find().sort({ updatedAt: -1 }),
+      Course.aggregate([
+        { $group: { _id: '$universityId', count: { $sum: 1 } } }
+      ])
     ]);
+
+    const countsMap = new Map(courseCounts.map(c => [c._id ? c._id.toString() : '', c.count]));
+    const universitiesWithCounts = universities.map(u => {
+      const uObj = u.toObject ? u.toObject() : u;
+      const count = countsMap.get(u._id.toString()) || 0;
+      if (!uObj.stats) uObj.stats = {};
+      uObj.stats.totalCoursesCount = count || uObj.stats.totalCoursesCount || uObj.courses?.length || 0;
+      return uObj;
+    });
 
     res.json({
       success: true,
       data: {
-        universities,
+        universities: universitiesWithCounts,
         courses,
         exams,
         news,

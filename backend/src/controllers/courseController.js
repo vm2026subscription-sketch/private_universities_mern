@@ -2,6 +2,24 @@ const mongoose = require('mongoose');
 const Course = require('../models/Course');
 const { escapeRegExp } = require('../utils/regex');
 
+const STREAM_MAP = {
+  'mba/pgdm': 'Management',
+  'management': 'Management',
+  'medical': 'Medical & Health Sciences',
+  'medical & health sciences': 'Medical & Health Sciences',
+  'design': 'Design & Architecture',
+  'design & architecture': 'Design & Architecture',
+  'engineering': 'Engineering',
+  'law': 'Law',
+  'science': 'Science',
+};
+
+const normalizeStream = (stream) => {
+  if (!stream) return stream;
+  const key = stream.toLowerCase().trim();
+  return STREAM_MAP[key] || stream;
+};
+
 const PUBLISHED_UNIVERSITY_MATCH = {
   $or: [
     { 'universityId.status': 'published' },
@@ -11,7 +29,7 @@ const PUBLISHED_UNIVERSITY_MATCH = {
 
 exports.getCourses = async (req, res) => {
   try {
-    const { category, universityId, name, baseCourse, state, segment = 'normal', page = 1, limit = 50 } = req.query;
+    const { category, stream, universityId, name, baseCourse, state, segment = 'normal', page = 1, limit = 50 } = req.query;
     const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
     const normalizedLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
     const skip = (normalizedPage - 1) * normalizedLimit;
@@ -21,6 +39,13 @@ exports.getCourses = async (req, res) => {
     // Basic filters on Course model
     const match = {};
     if (category && category !== 'All') match.category = { $regex: new RegExp(`^${escapeRegExp(category)}$`, 'i') };
+    
+    // Filter by stream (uses the normalized canonical DB stream value)
+    const normalizedStream = normalizeStream(stream);
+    if (normalizedStream && normalizedStream !== 'All') {
+      match.stream = { $regex: new RegExp(`^${escapeRegExp(normalizedStream)}$`, 'i') };
+    }
+    
     if (universityId) {
       if (!mongoose.Types.ObjectId.isValid(universityId)) {
         return res.status(400).json({ success: false, message: 'Invalid universityId' });
@@ -158,8 +183,9 @@ exports.getGroupedCourses = async (req, res) => {
     }
 
     // Filter by stream if provided
-    if (stream && stream !== 'All') {
-      pipeline.push({ $match: { stream: { $regex: new RegExp(`^${escapeRegExp(stream)}$`, 'i') } } });
+    const normalizedStream = normalizeStream(stream);
+    if (normalizedStream && normalizedStream !== 'All') {
+      pipeline.push({ $match: { stream: { $regex: new RegExp(`^${escapeRegExp(normalizedStream)}$`, 'i') } } });
     }
 
     // To filter by state, we need to join with University

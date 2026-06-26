@@ -824,7 +824,10 @@ export default function UniversitiesManager() {
     {
       key: 'courses',
       label: 'Courses',
-      render: (university) => university.courses?.length || 0,
+      // stats.totalCoursesCount is set by the Excel import pipeline and is authoritative.
+      // university.courses[] is the ObjectId ref array, which may be empty for Excel-imported data
+      // even when there are many Course documents linked via universityId.
+      render: (university) => university.stats?.totalCoursesCount ?? university.courses?.length ?? 0,
     },
   ];
 
