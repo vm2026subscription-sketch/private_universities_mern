@@ -41,7 +41,7 @@ export default function CoursesManager() {
 
   const load = () => {
     setLoading(true);
-    return api.get('/admin/content')
+    return api.get('/admin/content?resource=courses,universities')
       .then((response) => {
         setItems(response.data.data?.courses || []);
         setUniversities(response.data.data?.universities || []);

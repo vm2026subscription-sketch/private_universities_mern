@@ -207,34 +207,46 @@ exports.getDashboard = async (req, res) => {
 
 exports.getContentData = async (req, res) => {
   try {
-    const [universities, courses, exams, news, courseCounts] = await Promise.all([
-      University.find().sort({ updatedAt: -1 }).populate('courses'),
-      Course.find().sort({ updatedAt: -1 }).populate('universityId', 'name slug'),
-      Exam.find().sort({ updatedAt: -1 }),
-      News.find().sort({ updatedAt: -1 }),
-      Course.aggregate([
-        { $group: { _id: '$universityId', count: { $sum: 1 } } }
-      ])
-    ]);
+    // Each admin page only needs one or two resources. Returning everything
+    // (402 universities + ~8k courses ≈ 6 MB) on every page load is the main
+    // cause of slow admin loads, so callers pass ?resource=a,b to fetch only
+    // what they render. No param = everything (backward compatible).
+    const requested = String(req.query.resource || req.query.include || '').trim();
+    const wanted = requested
+      ? new Set(requested.split(',').map((s) => s.trim()).filter(Boolean))
+      : null;
+    const want = (name) => !wanted || wanted.has(name);
 
-    const countsMap = new Map(courseCounts.map(c => [c._id ? c._id.toString() : '', c.count]));
-    const universitiesWithCounts = universities.map(u => {
-      const uObj = u.toObject ? u.toObject() : u;
-      const count = countsMap.get(u._id.toString()) || 0;
-      if (!uObj.stats) uObj.stats = {};
-      uObj.stats.totalCoursesCount = count || uObj.stats.totalCoursesCount || uObj.courses?.length || 0;
-      return uObj;
+    const loadUniversities = async () => {
+      const [universities, courseCounts] = await Promise.all([
+        University.find().sort({ updatedAt: -1 }).populate('courses').lean(),
+        Course.aggregate([{ $group: { _id: '$universityId', count: { $sum: 1 } } }]),
+      ]);
+      const countsMap = new Map(courseCounts.map((c) => [c._id ? c._id.toString() : '', c.count]));
+      return universities.map((u) => {
+        if (!u.stats) u.stats = {};
+        u.stats.totalCoursesCount =
+          countsMap.get(u._id.toString()) || u.stats.totalCoursesCount || u.courses?.length || 0;
+        return u;
+      });
+    };
+
+    const builders = {
+      universities: loadUniversities,
+      courses: () => Course.find().sort({ updatedAt: -1 }).populate('universityId', 'name slug').lean(),
+      exams: () => Exam.find().sort({ updatedAt: -1 }).lean(),
+      news: () => News.find().sort({ updatedAt: -1 }).lean(),
+    };
+
+    const keys = Object.keys(builders).filter(want);
+    const results = await Promise.all(keys.map((k) => builders[k]()));
+
+    const data = {};
+    keys.forEach((k, i) => {
+      data[k] = results[i];
     });
 
-    res.json({
-      success: true,
-      data: {
-        universities: universitiesWithCounts,
-        courses,
-        exams,
-        news,
-      },
-    });
+    res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

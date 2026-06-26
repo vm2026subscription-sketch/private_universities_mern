@@ -16,7 +16,7 @@ export default function ExamsManager() {
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
-  const load = () => api.get('/admin/content').then(r => setItems(r.data.data?.exams || [])).catch(() => toast.error('Failed'));
+  const load = () => api.get('/admin/content?resource=exams').then(r => setItems(r.data.data?.exams || [])).catch(() => toast.error('Failed'));
   useEffect(() => { load(); }, []);
   const upd = (f, v) => setForm(p => ({ ...p, [f]: v }));
 

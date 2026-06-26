@@ -19,7 +19,7 @@ export default function BannersManager() {
   const load = () => api.get('/admin/banners').then(r => setBanners(r.data.data || [])).catch(() => toast.error('Failed to load'));
   useEffect(() => {
     load();
-    api.get('/admin/content')
+    api.get('/admin/content?resource=universities')
       .then(r => setUniversities(r.data.data?.universities || []))
       .catch(() => {});
   }, []);

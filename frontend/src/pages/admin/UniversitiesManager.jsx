@@ -358,7 +358,7 @@ export default function UniversitiesManager() {
   const load = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/admin/content');
+      const response = await api.get('/admin/content?resource=universities');
       setItems(response.data.data?.universities || []);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to load universities');
