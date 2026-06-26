@@ -10,6 +10,7 @@
   import Footer from './components/layout/Footer';
   import MobileNav from './components/layout/MobileNav';
   import StickyBottomBanner from './components/ads/StickyBottomBanner';
+  import SocialFloatButtons from './components/layout/SocialFloatButtons';
   import ExcelUploader from "./pages/admin/ExcelUploader";
 
   const Home = lazy(() => import('./pages/Home'));
@@ -128,6 +129,7 @@
         <Footer />
         <MobileNav />
         <StickyBottomBanner page="home" />
+        <SocialFloatButtons />
         <DeferredAiChatWidget />
       </div>
     );
