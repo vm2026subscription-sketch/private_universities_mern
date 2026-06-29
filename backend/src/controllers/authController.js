@@ -197,9 +197,11 @@ exports.login = async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials' });
 
+    // Promote to admin if their email is in ADMIN_EMAIL but role wasn't set yet
+    await ensureAdminRole(user);
+
     // Admin / superadmin logs in directly without OTP
     if (user.role === 'admin' || user.role === 'superadmin') {
-      await ensureAdminRole(user);
       await updateLoginTracking(user);
       const token = generateToken(user._id);
       return res.json({ success: true, token, user: getSafeUser(user) });
