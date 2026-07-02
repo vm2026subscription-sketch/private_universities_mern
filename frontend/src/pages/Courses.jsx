@@ -1043,8 +1043,12 @@ export default function Courses() {
                       ) : (
                         <>
                           <div
-                          className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 cursor-pointer hover:bg-slate-50/40 dark:hover:bg-dark-border/20 transition-colors"
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`View ${item.name} programs`}
+                          className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 cursor-pointer hover:bg-slate-50/40 dark:hover:bg-dark-border/20 transition-colors focus-visible:ring-2 focus-visible:ring-primary rounded-2xl"
                           onClick={() => { const params = new URLSearchParams(searchParams); params.set('course', item.name || ''); setSearchParams(params); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const params = new URLSearchParams(searchParams); params.set('course', item.name || ''); setSearchParams(params); } }}
                         >
                           {/* Left Icon Panel */}
                           <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900 group-hover:bg-primary group-hover:text-white transition-all duration-300">

@@ -428,6 +428,7 @@ export default function AiChatWidget() {
         <button
           type="button"
           onClick={openChat}
+          aria-label="Open Vidyarthi Mitra AI chat"
           className="rounded-full bg-[#E05404] p-4 text-white shadow-[0_8px_30px_rgba(224,84,4,0.35)] hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-accent/20 animate-ping rounded-full" />

@@ -101,7 +101,15 @@
       <div className="min-h-screen bg-transparent text-light-text dark:text-dark-text relative">
         <div className="fixed inset-0 z-[-1] pointer-events-none bg-[#f8fafc] dark:bg-dark-bg transition-colors duration-500" />
 
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-xl focus:bg-primary focus:text-white focus:shadow-lg"
+        >
+          Skip to content
+        </a>
+
         <Navbar />
+        <main id="main-content">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/universities" element={<Universities />} />
@@ -128,6 +136,7 @@
 
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </main>
         <Footer />
         <MobileNav />
         <StickyBottomBanner page="home" />

@@ -152,7 +152,7 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            <button onClick={toggle} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-colors">
+            <button onClick={toggle} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-colors">
               {dark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
             </button>
             <AccessibilityWidget inline />
@@ -208,7 +208,7 @@ export default function Navbar() {
               </div>
             )}
 
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-slate-600 dark:text-slate-300">
+            <button onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} className="lg:hidden p-2 text-slate-600 dark:text-slate-300">
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
