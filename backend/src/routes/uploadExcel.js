@@ -610,9 +610,20 @@ function dupKeyField(err) {
 }
 
 async function findExistingUniversity(u) {
-  const or = [{ name: u.name }];
-  if (u.universityCode) or.push({ universityCode: u.universityCode });
-  return University.findOne({ $or: or });
+  // Prefer the stable unique identifier. A matching universityCode means it is
+  // genuinely the same institution.
+  if (u.universityCode) {
+    const byCode = await University.findOne({ universityCode: u.universityCode });
+    if (byCode) return byCode;
+  }
+  // Fall back to name — but SCOPED TO THE SAME STATE. Matching on name alone
+  // (the previous behaviour) wrongly merged two different institutions that
+  // share a name in different states, so in upsert mode later rows overwrote
+  // the existing record instead of creating the intended new one. That silently
+  // dropped many imported universities (e.g. Gujarat, Goa) from the database.
+  const query = { name: u.name };
+  if (u.state) query.state = u.state;
+  return University.findOne(query);
 }
 
 // Persist one university. insertMany (not create) is used so the unique slug we
@@ -620,7 +631,9 @@ async function findExistingUniversity(u) {
 async function persistUniversity(u, mode, slugFactory) {
   const existing = await findExistingUniversity(u);
   if (existing) {
-    if (mode !== 'upsert') return { action: 'skipped' };
+    if (mode !== 'upsert') {
+      return { action: 'skipped', error: `"${u.name}" already exists (matched by ${u.universityCode ? 'university code' : 'name + state'}) — enable Upsert mode to update it` };
+    }
     const doc = await University.findByIdAndUpdate(existing._id, { $set: u }, { new: true });
     return { action: 'updated', doc };
   }
