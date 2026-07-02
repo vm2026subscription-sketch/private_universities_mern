@@ -11,13 +11,20 @@ export default {
         light: { bg: "#FFFFFF", card: "#F8FAFC", border: "#E2E8F0", text: "#0F172A", muted: "#64748B" },
         success: "#10B981",
         warning: "#F59E0B",
-        error: "#EF4444"
+        error: "#EF4444",
+        // Accessible link/label color (~4.5:1 on white) — use instead of #F97316 for text.
+        link: "#C2410C"
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
         serif: ['"Playfair Display"', 'serif']
       },
-      borderRadius: { xl: "12px", "2xl": "16px" }
+      borderRadius: { xl: "12px", "2xl": "16px", btn: "12px", card: "16px" },
+      boxShadow: {
+        card: "0 1px 3px 0 rgba(15,23,42,0.08)",
+        "card-hover": "0 10px 30px -10px rgba(15,23,42,0.15)",
+        modal: "0 24px 60px -12px rgba(15,23,42,0.30)"
+      }
     }
   },
   plugins: []
