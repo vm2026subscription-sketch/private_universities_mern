@@ -215,7 +215,24 @@ export default function UniversityDetail() {
     }
   };
 
-  if (loading) return <div className="max-w-7xl mx-auto px-4 py-12 text-center">Loading...</div>;
+  if (loading) return (
+    <div className="max-w-7xl mx-auto px-4 py-10 space-y-6" role="status" aria-busy="true" aria-label="Loading university">
+      <div className="h-52 skeleton rounded-2xl w-full" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="h-8 skeleton rounded-lg w-2/3" />
+          <div className="h-4 skeleton rounded-lg w-full" />
+          <div className="h-4 skeleton rounded-lg w-5/6" />
+          <div className="h-64 skeleton rounded-2xl w-full mt-4" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-40 skeleton rounded-2xl" />
+          <div className="h-40 skeleton rounded-2xl" />
+        </div>
+      </div>
+      <span className="sr-only">Loading university…</span>
+    </div>
+  );
   if (!uni) return (
     <div className="max-w-7xl mx-auto px-4 py-20 text-center">
       <div className="bg-white dark:bg-dark-card rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-white/5 p-14 max-w-xl mx-auto">

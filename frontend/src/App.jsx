@@ -58,8 +58,14 @@
 
   function PageLoader() {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center px-4">
-        <div className="card p-6 text-sm text-light-muted dark:text-dark-muted">Loading page...</div>
+      <div className="max-w-7xl mx-auto px-4 py-10 space-y-6" role="status" aria-busy="true" aria-label="Loading page">
+        <div className="h-40 skeleton rounded-2xl w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-52 skeleton rounded-2xl" />
+          <div className="h-52 skeleton rounded-2xl" />
+          <div className="h-52 skeleton rounded-2xl" />
+        </div>
+        <span className="sr-only">Loading page…</span>
       </div>
     );
   }
@@ -93,11 +99,7 @@
   function PublicLayout() {
     return (
       <div className="min-h-screen bg-transparent text-light-text dark:text-dark-text relative">
-        <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#f8fafc] dark:bg-dark-bg transition-colors duration-500">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[100px] animate-blob mix-blend-multiply dark:mix-blend-screen" />
-          <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen" />
-          <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-primary-light/15 rounded-full blur-[150px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen" />
-        </div>
+        <div className="fixed inset-0 z-[-1] pointer-events-none bg-[#f8fafc] dark:bg-dark-bg transition-colors duration-500" />
 
         <Navbar />
         <Routes>

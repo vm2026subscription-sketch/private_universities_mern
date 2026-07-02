@@ -134,13 +134,6 @@
   }
 }
 
-button, a {
-  @apply transition-all duration-300;
-}
-button:active, a:active {
-  @apply scale-95;
-}
-
 /* ── Custom scrollbar ── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
