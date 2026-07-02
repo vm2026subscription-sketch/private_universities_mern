@@ -3,7 +3,7 @@ import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, Globe, Phone, Mail, BookOpen, Users, Award, 
   Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2, ArrowRight, ExternalLink,
-  Edit, Trash2, Save, X, ClipboardList
+  Edit, Trash2, Save, X, ClipboardList, GraduationCap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
@@ -138,7 +138,7 @@ export default function UniversityDetail() {
 
   const handleTrackApplication = async () => {
     if (!user) return toast.error('Please login to track applications');
-    if (isTracked) return toast('Already tracking this university', { icon: '📋' });
+    if (isTracked) return toast('Already tracking this university', { icon: <ClipboardList className="w-4 h-4" aria-hidden="true" /> });
     setTrackLoading(true);
     try {
       await api.post('/users/applications', { universityId: uni._id });
@@ -219,7 +219,7 @@ export default function UniversityDetail() {
   if (!uni) return (
     <div className="max-w-7xl mx-auto px-4 py-20 text-center">
       <div className="bg-white dark:bg-dark-card rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-white/5 p-14 max-w-xl mx-auto">
-        <p className="text-5xl mb-6">🎓</p>
+        <GraduationCap className="w-16 h-16 mx-auto mb-6 text-primary" aria-hidden="true" />
         <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-3">
           {error === 'Connect to backend to load data' ? 'Connection Error' : 'University Not Found'}
         </h2>

@@ -15,6 +15,9 @@ import {
   AlertCircle,
   StarOff,
   Star,
+  Crown,
+  Medal,
+  Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -1345,10 +1348,10 @@ export default function UniversitiesManager() {
                           onChange={(event) => upd('sponsorTier', event.target.value)}
                           options={[
                             { value: 'none',     label: 'None' },
-                            { value: 'bronze',   label: '🥉 Bronze  — ₹15,000/mo — 20 leads' },
-                            { value: 'silver',   label: '🥈 Silver  — ₹30,000/mo — 50 leads' },
-                            { value: 'gold',     label: '🥇 Gold    — ₹60,000/mo — 120 leads' },
-                            { value: 'platinum', label: '👑 Platinum — ₹1,20,000/mo — 300 leads' },
+                            { value: 'bronze',   label: 'Bronze — ₹15,000/mo — 20 leads' },
+                            { value: 'silver',   label: 'Silver — ₹30,000/mo — 50 leads' },
+                            { value: 'gold',     label: 'Gold — ₹60,000/mo — 120 leads' },
+                            { value: 'platinum', label: 'Platinum — ₹1,20,000/mo — 300 leads' },
                           ]}
                         />
                       </FormField>
@@ -1374,15 +1377,15 @@ export default function UniversitiesManager() {
                 </div>
 
                 <div className="p-5 bg-amber-500/5 border border-dashed border-amber-500/30 rounded-2xl space-y-3">
-                  <p className="text-sm font-black text-amber-600 dark:text-amber-400">⚡ Search Priority Boosting</p>
+                  <p className="flex items-center gap-1.5 text-sm font-black text-amber-600 dark:text-amber-400"><Zap className="w-4 h-4" aria-hidden="true" /> Search Priority Boosting</p>
                   <p className="text-xs text-light-muted dark:text-dark-muted">
                     When active, this university will rank ahead of organic listings in searches.
                   </p>
-                  <ul className="text-xs text-light-muted dark:text-dark-muted list-disc list-inside space-y-1">
-                    <li><strong>👑 Platinum:</strong> Slot #1 in all searches. 300 leads/mo. Homepage hero + state takeover.</li>
-                    <li><strong>🥇 Gold:</strong> Top-3 placement in state. 120 leads/mo. Homepage Featured Section.</li>
-                    <li><strong>🥈 Silver:</strong> Priority placement under Gold. 50 leads/mo. Full media views.</li>
-                    <li><strong>🥉 Bronze:</strong> Basic visibility boost above organic. 20 leads/mo.</li>
+                  <ul className="text-xs text-light-muted dark:text-dark-muted space-y-1">
+                    <li className="flex items-start gap-1.5"><Crown className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" /><span><strong>Platinum:</strong> Slot #1 in all searches. 300 leads/mo. Homepage hero + state takeover.</span></li>
+                    <li className="flex items-start gap-1.5"><Medal className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" aria-hidden="true" /><span><strong>Gold:</strong> Top-3 placement in state. 120 leads/mo. Homepage Featured Section.</span></li>
+                    <li className="flex items-start gap-1.5"><Medal className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" /><span><strong>Silver:</strong> Priority placement under Gold. 50 leads/mo. Full media views.</span></li>
+                    <li className="flex items-start gap-1.5"><Medal className="w-3.5 h-3.5 mt-0.5 shrink-0 text-orange-500" aria-hidden="true" /><span><strong>Bronze:</strong> Basic visibility boost above organic. 20 leads/mo.</span></li>
                   </ul>
                 </div>
               </div>
@@ -1486,17 +1489,18 @@ export default function UniversitiesManager() {
               { label: 'Twinning', value: 'twinning' },
               { label: 'Drafts', value: 'draft' },
               { label: 'Published', value: 'published' },
-              { label: '⭐ Sponsored', value: 'sponsored' },
+              { label: 'Sponsored', value: 'sponsored', icon: Star },
             ].map((filter) => (
               <button
                 key={filter.value}
                 onClick={() => setFilterType(filter.value)}
-                className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all ${
                   filterType === filter.value
                     ? 'bg-primary text-white shadow-lg shadow-primary/20'
                     : 'bg-light-card dark:bg-dark-card text-light-muted dark:text-dark-muted'
                 }`}
               >
+                {filter.icon && <filter.icon className="w-3.5 h-3.5" aria-hidden="true" />}
                 {filter.label}
               </button>
             ))}
@@ -1573,8 +1577,8 @@ export default function UniversitiesManager() {
               <X className="w-4 h-4" />
             </button>
 
-            <h3 className="text-lg font-black text-light-text dark:text-dark-text mb-2">
-              ⭐ Sponsorship Settings
+            <h3 className="flex items-center gap-2 text-lg font-black text-light-text dark:text-dark-text mb-2">
+              <Star className="w-5 h-5" aria-hidden="true" /> Sponsorship Settings
             </h3>
             <p className="text-xs text-light-muted dark:text-dark-muted mb-6">
               Quickly manage sponsorship status for <strong>{sponsorModalUni.name}</strong>.
@@ -1595,10 +1599,10 @@ export default function UniversitiesManager() {
                       onChange={(e) => setSponsorModalForm(p => ({ ...p, sponsorTier: e.target.value }))}
                       options={[
                         { value: 'none',     label: 'None' },
-                        { value: 'bronze',   label: '🥉 Bronze  — ₹15,000/mo' },
-                        { value: 'silver',   label: '🥈 Silver  — ₹30,000/mo' },
-                        { value: 'gold',     label: '🥇 Gold    — ₹60,000/mo' },
-                        { value: 'platinum', label: '👑 Platinum — ₹1,20,000/mo' },
+                        { value: 'bronze',   label: 'Bronze — ₹15,000/mo' },
+                        { value: 'silver',   label: 'Silver — ₹30,000/mo' },
+                        { value: 'gold',     label: 'Gold — ₹60,000/mo' },
+                        { value: 'platinum', label: 'Platinum — ₹1,20,000/mo' },
                       ]}
                     />
                   </FormField>

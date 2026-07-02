@@ -4,7 +4,8 @@ import { useRole } from '../../hooks/useRole';
 import {
   LayoutDashboard, Building2, BookOpen, FileText, Newspaper,
   Users, Image, MessageSquareQuote, FileEdit, HelpCircle,
-  Mail, Bell, Send, Settings, Shield, Menu, X, ChevronLeft, FileSpreadsheet, BarChart3
+  Mail, Bell, Send, Settings, Shield, Menu, X, ChevronLeft, FileSpreadsheet, BarChart3,
+  Star, Wrench
 } from 'lucide-react';
 
 const navItems = [
@@ -88,7 +89,7 @@ export default function AdminLayout() {
         {sidebarOpen && (
           <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold ${isSuperAdmin ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-primary/10 text-primary'}`}>
             <Shield className="w-3.5 h-3.5 shrink-0" />
-            <span>{isSuperAdmin ? '⭐ Super Admin' : '🔧 Admin'}</span>
+            <span>{isSuperAdmin ? 'Super Admin' : 'Admin'}</span>
           </div>
         )}
         <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-light-card dark:hover:bg-dark-card transition-colors text-light-muted dark:text-dark-muted">
@@ -127,11 +128,11 @@ export default function AdminLayout() {
           </h1>
           {isSuperAdmin ? (
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-              ⭐ Super Admin
+              <Star className="w-3.5 h-3.5" aria-hidden="true" /> Super Admin
             </span>
           ) : (
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-              🔧 Admin
+              <Wrench className="w-3.5 h-3.5" aria-hidden="true" /> Admin
             </span>
           )}
         </header>

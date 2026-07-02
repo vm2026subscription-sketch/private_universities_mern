@@ -88,7 +88,7 @@ const sendViaResend = async ({ to, subject, html }) => {
     throw new Error(error.message);
   }
 
-  console.log(`✅ Email sent via Resend to ${to}`);
+  console.log(`Email sent via Resend to ${to}`);
 };
 
 const sendViaSmtp = async ({ to, subject, html }) => {
@@ -101,7 +101,7 @@ const sendViaSmtp = async ({ to, subject, html }) => {
     html,
   });
 
-  console.log(`✅ Email sent via SMTP to ${to}`);
+  console.log(`Email sent via SMTP to ${to}`);
 };
 
 const sendEmail = async ({ to, subject, html }) => {
@@ -114,7 +114,7 @@ const sendEmail = async ({ to, subject, html }) => {
     const adminEmail = getAdminEmails()[0] || process.env.SMTP_USER;
     if (adminEmail) {
       recipient = adminEmail;
-      console.log(`📧 [DEV MODE - FORWARDED TO ADMIN] Original recipient: ${to}`);
+      console.log(`[DEV MODE - FORWARDED TO ADMIN] Original recipient: ${to}`);
     }
   }
 

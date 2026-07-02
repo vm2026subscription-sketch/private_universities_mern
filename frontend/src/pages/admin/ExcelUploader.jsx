@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { CheckCircle2, XCircle, AlertTriangle, RefreshCw, FileText, FileSpreadsheet, Check } from 'lucide-react';
 import axios from 'axios';
 import api from '../../utils/api';  
 
@@ -155,22 +156,22 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
       return (
         <div className="mb-6 space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h4 className="font-semibold text-green-800 mb-2">✅ Bulk Upload Complete!</h4>
+            <h4 className="flex items-center gap-1.5 font-semibold text-green-800 mb-2"><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Bulk Upload Complete!</h4>
             <div className="grid grid-cols-2 gap-4 mt-2">
               <div>
                 <p className="font-medium text-gray-700">Universities:</p>
                 <ul className="text-sm mt-1 space-y-1">
-                  <li className="text-green-600">✓ Created: {universities.created}</li>
-                  <li className="text-blue-600">✓ Updated: {universities.updated}</li>
-                  <li className="text-yellow-600">⚠ Skipped: {universities.skipped}</li>
+                  <li className="flex items-center gap-1.5 text-green-600"><Check className="w-3.5 h-3.5" aria-hidden="true" /> Created: {universities.created}</li>
+                  <li className="flex items-center gap-1.5 text-blue-600"><Check className="w-3.5 h-3.5" aria-hidden="true" /> Updated: {universities.updated}</li>
+                  <li className="flex items-center gap-1.5 text-yellow-600"><AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" /> Skipped: {universities.skipped}</li>
                 </ul>
               </div>
               <div>
                 <p className="font-medium text-gray-700">Courses:</p>
                 <ul className="text-sm mt-1 space-y-1">
-                  <li className="text-green-600">✓ Created: {courses.created}</li>
-                  <li className="text-blue-600">✓ Updated: {courses.updated}</li>
-                  <li className="text-yellow-600">⚠ Skipped: {courses.skipped}</li>
+                  <li className="flex items-center gap-1.5 text-green-600"><Check className="w-3.5 h-3.5" aria-hidden="true" /> Created: {courses.created}</li>
+                  <li className="flex items-center gap-1.5 text-blue-600"><Check className="w-3.5 h-3.5" aria-hidden="true" /> Updated: {courses.updated}</li>
+                  <li className="flex items-center gap-1.5 text-yellow-600"><AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" /> Skipped: {courses.skipped}</li>
                 </ul>
               </div>
             </div>
@@ -255,7 +256,9 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
                   {previewData.preview.slice(0, 5).map((row, i) => (
                     <tr key={i} className={row._validation?.isValid ? '' : 'bg-red-50'}>
                       <td className="px-3 py-2">
-                        {row._validation?.isValid ? '✅' : '❌'}
+                        {row._validation?.isValid
+                          ? <CheckCircle2 className="w-4 h-4 text-green-600" aria-label="Valid row" />
+                          : <XCircle className="w-4 h-4 text-red-600" aria-label="Invalid row" />}
                       </td>
                       {Object.entries(row)
                         .filter(([k]) => !k.startsWith('_'))
@@ -289,7 +292,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
   if (step === 'complete') {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center">
-        <div className="text-green-500 text-6xl mb-4">✓</div>
+        <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-green-500" aria-hidden="true" />
         <h3 className="text-xl font-semibold mb-2">Upload Complete!</h3>
         <p className="text-gray-600 mb-4">Your data has been successfully imported.</p>
         <button onClick={reset} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
@@ -327,7 +330,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              🔄 Bulk Upload (Both Sheets)
+              <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-4 h-4" aria-hidden="true" /> Bulk Upload (Both Sheets)</span>
             </button>
             <button
               type="button"
@@ -341,7 +344,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              📄 Single Sheet Upload
+              <span className="inline-flex items-center gap-1.5"><FileText className="w-4 h-4" aria-hidden="true" /> Single Sheet Upload</span>
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-2">
@@ -359,7 +362,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
                 ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
             >
               <input {...getInputProps()} />
-              <div className="text-4xl mb-2">📊</div>
+              <FileSpreadsheet className="w-12 h-12 mx-auto mb-2 text-gray-400" aria-hidden="true" />
               {isDragActive ? (
                 <p className="text-blue-600">Drop the Excel file here...</p>
               ) : (
@@ -384,7 +387,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
                 >
                   {sheetNames.map((sheet, i) => (
                     <option key={i} value={sheet}>
-                      {sheet} {sheet.toLowerCase().includes('universit') ? '🏛️' : sheet.toLowerCase().includes('course') ? '📚' : ''}
+                      {sheet}
                     </option>
                   ))}
                 </select>
@@ -439,8 +442,8 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
             </div>
 
             {!previewData.bulkResults && previewData.invalidCount > 0 && (
-              <p className="text-sm text-red-600 mt-4">
-                ⚠️ {previewData.invalidCount} rows have errors and will be skipped. Fix them in Excel and re-upload.
+              <p className="flex items-center gap-1.5 text-sm text-red-600 mt-4">
+                <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" /> {previewData.invalidCount} rows have errors and will be skipped. Fix them in Excel and re-upload.
               </p>
             )}
           </>

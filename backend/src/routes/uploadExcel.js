@@ -895,7 +895,7 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
           userAgent: req.headers['user-agent'],
         }]);
       } catch (auditError) {
-        console.error('⚠️ Audit log creation failed:', auditError.message);
+        console.error('Audit log creation failed:', auditError.message);
       }
     }
 
@@ -921,7 +921,7 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const { mode = 'upsert' } = req.body;
 
-    console.log(`\n📊 Excel file loaded. Sheets found: ${workbook.SheetNames.join(', ')}`);
+    console.log(`\nExcel file loaded. Sheets found: ${workbook.SheetNames.join(', ')}`);
 
     let results = {
       universities: { created: 0, updated: 0, skipped: 0, warnings: [], errors: [] },
@@ -934,14 +934,14 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
     // ========== 1. PROCESS UNIVERSITIES SHEET ==========
     const uniSheetName = pickUniversitySheet(workbook);
     if (uniSheetName) {
-      console.log(`\n📚 Processing Universities sheet: "${uniSheetName}"`);
+      console.log(`\nProcessing Universities sheet: "${uniSheetName}"`);
       const rows = sheetToMatrix(workbook.Sheets[uniSheetName]);
       const { headerRowIndex, idx, dataRows } = parseSheet(rows, 'universities');
 
       if (headerRowIndex === -1) {
-        console.log('   ❌ Could not find header row in Universities sheet');
+        console.log('   Could not find header row in Universities sheet');
       } else {
-        console.log(`   ✅ Header row at index ${headerRowIndex}. Found ${dataRows.length} rows`);
+        console.log(`   Header row at index ${headerRowIndex}. Found ${dataRows.length} rows`);
         for (let i = 0; i < dataRows.length; i++) {
           try {
             const university = parseUniversityRow(dataRows[i], idx);
@@ -971,26 +971,26 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
         }
       }
     } else {
-      console.log('⚠️ No Universities sheet found');
+      console.log('No Universities sheet found');
     }
 
     // Seed registry with ALL existing universities so courses can also match
     // institutions that were imported in earlier runs.
     const allUnis = await University.find({}, 'name universityCode');
     allUnis.forEach(u => registry.add(u));
-    console.log(`   🌐 Registry seeded with ${allUnis.length} total universities`);
+    console.log(`   Registry seeded with ${allUnis.length} total universities`);
 
     // ========== 2. PROCESS COURSES SHEET ==========
     const courseSheetName = pickCourseSheet(workbook);
     if (courseSheetName) {
-      console.log(`\n📖 Processing Courses sheet: "${courseSheetName}"`);
+      console.log(`\nProcessing Courses sheet: "${courseSheetName}"`);
       const rows = sheetToMatrix(workbook.Sheets[courseSheetName]);
       const { headerRowIndex, idx, dataRows } = parseSheet(rows, 'courses');
 
       if (headerRowIndex === -1) {
-        console.log('   ❌ Could not detect header row in Courses sheet. Skipping courses.');
+        console.log('   Could not detect header row in Courses sheet. Skipping courses.');
       } else {
-        console.log(`   ✅ Header row at index ${headerRowIndex}. Field map: ${JSON.stringify(idx)}`);
+        console.log(`   Header row at index ${headerRowIndex}. Field map: ${JSON.stringify(idx)}`);
         let matchedCount = 0;
         let unmatchedCount = 0;
         const unmatchedExamples = [];
@@ -1027,7 +1027,7 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
             const { action, error } = await persistCourse(course, match.uni, mode);
             if (action === 'created') {
               results.courses.created++;
-              if (results.courses.created <= 10) console.log(`   ✅ "${course.name}" → ${match.uni.name}`);
+              if (results.courses.created <= 10) console.log(`   "${course.name}" → ${match.uni.name}`);
             } else if (action === 'updated') {
               results.courses.updated++;
             } else {
@@ -1040,14 +1040,14 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
           }
         }
 
-        console.log(`   📊 Match results: ${matchedCount} matched, ${unmatchedCount} unmatched, ${results.courses.ambiguous} ambiguous`);
+        console.log(`   Match results: ${matchedCount} matched, ${unmatchedCount} unmatched, ${results.courses.ambiguous} ambiguous`);
         if (unmatchedExamples.length > 0) {
-          console.log('   ⚠️ First unmatched university names:');
+          console.log('   First unmatched university names:');
           unmatchedExamples.slice(0, 10).forEach(name => console.log(`     - "${name}"`));
         }
       }
     } else {
-      console.log('⚠️ No Courses sheet found');
+      console.log('No Courses sheet found');
     }
 
     // ========== 3. UPDATE COURSE COUNTS ==========
@@ -1069,26 +1069,26 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
       }]);
-      console.log('📝 Audit log created');
+      console.log('Audit log created');
     } catch (auditError) {
-      console.error('⚠️ Audit log creation failed:', auditError.message);
+      console.error('Audit log creation failed:', auditError.message);
     }
 
-    console.log('\n✅ BULK IMPORT COMPLETE');
+    console.log('\nBULK IMPORT COMPLETE');
     console.log(`   Universities: ${results.universities.created} created, ${results.universities.updated} updated, ${results.universities.skipped} skipped`);
     console.log(`   Courses: ${results.courses.created} created, ${results.courses.updated} updated, ${results.courses.skipped} skipped`);
 
     res.json({
       success: true,
       results,
-      message: `✅ Universities: ${results.universities.created} created, ${results.universities.updated} updated. Courses: ${results.courses.created} created, ${results.courses.updated} updated.`,
+      message: `Universities: ${results.universities.created} created, ${results.universities.updated} updated. Courses: ${results.courses.created} created, ${results.courses.updated} updated.`,
       summary: {
         universities: { created: results.universities.created, updated: results.universities.updated, skipped: results.universities.skipped },
         courses: { created: results.courses.created, updated: results.courses.updated, skipped: results.courses.skipped, ambiguous: results.courses.ambiguous },
       },
     });
   } catch (error) {
-    console.error('❌ Bulk upload error:', error);
+    console.error('Bulk upload error:', error);
     res.status(500).json({ error: error.message });
   }
 });

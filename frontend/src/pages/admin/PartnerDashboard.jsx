@@ -2,17 +2,18 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Building2, Eye, Mail, FileText, TrendingUp,
-  Download, Users, Star, Calendar, BarChart3, CheckCircle2
+  Download, Users, Star, Calendar, BarChart3, CheckCircle2,
+  Crown, Medal, ClipboardList, Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 
 const TIER_CONFIG = {
-  platinum: { label: 'Platinum', color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-400/30', icon: '👑' },
-  gold:     { label: 'Gold',     color: 'text-amber-500',  bg: 'bg-amber-500/10',  border: 'border-amber-400/30',  icon: '🥇' },
-  silver:   { label: 'Silver',   color: 'text-slate-400',  bg: 'bg-slate-400/10',  border: 'border-slate-400/30',  icon: '🥈' },
-  bronze:   { label: 'Bronze',   color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-400/30', icon: '🥉' },
-  none:     { label: 'Organic',  color: 'text-light-muted',bg: 'bg-light-bg',      border: 'border-light-border',  icon: '📋' },
+  platinum: { label: 'Platinum', color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-400/30', icon: Crown },
+  gold:     { label: 'Gold',     color: 'text-amber-500',  bg: 'bg-amber-500/10',  border: 'border-amber-400/30',  icon: Medal },
+  silver:   { label: 'Silver',   color: 'text-slate-400',  bg: 'bg-slate-400/10',  border: 'border-slate-400/30',  icon: Medal },
+  bronze:   { label: 'Bronze',   color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-400/30', icon: Medal },
+  none:     { label: 'Organic',  color: 'text-light-muted',bg: 'bg-light-bg',      border: 'border-light-border',  icon: ClipboardList },
 };
 
 function StatCard({ icon: Icon, label, value, sub, color = 'text-primary', bg = 'bg-primary/10' }) {
@@ -126,7 +127,7 @@ export default function PartnerDashboard() {
         <div className="flex items-center gap-3 flex-wrap">
           {/* Tier badge */}
           <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black border ${tier.bg} ${tier.color} ${tier.border}`}>
-            <span>{tier.icon}</span> {tier.label} Partner
+            <tier.icon className="w-4 h-4" aria-hidden="true" /> {tier.label} Partner
           </span>
 
           {/* Expiry */}
@@ -218,12 +219,12 @@ export default function PartnerDashboard() {
 
           {/* Tier summary */}
           <div className={`mt-4 p-4 rounded-xl border ${tier.border} ${tier.bg}`}>
-            <p className={`text-xs font-black uppercase tracking-widest ${tier.color}`}>{tier.icon} {tier.label} Tier Benefits</p>
-            <ul className="mt-2 space-y-1 text-xs text-light-muted dark:text-dark-muted">
-              {university.sponsorTier === 'platinum' && <><li>✓ Slot #1 in all listings</li><li>✓ Hero banner slider placement</li><li>✓ Homepage sponsored showcase</li><li>✓ Sticky bottom & sidebar ads</li></>}
-              {university.sponsorTier === 'gold'     && <><li>✓ Top 3 state placement</li><li>✓ Homepage sponsored section</li><li>✓ Sidebar ad placement</li></>}
-              {university.sponsorTier === 'silver'   && <><li>✓ Medium ranking boost</li><li>✓ Sidebar ad placement</li><li>✓ Video/photo gallery</li></>}
-              {university.sponsorTier === 'bronze'   && <><li>✓ Basic visibility boost</li><li>✓ Verified badge</li></>}
+            <p className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest ${tier.color}`}><tier.icon className="w-4 h-4" aria-hidden="true" /> {tier.label} Tier Benefits</p>
+            <ul className="mt-2 space-y-1 text-xs text-light-muted dark:text-dark-muted [&>li]:flex [&>li]:items-center [&>li]:gap-1.5 [&>li>svg]:w-3 [&>li>svg]:h-3 [&>li>svg]:shrink-0">
+              {university.sponsorTier === 'platinum' && <><li><Check aria-hidden="true" />Slot #1 in all listings</li><li><Check aria-hidden="true" />Hero banner slider placement</li><li><Check aria-hidden="true" />Homepage sponsored showcase</li><li><Check aria-hidden="true" />Sticky bottom & sidebar ads</li></>}
+              {university.sponsorTier === 'gold'     && <><li><Check aria-hidden="true" />Top 3 state placement</li><li><Check aria-hidden="true" />Homepage sponsored section</li><li><Check aria-hidden="true" />Sidebar ad placement</li></>}
+              {university.sponsorTier === 'silver'   && <><li><Check aria-hidden="true" />Medium ranking boost</li><li><Check aria-hidden="true" />Sidebar ad placement</li><li><Check aria-hidden="true" />Video/photo gallery</li></>}
+              {university.sponsorTier === 'bronze'   && <><li><Check aria-hidden="true" />Basic visibility boost</li><li><Check aria-hidden="true" />Verified badge</li></>}
               {(!university.sponsorTier || university.sponsorTier === 'none') && <li>No sponsorship active</li>}
             </ul>
           </div>

@@ -486,7 +486,7 @@ export default function UniversityComparison() {
                         <Crown className="w-7 h-7 text-amber-500" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-500 mb-1">🏆 Overall Top Pick</p>
+                        <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-amber-500 mb-1"><Trophy className="w-3.5 h-3.5" aria-hidden="true" /> Overall Top Pick</p>
                         <p className="font-black text-xl text-slate-900 dark:text-white">{topUni.name}</p>
                         <p className="text-sm text-slate-500 mt-0.5">Leads in {allWinnerCounts[topId]} out of {Object.keys(summaryLabels).length} categories</p>
                       </div>

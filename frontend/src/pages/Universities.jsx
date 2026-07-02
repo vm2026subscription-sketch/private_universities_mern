@@ -302,7 +302,7 @@ export default function Universities() {
                             )}
                             {u.isSponsored && (
                               <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-amber-400/20 flex items-center gap-1">
-                                ⭐ {u.sponsorTier || 'Premium'} Partner
+                                <Star className="w-3 h-3" aria-hidden="true" /> {u.sponsorTier || 'Premium'} Partner
                               </div>
                             )}
                           </div>

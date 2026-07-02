@@ -1,4 +1,4 @@
-import { MapPin, ArrowRight } from 'lucide-react';
+import { MapPin, ArrowRight, Gem, Star } from 'lucide-react';
 import UniversityLogo from '../common/UniversityLogo';
 import { useAdBanners, bannerClickUrl } from '../../hooks/useAdBanners';
 
@@ -14,8 +14,8 @@ export default function SponsoredUniversities({ page = 'home' }) {
     <section className="max-w-7xl mx-auto px-4 py-16">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="text-primary font-black text-xs uppercase tracking-[0.3em] mb-2">
-            💎 Premium Admissions
+          <p className="flex items-center gap-1.5 text-primary font-black text-xs uppercase tracking-[0.3em] mb-2">
+            <Gem className="w-3.5 h-3.5" aria-hidden="true" /> Premium Admissions
           </p>
           <h2 className="text-2xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">
             Featured University Partners
@@ -52,7 +52,7 @@ export default function SponsoredUniversities({ page = 'home' }) {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center gap-1">
-                      ⭐ {tier} Partner
+                      <Star className="w-3 h-3" aria-hidden="true" /> {tier} Partner
                     </span>
                     {u?.naacGrade && (
                       <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full">
