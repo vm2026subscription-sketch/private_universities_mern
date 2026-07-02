@@ -291,7 +291,7 @@ export default function Universities() {
                             : <Download className="w-4 h-4" />}
                         </button>
 
-                      <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
+                      <div className="relative w-full h-full [transform-style:preserve-3d]">
                         {/* Front Face */}
                         <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2rem] border shadow-lg flex flex-col overflow-hidden ${u.isSponsored ? 'border-amber-400/60 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent' : 'border-slate-100 dark:border-white/5'}`}>
                           {/* Top Badges */}
