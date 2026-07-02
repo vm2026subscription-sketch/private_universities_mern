@@ -267,6 +267,14 @@ exports.getUniversities = async (req, res) => {
 
     const LIST_FIELDS = 'name slug state city type segment institutionKind establishedYear naacGrade nirfRank logoUrl links.brochureLink description stats views approvals isSponsored sponsorTier sponsorPriority sponsorExpiry';
 
+    // "By Ranking" is the default sort. A plain ascending sort on nirfRank puts
+    // universities WITHOUT a NIRF rank first (null sorts before numbers in
+    // MongoDB), burying the top-ranked ones. For this sort we use an aggregation
+    // that treats "no rank" as last, so NIRF-ranked colleges appear first (by
+    // rank), then the unranked ones — while keeping server-side pagination.
+    const isRankingSort = !['fees_asc', 'fees_desc', 'package', 'name', 'name_desc', 'established'].includes(sort);
+    const needsCoursePopulate = requestedType === 'foreign' || requestedType === 'twinning';
+
     let universities;
     let total;
 
@@ -295,6 +303,33 @@ exports.getUniversities = async (req, res) => {
 
       total = sortedUniversities.length;
       universities = sortedUniversities.slice(skip, skip + normalizedLimit);
+    } else if (isRankingSort && !needsCoursePopulate) {
+      const projection = LIST_FIELDS.split(' ').reduce((acc, field) => {
+        acc[field] = 1;
+        return acc;
+      }, {});
+
+      const [result] = await University.aggregate([
+        { $match: filter },
+        {
+          $addFields: {
+            // Ranked universities keep their rank; unranked sort to the very end.
+            _rankOrder: {
+              $cond: [{ $gt: ['$nirfRank', 0] }, '$nirfRank', Number.MAX_SAFE_INTEGER],
+            },
+          },
+        },
+        { $sort: { isSponsored: -1, sponsorPriority: -1, _rankOrder: 1, name: 1 } },
+        {
+          $facet: {
+            data: [{ $skip: skip }, { $limit: normalizedLimit }, { $project: projection }],
+            total: [{ $count: 'count' }],
+          },
+        },
+      ]);
+
+      universities = result?.data || [];
+      total = result?.total?.[0]?.count || 0;
     } else {
       let query = University.find(filter, LIST_FIELDS).sort(sortObj).skip(skip).limit(normalizedLimit);
 
