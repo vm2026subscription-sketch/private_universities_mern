@@ -419,7 +419,7 @@ export default function AiChatWidget() {
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="fixed bottom-6 left-6 z-[90] group"
+        className="fixed bottom-24 md:bottom-6 left-6 z-[90] group"
       >
         <div className="absolute bottom-full left-0 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border px-4 py-2 rounded-2xl shadow-xl whitespace-nowrap text-xs font-bold text-[#E05404] flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5" />
@@ -440,7 +440,7 @@ export default function AiChatWidget() {
   if (minimized) {
     return (
       <motion.div
-        className="fixed bottom-6 left-6 z-[90] shadow-2xl overflow-hidden"
+        className="fixed bottom-24 md:bottom-6 left-6 z-[90] shadow-2xl overflow-hidden"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
       >

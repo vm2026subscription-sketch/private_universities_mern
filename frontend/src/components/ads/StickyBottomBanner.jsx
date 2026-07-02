@@ -33,7 +33,7 @@ export default function StickyBottomBanner({ page = 'home' }) {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-        className="fixed bottom-16 md:bottom-0 inset-x-0 z-40 px-3 pb-3"
+        className="fixed bottom-20 md:bottom-0 inset-x-0 z-40 px-3 pb-3"
       >
         <div
           className="max-w-5xl mx-auto relative rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex items-center gap-4 pr-12 pl-4 py-3"

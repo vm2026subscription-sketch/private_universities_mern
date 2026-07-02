@@ -360,7 +360,7 @@ export default function Home() {
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 overflow-x-hidden">
       {/* Hero Section - Shiksha-style rotating campus background */}
-      <section className="relative h-[600px] md:h-[85vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[600px] md:h-[85vh] flex items-center justify-center overflow-hidden">
         {/* Rotating Campus Background */}
         <AnimatePresence mode="sync">
           <motion.div
