@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { readSessionCache, writeSessionCache } from '../utils/pageCache';
+import { EmptyState } from '../components/ui';
 
 const CATEGORY_LABELS = ['all', 'engineering', 'medical', 'management', 'law', 'others'];
 const EXAMS_CACHE_KEY = 'vm_exams_catalog_v1';
@@ -206,12 +207,11 @@ export default function Exams() {
       {loading ? (
         <CardSkeleton count={6} />
       ) : filteredExams.length === 0 ? (
-        <div className="card p-8 text-center">
-          <h2 className="text-xl font-semibold mb-2">No exams found</h2>
-          <p className="text-light-muted dark:text-dark-muted">
-            Try adjusting your category, scope, or state filters.
-          </p>
-        </div>
+        <EmptyState
+          icon={Search}
+          title="No exams found"
+          description="Try adjusting your category, scope, or state filters."
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredExams.map((exam) => (

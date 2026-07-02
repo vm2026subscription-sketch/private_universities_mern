@@ -152,7 +152,21 @@
         <ThemeProvider>
           <AuthProvider>
             <AiChatProvider>
-              <Toaster position="top-right" toastOptions={{ style: { borderRadius: '12px' } }} />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 3500,
+                  style: {
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    padding: '10px 14px',
+                    boxShadow: '0 10px 30px -10px rgba(15,23,42,0.25)',
+                  },
+                  success: { iconTheme: { primary: '#10B981', secondary: '#ffffff' } },
+                  error: { iconTheme: { primary: '#EF4444', secondary: '#ffffff' } },
+                }}
+              />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
 

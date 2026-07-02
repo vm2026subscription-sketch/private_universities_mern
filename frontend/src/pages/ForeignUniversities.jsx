@@ -19,6 +19,7 @@ import {
 import api from '../utils/api';
 import { ListSkeleton } from '../components/common/LoadingSkeleton';
 import UniversityLogo from '../components/common/UniversityLogo';
+import { EmptyState } from '../components/ui';
 import { readSessionCache, writeSessionCache } from '../utils/pageCache';
 
 const typeCopy = {
@@ -254,11 +255,11 @@ export default function ForeignUniversities() {
             {loading ? (
               <ListSkeleton count={4} />
             ) : filteredUniversities.length === 0 ? (
-              <div className="text-center py-24 bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border">
-                <Globe className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-600 dark:text-slate-200">{copy.emptyTitle}</h3>
-                <p className="text-sm text-slate-400 mt-2">Try a different search or add records from the admin panel.</p>
-              </div>
+              <EmptyState
+                icon={Globe}
+                title={copy.emptyTitle}
+                description="Try a different search or add records from the admin panel."
+              />
             ) : (
               filteredUniversities.map((university, index) => {
                 const courses = university.courses || [];
