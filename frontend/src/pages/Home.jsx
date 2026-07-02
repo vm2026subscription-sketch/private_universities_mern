@@ -16,6 +16,7 @@ import LeadCaptureModal from '../components/university/LeadCaptureModal';
 import HeroBannerSlider from '../components/ads/HeroBannerSlider';
 import SponsoredUniversities from '../components/ads/SponsoredUniversities';
 import SidebarAds from '../components/ads/SidebarAds';
+import { EmptyState, Card } from '../components/ui';
 import { toast } from 'react-hot-toast';
 import img_gujarat from '../assets/states/gujarat.jpg';
 import img_uttar_pradesh from '../assets/states/uttar-pradesh.jpg';
@@ -732,12 +733,13 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-[2rem] border border-dashed border-slate-200 dark:border-white/10 bg-white/70 dark:bg-dark-card/70 p-10 text-center shadow-sm">
-                <p className="text-sm font-black uppercase tracking-[0.24em] text-primary">No Recommendations Yet</p>
-                <p className="mt-4 text-base text-slate-600 dark:text-slate-300">
-                  No universities are available right now. Once your team uploads universities from the admin panel, recommendations will appear here.
-                </p>
-              </div>
+              <Card className="border-dashed bg-white/70 dark:bg-dark-card/70">
+                <EmptyState
+                  icon={School}
+                  title="No Recommendations Yet"
+                  description="No universities are available right now. Once your team uploads universities from the admin panel, recommendations will appear here."
+                />
+              </Card>
             )}
             {universities.length > 0 ? (
               <div className="mt-12 text-center">

@@ -11,6 +11,7 @@ import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { useAuth } from '../context/AuthContext'; // adjust import path as needed
 import { readSessionCache, writeSessionCache } from '../utils/pageCache';
+import { EmptyState, Button, Card } from '../components/ui';
 
 const STREAMS_CACHE_KEY = 'vm_courses_streams_v1';
 const STREAMS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 mins
@@ -123,7 +124,7 @@ function EditCourseModal({ course, onClose, onSaved }) {
               <input
                 value={form.baseCourse}
                 onChange={set('baseCourse')}
-                className="modal-input"
+                className="input-field"
                 placeholder="e.g. B.Tech, MBA"
               />
             </Field>
@@ -131,17 +132,17 @@ function EditCourseModal({ course, onClose, onSaved }) {
               <input
                 value={form.specializationName}
                 onChange={set('specializationName')}
-                className="modal-input"
+                className="input-field"
                 placeholder="e.g. Computer Science"
               />
             </Field>
             <Field label="Degree Level">
-              <select value={form.category} onChange={set('category')} className="modal-input">
+              <select value={form.category} onChange={set('category')} className="input-field">
                 {CATEGORY_OPTIONS.map((c) => <option key={c}>{c}</option>)}
               </select>
             </Field>
             <Field label="Stream">
-              <select value={form.stream} onChange={set('stream')} className="modal-input">
+              <select value={form.stream} onChange={set('stream')} className="input-field">
                 {STREAM_OPTIONS.map((s) => <option key={s}>{s}</option>)}
               </select>
             </Field>
@@ -149,7 +150,7 @@ function EditCourseModal({ course, onClose, onSaved }) {
               <input
                 value={form.duration}
                 onChange={set('duration')}
-                className="modal-input"
+                className="input-field"
                 placeholder="e.g. 4 Years"
               />
             </Field>
@@ -158,7 +159,7 @@ function EditCourseModal({ course, onClose, onSaved }) {
                 type="number"
                 value={form.totalSeats}
                 onChange={set('totalSeats')}
-                className="modal-input"
+                className="input-field"
                 placeholder="e.g. 60"
                 min={0}
               />
@@ -168,7 +169,7 @@ function EditCourseModal({ course, onClose, onSaved }) {
                 type="number"
                 value={form.feesPerYear}
                 onChange={set('feesPerYear')}
-                className="modal-input"
+                className="input-field"
                 placeholder="e.g. 150000"
                 min={0}
               />
@@ -177,7 +178,7 @@ function EditCourseModal({ course, onClose, onSaved }) {
               <input
                 value={form.entranceExams}
                 onChange={set('entranceExams')}
-                className="modal-input"
+                className="input-field"
                 placeholder="JEE, CAT (comma separated)"
               />
             </Field>
@@ -186,7 +187,7 @@ function EditCourseModal({ course, onClose, onSaved }) {
             <textarea
               value={form.eligibility}
               onChange={set('eligibility')}
-              className="modal-input resize-none"
+              className="input-field resize-none"
               rows={3}
               placeholder="Eligibility criteria..."
             />
@@ -218,29 +219,6 @@ function EditCourseModal({ course, onClose, onSaved }) {
           </button>
         </div>
       </motion.div>
-
-      <style>{`
-        .modal-input {
-          width: 100%;
-          padding: 0.75rem 1rem;
-          background: rgb(248 250 252);
-          border: 1.5px solid rgb(226 232 240);
-          border-radius: 0.875rem;
-          font-size: 0.875rem;
-          font-weight: 600;
-          outline: none;
-          transition: border-color 0.15s;
-          color: inherit;
-        }
-        .dark .modal-input {
-          background: rgb(30 41 59 / 0.5);
-          border-color: rgb(51 65 85);
-          color: white;
-        }
-        .modal-input:focus {
-          border-color: var(--color-primary, #6366f1);
-        }
-      `}</style>
     </div>
   );
 }
@@ -907,14 +885,18 @@ export default function Courses() {
           ) : (
             <div className="space-y-16">
               {filteredCourseGroups.length === 0 && !selectedCourse && (
-                <div className="py-32 text-center bg-white dark:bg-dark-card rounded-[3rem] border-2 border-dashed border-light-border dark:border-dark-border">
-                  <div className="w-20 h-20 bg-slate-100 dark:bg-dark-border rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Search className="w-10 h-10 text-slate-300" />
-                  </div>
-                  <h3 className="text-3xl font-black mb-2 text-slate-400">No Courses Found</h3>
-                  <p className="text-light-muted font-bold max-w-md mx-auto mb-8">We couldn't find any courses matching your current filters.</p>
-                  <button onClick={() => { handleStreamChange('All'); handleCategoryChange('All'); setSearch(''); }} className="px-10 py-4 bg-primary text-white rounded-2xl font-black text-sm shadow-xl shadow-primary/20">Reset Filters</button>
-                </div>
+                <Card className="border-2 border-dashed">
+                  <EmptyState
+                    icon={Search}
+                    title="No Courses Found"
+                    description="We couldn't find any courses matching your current filters."
+                    action={(
+                      <Button onClick={() => { handleStreamChange('All'); handleCategoryChange('All'); setSearch(''); }}>
+                        Reset Filters
+                      </Button>
+                    )}
+                  />
+                </Card>
               )}
 
               <div className="space-y-4">
