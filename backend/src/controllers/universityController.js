@@ -257,6 +257,8 @@ exports.getUniversities = async (req, res) => {
       sortObj['stats.avgPackageLPA'] = -1;
     } else if (sort === 'name') {
       sortObj.name = 1;
+    } else if (sort === 'name_desc') {
+      sortObj.name = -1;
     } else if (sort === 'established') {
       sortObj.establishedYear = 1;
     } else {
