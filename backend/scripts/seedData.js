@@ -10,6 +10,26 @@ const News = require('../src/models/News');
 const Question = require('../src/models/Question');
 const User = require('../src/models/User');
 
+// ─── DESTRUCTIVE-RUN GUARD ───────────────────────────────────────────────────
+// This script DELETES ALL universities & courses and re-inserts a small curated
+// seed set. Because MONGODB_URI usually points at the production database, an
+// accidental or deploy-time run (e.g. `npm run seed` in a pre-deploy hook) would
+// wipe every Excel-imported university and make whole states disappear.
+// It now refuses to run unless the operator explicitly confirms intent.
+(function guardDestructiveRun() {
+  const confirmed = process.argv.includes('--force') || process.env.ALLOW_DESTRUCTIVE === 'true';
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DESTRUCTIVE !== 'true') {
+    console.error('[seed][GUARD] Refusing to wipe/seed in production (NODE_ENV=production). This would delete all imported universities.');
+    console.error('[seed][GUARD] If you truly intend to reset production, set ALLOW_DESTRUCTIVE=true explicitly.');
+    process.exit(1);
+  }
+  if (!confirmed) {
+    console.error('[seed][GUARD] This DELETES ALL universities & courses and replaces them with a small curated seed set.');
+    console.error('[seed][GUARD] It will erase Excel-imported data. Re-run intentionally with:  npm run seed -- --force');
+    process.exit(1);
+  }
+})();
+
 const universities = [
   { name: "MIT-WPU Pune", state: "Maharashtra", city: "Pune", type: "private", establishedYear: 2017, naacGrade: "A++", nirfRank: 62, description: "MIT World Peace University is a premier private university in Pune offering diverse programs.", website: "https://mitwpu.edu.in", approvals: { ugc: true, aicte: true, nmc: false, bci: false, coa: true, pci: false }, stats: { totalStudents: 15000, campusSizeAcres: 25, avgPackageLPA: 6.5, highestPackageLPA: 42, placementPercentage: 92 }, topRecruiters: ["TCS", "Infosys", "Wipro", "Capgemini", "Accenture", "Amazon"], facilities: ["Library", "Hostel", "Sports Complex", "Cafeteria", "Labs", "WiFi", "Medical Center", "Transport"], address: "Rajbaug, Loni Kalbhor, Pune", phone: "+91-20-71177117", email: "admissions@mitwpu.edu.in" },
   { name: "Symbiosis International University", state: "Maharashtra", city: "Pune", type: "deemed", establishedYear: 2002, naacGrade: "A", nirfRank: 28, description: "Symbiosis is a prestigious deemed university known for its management and law programs.", website: "https://siu.edu.in", approvals: { ugc: true, aicte: true, nmc: true, bci: true, coa: false, pci: false }, stats: { totalStudents: 40000, campusSizeAcres: 300, avgPackageLPA: 9.5, highestPackageLPA: 55, placementPercentage: 95 }, topRecruiters: ["Deloitte", "EY", "KPMG", "McKinsey", "Goldman Sachs", "Google"], facilities: ["Library", "Hostel", "Sports Complex", "Cafeteria", "Labs", "WiFi", "Medical Center", "Transport", "Swimming Pool"], address: "Lavale, Pune", phone: "+91-20-39116200", email: "info@siu.edu.in" },

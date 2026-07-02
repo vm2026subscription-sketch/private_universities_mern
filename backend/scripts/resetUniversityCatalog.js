@@ -5,6 +5,23 @@ const Course = require('../src/models/Course');
 const User = require('../src/models/User');
 const Question = require('../src/models/Question');
 
+// ─── DESTRUCTIVE-RUN GUARD ───────────────────────────────────────────────────
+// This script DELETES ALL universities & courses. Because MONGODB_URI usually
+// points at the production database, an accidental or automated run would wipe
+// every Excel-imported university. Refuse unless intent is explicit.
+(function guardDestructiveRun() {
+  const confirmed = process.argv.includes('--force') || process.env.ALLOW_DESTRUCTIVE === 'true';
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DESTRUCTIVE !== 'true') {
+    console.error('[reset][GUARD] Refusing to wipe the catalog in production (NODE_ENV=production). This would delete all imported universities.');
+    console.error('[reset][GUARD] If you truly intend to reset production, set ALLOW_DESTRUCTIVE=true explicitly.');
+    process.exit(1);
+  }
+  if (!confirmed) {
+    console.error('[reset][GUARD] This DELETES ALL universities & courses. Re-run intentionally with:  npm run reset:catalog -- --force');
+    process.exit(1);
+  }
+})();
+
 async function resetUniversityCatalog() {
   if (!process.env.MONGODB_URI) {
     throw new Error('MONGODB_URI is not configured');
