@@ -165,7 +165,6 @@ export default function Universities() {
           <select value={sort} onChange={e => setSort(e.target.value)} className="input-field !w-auto !py-2 text-sm">
             <option value="ranking">By Ranking</option>
             <option value="name">Name A-Z</option>
-            <option value="name_desc">Name Z-A</option>
           </select>
           <button onClick={() => setShowFilters(!showFilters)} className="md:hidden p-2 rounded-xl border border-light-border dark:border-dark-border">
             <Filter className="w-5 h-5" />
