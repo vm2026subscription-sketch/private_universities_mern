@@ -191,7 +191,7 @@ const AccessibilityWidget = ({ inline = false }) => {
             {/* Header - Fixed at top */}
             <div className="flex items-start justify-between border-b border-slate-100 dark:border-dark-border p-4 bg-white dark:bg-dark-card z-20 shrink-0">
               <div className="pr-2">
-                <p className="text-sm font-black text-slate-900 dark:text-white">Accessibility</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">Accessibility</p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Personalize reading</p>
               </div>
               <div className="flex items-center gap-1">

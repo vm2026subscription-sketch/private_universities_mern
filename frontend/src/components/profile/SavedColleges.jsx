@@ -39,7 +39,7 @@ export default function SavedColleges({ savedUnis, ratings, notes, compareList, 
   if (savedUnis.length === 0) return (
     <div className="card p-12 text-center">
       <div className="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-dark-border flex items-center justify-center mx-auto mb-4">
-        <GitCompare className="w-8 h-8 text-primary" />
+        <GitCompare className="w-8 h-8 text-link" />
       </div>
       <p className="text-light-muted mb-4">No saved colleges yet. Browse and bookmark your favourites!</p>
       <Link to="/universities" className="btn-primary text-sm">Browse Colleges</Link>
@@ -95,20 +95,20 @@ export default function SavedColleges({ savedUnis, ratings, notes, compareList, 
           </button>
           
           {fitScore > 50 && (
-             <div className="absolute top-0 right-16 bg-primary/10 text-primary text-[10px] font-black px-3 py-1 rounded-bl-xl border-b border-l border-primary/20">
+             <div className="absolute top-0 right-16 bg-primary/10 text-link text-[10px] font-bold px-3 py-1 rounded-bl-xl border-b border-l border-primary/20">
                 {fitScore}% MATCH
              </div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Logo placeholder */}
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-primary font-bold text-lg shrink-0 ${isFav ? 'bg-primary/20' : 'bg-primary-50 dark:bg-dark-border'}`}>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-link font-bold text-lg shrink-0 ${isFav ? 'bg-primary/20' : 'bg-primary-50 dark:bg-dark-border'}`}>
               {u.name?.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <Link to={`/universities/${u.slug}`} className="font-semibold hover:text-primary transition-colors line-clamp-1">
+                  <Link to={`/universities/${u.slug}`} className="font-semibold hover:text-link transition-colors line-clamp-1">
                     {u.name}
                   </Link>
                   <p className="text-sm text-light-muted flex items-center gap-1 mt-0.5">
@@ -116,7 +116,7 @@ export default function SavedColleges({ savedUnis, ratings, notes, compareList, 
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 items-center">
-                  <div className="flex items-center gap-1 bg-primary text-white px-3 py-1 rounded-full text-xs font-black shadow-lg shadow-primary/20">
+                  <div className="flex items-center gap-1 bg-primary text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg shadow-primary/20">
                     {calculateFitScore(u, userPrefs)}% Match
                   </div>
                   <span className="badge badge-orange">{displayType}</span>

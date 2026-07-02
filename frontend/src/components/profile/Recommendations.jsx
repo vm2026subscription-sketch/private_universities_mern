@@ -53,12 +53,12 @@ export default function Recommendations({ recommendations, onSave, userPrefs }) 
           return (
             <div key={university._id} className="card p-5 hover:shadow-lg transition-all hover:-translate-y-0.5 relative overflow-hidden">
               {score > 60 && (
-                <div className="absolute top-0 right-0 bg-yellow-400/10 text-yellow-600 text-[10px] font-black px-3 py-1 rounded-bl-xl border-b border-l border-yellow-400/20 flex items-center gap-1">
+                <div className="absolute top-0 right-0 bg-yellow-400/10 text-yellow-600 text-[10px] font-bold px-3 py-1 rounded-bl-xl border-b border-l border-yellow-400/20 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" /> TOP MATCH
                 </div>
               )}
               <div className="flex items-start gap-3 mb-3 mt-2">
-                <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary font-bold shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-link font-bold shrink-0">
                   {university.name?.charAt(0)}
                 </div>
                 <div className="min-w-0">

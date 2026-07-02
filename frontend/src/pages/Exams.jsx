@@ -113,7 +113,7 @@ export default function Exams() {
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between mb-10">
         <div>
           <span className="badge badge-orange mb-4 inline-flex">Exam Updates</span>
-          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3 text-primary">Entrance Exams Directory</h1>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3 text-link">Entrance Exams Directory</h1>
           <p className="text-light-muted dark:text-dark-muted max-w-2xl">
             Find and track central national exams and state-wise entrance tests for private universities across India.
           </p>
@@ -175,7 +175,7 @@ export default function Exams() {
                 onClick={() => handleScopeChange(scope)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
                   selectedScope === scope
-                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    ? 'bg-primary/10 text-link border border-primary/20'
                     : 'bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border hover:bg-light-border'
                 }`}
               >
@@ -246,10 +246,10 @@ export default function Exams() {
                         )}
                       </span>
                     </div>
-                    <h2 className="text-xl font-serif font-bold text-primary">{exam.name}</h2>
+                    <h2 className="text-xl font-serif font-bold text-link">{exam.name}</h2>
                   </div>
                   {exam.officialUrl ? (
-                    <a href={exam.officialUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm inline-flex items-center gap-1 font-semibold">
+                    <a href={exam.officialUrl} target="_blank" rel="noreferrer" className="text-link hover:underline text-sm inline-flex items-center gap-1 font-semibold">
                       Apply <ExternalLink className="w-4 h-4" />
                     </a>
                   ) : null}
@@ -257,15 +257,15 @@ export default function Exams() {
 
                 <div className="space-y-3 text-sm mb-5">
                   <p className="flex items-center gap-2 text-light-muted dark:text-dark-muted">
-                    <Landmark className="w-4 h-4 text-primary" />
+                    <Landmark className="w-4 h-4 text-link" />
                     <span className="text-light-text dark:text-dark-text">{exam.conductingBody || 'Conducting body not listed'}</span>
                   </p>
                   <p className="flex items-center gap-2 text-light-muted dark:text-dark-muted">
-                    <CalendarDays className="w-4 h-4 text-primary" />
+                    <CalendarDays className="w-4 h-4 text-link" />
                     Exam Date: <span className="text-light-text dark:text-dark-text font-medium">{exam.examDate ? new Date(exam.examDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'TBA'}</span>
                   </p>
                   <p className="flex items-center gap-2 text-light-muted dark:text-dark-muted">
-                    <FileCheck2 className="w-4 h-4 text-primary" />
+                    <FileCheck2 className="w-4 h-4 text-link" />
                     Registration Deadline: <span className="text-light-text dark:text-dark-text font-medium">{exam.registrationDeadline ? new Date(exam.registrationDeadline).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'TBA'}</span>
                   </p>
                 </div>
@@ -275,7 +275,7 @@ export default function Exams() {
                     <p className="text-xs font-bold text-light-muted dark:text-dark-muted uppercase tracking-wider mb-2">Courses Offered</p>
                     <div className="flex flex-wrap gap-1.5">
                       {exam.courses.map((course, index) => (
-                        <span key={index} className="px-2.5 py-1 rounded-lg bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-semibold text-primary">
+                        <span key={index} className="px-2.5 py-1 rounded-lg bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-semibold text-link">
                           {course}
                         </span>
                       ))}
@@ -285,7 +285,7 @@ export default function Exams() {
 
                 {exam.highlights && exam.highlights.length > 0 && (
                   <div className="mb-5 p-4 rounded-2xl bg-primary-50/50 dark:bg-dark-border/40 border border-primary-50 dark:border-dark-border/30">
-                    <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Key Highlights</p>
+                    <p className="text-xs font-bold text-link uppercase tracking-wider mb-2">Key Highlights</p>
                     <ul className="space-y-1.5">
                       {exam.highlights.map((highlight, index) => (
                         <li key={index} className="flex items-start gap-2 text-xs text-light-muted dark:text-dark-muted">
@@ -307,7 +307,7 @@ export default function Exams() {
                 {exam.participatingUniversities ? (
                   <p className="mt-4 text-xs text-light-muted dark:text-dark-muted font-medium flex justify-between items-center">
                     <span>Participating Institutions:</span>
-                    <span className="text-sm font-bold text-primary">{exam.participatingUniversities}+ {exam.scope === 'university' ? 'Campuses' : 'Universities'}</span>
+                    <span className="text-sm font-bold text-link">{exam.participatingUniversities}+ {exam.scope === 'university' ? 'Campuses' : 'Universities'}</span>
                   </p>
                 ) : null}
               </div>

@@ -106,7 +106,7 @@ export default function Login() {
               </button>
             </div>
 
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline block text-right">
+            <Link to="/forgot-password" className="text-sm text-link hover:underline block text-right">
               Forgot Password?
             </Link>
 
@@ -117,7 +117,7 @@ export default function Login() {
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="rounded-2xl border border-light-border dark:border-dark-border bg-light-card/50 dark:bg-dark-card/50 px-4 py-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">OTP Sent To</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-link mb-1">OTP Sent To</p>
               <p className="text-sm font-medium break-all">{email}</p>
             </div>
 
@@ -139,11 +139,11 @@ export default function Login() {
               {loading ? 'Verifying...' : 'Verify & Login'}
             </button>
 
-            <button type="button" onClick={resetStep} className="text-sm text-primary hover:underline block text-center w-full">
+            <button type="button" onClick={resetStep} className="text-sm text-link hover:underline block text-center w-full">
               Change email or password
             </button>
 
-            <button type="button" onClick={handleLogin} disabled={loading} className="text-sm text-light-muted hover:text-primary block text-center w-full">
+            <button type="button" onClick={handleLogin} disabled={loading} className="text-sm text-light-muted hover:text-link block text-center w-full">
               Resend OTP
             </button>
           </form>
@@ -164,7 +164,7 @@ export default function Login() {
         </button>
 
         <p className="text-center text-sm mt-6 text-light-muted">
-          Don&apos;t have an account? <Link to="/signup" className="text-primary font-medium">Sign Up</Link>
+          Don&apos;t have an account? <Link to="/signup" className="text-link font-medium">Sign Up</Link>
         </p>
       </div>
     </div>

@@ -37,7 +37,7 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pb-20 md:pb-0">
       <div className="card p-8 w-full max-w-md">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-5">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 text-link flex items-center justify-center mx-auto mb-5">
           <Lock className="w-6 h-6" />
         </div>
         <h1 className="text-2xl font-bold text-center mb-3">Reset Password</h1>
@@ -92,7 +92,7 @@ export default function ResetPassword() {
         </form>
 
         <p className="text-center text-sm mt-6 text-light-muted">
-          Back to <Link to="/login" className="text-primary font-medium">login</Link>
+          Back to <Link to="/login" className="text-link font-medium">login</Link>
         </p>
       </div>
     </div>

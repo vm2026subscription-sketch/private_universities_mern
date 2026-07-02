@@ -91,7 +91,7 @@ export default function Navbar() {
               >
                 <Link 
                   to={l.to} 
-                  className={`relative px-4 py-3 text-sm font-black tracking-tight transition-all flex items-center gap-1 group overflow-hidden ${
+                  className={`relative px-4 py-3 text-sm font-bold tracking-tight transition-all flex items-center gap-1 group overflow-hidden ${
                     isActive ? 'text-accent' : 'text-slate-600 dark:text-slate-300 hover:text-accent'
                   }`}
                 >
@@ -137,11 +137,11 @@ export default function Navbar() {
                         }}
                         className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-dark-border flex items-center gap-3 transition-colors">
                         <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                           {r._type === 'university' ? <Building2 className="w-4 h-4 text-primary" /> : <BookOpen className="w-4 h-4 text-indigo-500" />}
+                           {r._type === 'university' ? <Building2 className="w-4 h-4 text-link" /> : <BookOpen className="w-4 h-4 text-indigo-500" />}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold truncate">{r.name}</p>
-                          <p className="text-[10px] text-light-muted uppercase font-black tracking-widest">
+                          <p className="text-[10px] text-light-muted uppercase font-bold tracking-widest">
                             {r._type === 'university' ? `${r.city}, ${r.state}` : r.universityId?.name}
                           </p>
                         </div>
@@ -160,7 +160,7 @@ export default function Navbar() {
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button onClick={() => setShowDropdown(!showDropdown)} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-all">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white text-sm font-black shadow-lg shadow-primary/20 border border-accent/30">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-primary/20 border border-accent/30">
                     {user.name?.charAt(0)?.toUpperCase()}
                   </div>
                   <ChevronDown className={`w-4 h-4 hidden md:block transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
@@ -174,26 +174,26 @@ export default function Navbar() {
                       className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-hidden z-[110]"
                     >
                       <div className="px-5 py-4 bg-slate-50 dark:bg-white/5 border-b border-light-border dark:border-dark-border">
-                        <p className="text-sm font-black truncate">{user.name}</p>
+                        <p className="text-sm font-bold truncate">{user.name}</p>
                         <p className="text-[10px] text-light-muted font-bold uppercase tracking-widest truncate">{user.email}</p>
                       </div>
                       <div className="p-2">
-                        <Link to="/profile?tab=overview" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-primary-50 hover:text-primary rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
+                        <Link to="/profile?tab=overview" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-primary-50 hover:text-link rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
                           <User className="w-4 h-4" /> Profile Overview
                         </Link>
-                        <Link to="/profile?tab=saved-colleges" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-primary-50 hover:text-primary rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
+                        <Link to="/profile?tab=saved-colleges" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-primary-50 hover:text-link rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
                           <Bookmark className="w-4 h-4" /> My Shortlist
                         </Link>
-                        <Link to="/profile?tab=settings" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-primary-50 hover:text-primary rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
+                        <Link to="/profile?tab=settings" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-primary-50 hover:text-link rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
                           <Settings className="w-4 h-4" /> Settings
                         </Link>
                         {isAdmin && (
-                          <Link to="/admin" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-primary hover:bg-primary/10 rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
+                          <Link to="/admin" className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-link hover:bg-primary/10 rounded-xl transition-all" onClick={() => setShowDropdown(false)}>
                             <Shield className="w-4 h-4" /> Admin Panel
                           </Link>
                         )}
                         <div className="h-px bg-slate-100 dark:bg-white/5 my-2 mx-2" />
-                        <button onClick={() => { logout(); setShowDropdown(false); navigate('/'); }} className="flex items-center gap-3 px-4 py-2.5 text-sm font-black w-full text-left text-error hover:bg-red-50 rounded-xl transition-all">
+                        <button onClick={() => { logout(); setShowDropdown(false); navigate('/'); }} className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold w-full text-left text-error hover:bg-red-50 rounded-xl transition-all">
                           <LogOut className="w-4 h-4" /> Logout Account
                         </button>
                       </div>
@@ -203,8 +203,8 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-2">
-                <Link to="/login" className="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">Login</Link>
-                <Link to="/signup" className="bg-primary text-white text-sm font-black px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all">Sign Up</Link>
+                <Link to="/login" className="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-link transition-colors">Login</Link>
+                <Link to="/signup" className="bg-primary text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all">Sign Up</Link>
               </div>
             )}
 
@@ -226,7 +226,7 @@ export default function Navbar() {
                 <Link 
                   to={l.to} 
                   onClick={() => setMobileOpen(false)} 
-                  className="flex items-center justify-between px-6 py-3 text-sm font-black text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-dark-card"
+                  className="flex items-center justify-between px-6 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-dark-card"
                 >
                   {l.label}
                 </Link>
@@ -234,8 +234,8 @@ export default function Navbar() {
             ))}
             {!user && (
               <div className="flex gap-4 mt-8 px-6">
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-black border-2 border-primary text-primary rounded-xl">Login</Link>
-                <Link to="/signup" onClick={() => setMobileOpen(false)} className="flex-1 text-center bg-primary text-white text-sm font-black py-3 rounded-xl shadow-lg shadow-primary/20">Sign Up</Link>
+                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-3 text-sm font-bold border-2 border-primary text-link rounded-xl">Login</Link>
+                <Link to="/signup" onClick={() => setMobileOpen(false)} className="flex-1 text-center bg-primary text-white text-sm font-bold py-3 rounded-xl shadow-lg shadow-primary/20">Sign Up</Link>
               </div>
             )}
           </div>

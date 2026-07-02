@@ -3,7 +3,7 @@ import { Users, Building2, BookOpen, FileText, Newspaper, HelpCircle } from 'luc
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 
-function StatCard({ icon: Icon, label, value, color = 'text-primary' }) {
+function StatCard({ icon: Icon, label, value, color = 'text-link' }) {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3">

@@ -71,12 +71,12 @@ export default function QASection({ universityId, user }) {
          {questions.map((q, i) => (
            <div key={q._id} className="card p-6 border-l-4 border-primary">
               <div className="flex items-start gap-4 mb-4">
-                 <div className="w-10 h-10 rounded-full bg-light-bg dark:bg-dark-border flex items-center justify-center text-primary">
+                 <div className="w-10 h-10 rounded-full bg-light-bg dark:bg-dark-border flex items-center justify-center text-link">
                     <User className="w-5 h-5" />
                  </div>
                  <div className="flex-1">
                     <p className="font-bold text-sm mb-1">{q.title || q.content}</p>
-                    <p className="text-[10px] text-light-muted uppercase font-black tracking-widest flex items-center gap-2">
+                    <p className="text-[10px] text-light-muted uppercase font-bold tracking-widest flex items-center gap-2">
                        Asked by {q.userId?.name || 'Anonymous'} | {new Date(q.createdAt).toLocaleDateString()}
                     </p>
                  </div>
@@ -89,7 +89,7 @@ export default function QASection({ universityId, user }) {
                       <p className="text-sm">{ans.content}</p>
                       <div className="flex items-center justify-between mt-3">
                          <span className="text-[10px] font-bold text-light-muted italic">Answered by {ans.userId?.name || 'Student'}</span>
-                         <button className="flex items-center gap-1 text-[10px] font-black text-primary uppercase">
+                         <button className="flex items-center gap-1 text-[10px] font-bold text-link uppercase">
                             <ThumbsUp className="w-3 h-3" /> Helpful
                          </button>
                       </div>

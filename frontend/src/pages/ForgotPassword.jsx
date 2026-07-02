@@ -30,7 +30,7 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pb-20 md:pb-0">
       <div className="card p-8 w-full max-w-md">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-5">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 text-link flex items-center justify-center mx-auto mb-5">
           <Mail className="w-6 h-6" />
         </div>
         <h1 className="text-2xl font-bold text-center mb-3">Forgot Password</h1>
@@ -58,13 +58,13 @@ export default function ForgotPassword() {
           </p>
         ) : null}
         {resetUrl ? (
-          <a href={resetUrl} className="block text-center text-sm mt-3 text-primary font-medium hover:underline">
+          <a href={resetUrl} className="block text-center text-sm mt-3 text-link font-medium hover:underline">
             Open reset page directly
           </a>
         ) : null}
 
         <p className="text-center text-sm mt-6 text-light-muted">
-          Remembered it? <Link to="/login" className="text-primary font-medium">Back to login</Link>
+          Remembered it? <Link to="/login" className="text-link font-medium">Back to login</Link>
         </p>
       </div>
     </div>

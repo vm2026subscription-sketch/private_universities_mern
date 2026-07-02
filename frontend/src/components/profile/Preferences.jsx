@@ -33,7 +33,7 @@ export default function Preferences({ profile, onSave }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <Settings className="w-5 h-5 text-primary" /> Preferences
+          <Settings className="w-5 h-5 text-link" /> Preferences
         </h2>
       </div>
 
@@ -42,7 +42,7 @@ export default function Preferences({ profile, onSave }) {
           {/* Current Location */}
           <div className="space-y-2">
             <label className="text-sm font-semibold flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary" /> Current State
+              <MapPin className="w-4 h-4 text-link" /> Current State
             </label>
             <input
               type="text"
@@ -56,7 +56,7 @@ export default function Preferences({ profile, onSave }) {
           {/* Academic Info */}
           <div className="space-y-2">
             <label className="text-sm font-semibold flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-primary" /> Preferred Stream
+              <BookOpen className="w-4 h-4 text-link" /> Preferred Stream
             </label>
             <select
               value={formData.stream}
@@ -76,7 +76,7 @@ export default function Preferences({ profile, onSave }) {
           {/* Preferred States */}
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-semibold flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary" /> Preferred States for Education
+              <MapPin className="w-4 h-4 text-link" /> Preferred States for Education
             </label>
             <div className="flex gap-2">
               <input
@@ -103,7 +103,7 @@ export default function Preferences({ profile, onSave }) {
           {/* College Type */}
           <div className="space-y-2">
             <label className="text-sm font-semibold flex items-center gap-2">
-              <Building className="w-4 h-4 text-primary" /> College Type
+              <Building className="w-4 h-4 text-link" /> College Type
             </label>
             <div className="flex gap-4 mt-2">
               {['private', 'deemed', 'both'].map(type => (
@@ -114,7 +114,7 @@ export default function Preferences({ profile, onSave }) {
                     value={type}
                     checked={formData.collegeType === type}
                     onChange={(e) => setFormData({ ...formData, collegeType: e.target.value })}
-                    className="text-primary focus:ring-primary"
+                    className="text-link focus:ring-primary"
                   />
                   <span className="text-sm capitalize">{type}</span>
                 </label>
@@ -125,7 +125,7 @@ export default function Preferences({ profile, onSave }) {
           {/* Target Course */}
           <div className="space-y-2">
             <label className="text-sm font-semibold flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-primary" /> Preferred Course
+              <BookOpen className="w-4 h-4 text-link" /> Preferred Course
             </label>
             <input
               type="text"

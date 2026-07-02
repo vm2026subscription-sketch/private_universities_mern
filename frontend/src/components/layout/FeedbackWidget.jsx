@@ -27,7 +27,7 @@ export default function FeedbackWidget() {
       {/* Floating Vertical Tab */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed left-0 top-1/2 -translate-y-1/2 z-[100] bg-[#FF6B00] hover:bg-[#E65A00] text-white font-black tracking-widest text-sm py-4 px-2 rounded-r-xl shadow-lg transition-colors flex items-center justify-center writing-vertical-rl"
+        className="fixed left-0 top-1/2 -translate-y-1/2 z-[100] bg-[#FF6B00] hover:bg-[#E65A00] text-white font-bold tracking-widest text-sm py-4 px-2 rounded-r-xl shadow-lg transition-colors flex items-center justify-center writing-vertical-rl"
         style={{ writingMode: 'vertical-rl', transform: 'translateY(-50%) rotate(180deg)' }}
       >
         FEEDBACK
@@ -45,7 +45,7 @@ export default function FeedbackWidget() {
             >
               {/* Header */}
               <div className="bg-[#FF6B00] px-6 py-4 flex items-center justify-between relative">
-                <h2 className="text-2xl font-black text-white w-full text-center uppercase tracking-wider">
+                <h2 className="text-2xl font-bold text-white w-full text-center uppercase tracking-wider">
                   Feedback Form
                 </h2>
                 <button
@@ -61,7 +61,7 @@ export default function FeedbackWidget() {
                 <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-10">
                   <div className="flex-1 space-y-4">
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
                         Name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -75,7 +75,7 @@ export default function FeedbackWidget() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
                         Mobile <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -89,7 +89,7 @@ export default function FeedbackWidget() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
                         Email Id <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -103,7 +103,7 @@ export default function FeedbackWidget() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
                         Designation <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -117,7 +117,7 @@ export default function FeedbackWidget() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
                         Feedback <span className="text-red-500">*</span>
                       </label>
                       <textarea
@@ -143,7 +143,7 @@ export default function FeedbackWidget() {
 
                   {/* Avatar Upload side */}
                   <div className="w-full md:w-64 space-y-2">
-                    <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-1">
                       Avatar Upload
                     </label>
                     <div className="flex flex-col gap-2">
@@ -158,7 +158,7 @@ export default function FeedbackWidget() {
                     </div>
 
                     <div className="pt-4">
-                      <label className="block text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-2">
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-2">
                         Avatar Preview
                       </label>
                       <div className="w-48 h-48 bg-[#f8f9fa] dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded flex flex-col items-center justify-center text-slate-400">

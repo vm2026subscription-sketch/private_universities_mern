@@ -15,7 +15,7 @@ export default function SavedCourses({ savedCourses, allCourses, onAdd, onRemove
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-primary" /> Saved Courses ({savedCourses.length})
+          <BookOpen className="w-5 h-5 text-link" /> Saved Courses ({savedCourses.length})
         </h2>
         <button onClick={() => setShowBrowse(v => !v)}
           className="btn-primary !py-2 !px-4 text-sm flex items-center gap-1.5">

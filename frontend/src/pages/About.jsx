@@ -58,10 +58,10 @@ export default function About() {
         <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, rgba(99,102,241,0.12) 0%, transparent 55%)' }} />
         <div className="relative max-w-7xl mx-auto px-4 py-28 text-center">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-black uppercase tracking-widest mb-6">
+            <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-bold uppercase tracking-widest mb-6">
               <Rocket className="w-3.5 h-3.5 text-accent" /> Est. 1981
             </span>
-            <h1 className="text-5xl md:text-7xl font-serif font-black text-white mb-4">
+            <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-4">
               About <span className="text-accent italic">Vidyarthi Mitra</span>
             </h1>
             <p className="text-lg text-white/60 max-w-2xl mx-auto font-medium leading-relaxed">
@@ -82,10 +82,10 @@ export default function About() {
           {stats.map((s) => (
             <div key={s.label} className="bg-white dark:bg-dark-card rounded-[2rem] p-8 border border-slate-100 dark:border-white/5 shadow-sm text-center group hover:-translate-y-1 transition-transform">
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <s.icon className="w-7 h-7 text-primary" />
+                <s.icon className="w-7 h-7 text-link" />
               </div>
-              <p className="text-3xl font-serif font-black text-slate-900 dark:text-white mb-1">{s.value}</p>
-              <p className="text-xs font-black uppercase tracking-widest text-slate-400">{s.label}</p>
+              <p className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-1">{s.value}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">{s.label}</p>
             </div>
           ))}
         </motion.div>
@@ -93,14 +93,14 @@ export default function About() {
         {/* About Text */}
         <motion.div
           initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          className="bg-white dark:bg-dark-card rounded-[3rem] p-10 md:p-16 border border-slate-100 dark:border-white/5 shadow-sm"
+          className="bg-white dark:bg-dark-card rounded-[2rem] p-10 md:p-16 border border-slate-100 dark:border-white/5 shadow-sm"
         >
           <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-8">
-            About <span className="text-primary">VidyarthiMitra.org</span>
+            About <span className="text-link">VidyarthiMitra.org</span>
           </h2>
           <div className="space-y-5 text-slate-600 dark:text-slate-300 font-medium leading-relaxed text-[15px]">
             <p>
-              <span className="text-primary font-bold">VidyarthiMitra.org</span> is a search engine for precise, authentic, and up-to-date information on education, skills, and careers. We cover everything from Courses, Schools, and Colleges to admission procedures, Entrance Exams, College &amp; Rank predictors, Govt. &amp; Private Scholarships &amp; Schemes, Education Loans, and Jobs, both in India and abroad.
+              <span className="text-link font-bold">VidyarthiMitra.org</span> is a search engine for precise, authentic, and up-to-date information on education, skills, and careers. We cover everything from Courses, Schools, and Colleges to admission procedures, Entrance Exams, College &amp; Rank predictors, Govt. &amp; Private Scholarships &amp; Schemes, Education Loans, and Jobs, both in India and abroad.
             </p>
             <p>
               We believe that with the right guidance, every student can succeed. That's why VidyarthiMitra.org serves as a one-stop solution for students and parents seeking the latest educational and career information. Our platform is designed to help you secure admission to top colleges, careers, or courses that align with your aspirations.
@@ -112,7 +112,7 @@ export default function About() {
               Additionally, we are proud to introduce our <strong>Career Book</strong> and <strong>E-Paper</strong>, designed to benefit the student community by providing valuable insights and information on career planning and opportunities.
             </p>
             <p className="text-sm text-slate-400 italic">
-              www.vidyarthimitra.org is the property of <span className="font-bold text-primary">Sankshemam Foundation &amp; Sankshemam Seva Private Ltd.</span>
+              www.vidyarthimitra.org is the property of <span className="font-bold text-link">Sankshemam Foundation &amp; Sankshemam Seva Private Ltd.</span>
             </p>
           </div>
         </motion.div>
@@ -136,12 +136,12 @@ export default function About() {
             <motion.div
               key={item.title}
               initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className={`bg-gradient-to-br ${item.color} rounded-[3rem] p-10 md:p-12 text-white shadow-xl`}
+              className={`bg-gradient-to-br ${item.color} rounded-[2rem] p-10 md:p-12 text-white shadow-xl`}
             >
               <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-8">
                 <item.icon className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-2xl font-serif font-black uppercase tracking-widest mb-5">{item.title}</h3>
+              <h3 className="text-2xl font-serif font-bold uppercase tracking-widest mb-5">{item.title}</h3>
               <p className="text-white/85 font-medium leading-relaxed text-[15px]">{item.text}</p>
             </motion.div>
           ))}
@@ -150,9 +150,9 @@ export default function About() {
         {/* Our Team */}
         <div>
           <div className="text-center mb-16">
-            <span className="inline-block px-5 py-2 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-widest mb-4">The People Behind It</span>
+            <span className="inline-block px-5 py-2 rounded-full bg-primary/10 text-link text-xs font-bold uppercase tracking-widest mb-4">The People Behind It</span>
             <h2 className="text-4xl font-serif font-bold text-slate-900 dark:text-white">
-              Our <span className="text-primary italic">Team</span>
+              Our <span className="text-link italic">Team</span>
             </h2>
           </div>
 
@@ -161,17 +161,17 @@ export default function About() {
               <motion.div
                 key={member.name}
                 initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 * i }}
-                className="bg-white dark:bg-dark-card rounded-[3rem] p-10 md:p-14 border border-slate-100 dark:border-white/5 shadow-sm"
+                className="bg-white dark:bg-dark-card rounded-[2rem] p-10 md:p-14 border border-slate-100 dark:border-white/5 shadow-sm"
               >
                 <div className="flex flex-col md:flex-row gap-10">
                   {/* Avatar */}
                   <div className="shrink-0 flex flex-col items-center gap-4">
                     <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-xl shadow-primary/30">
-                      <span className="text-4xl font-serif font-black text-white">{member.initial}</span>
+                      <span className="text-4xl font-serif font-bold text-white">{member.initial}</span>
                     </div>
                     <div className="text-center">
-                      <p className="font-black text-lg text-slate-900 dark:text-white">{member.name}</p>
-                      <p className="text-primary font-bold text-sm">{member.role}</p>
+                      <p className="font-bold text-lg text-slate-900 dark:text-white">{member.name}</p>
+                      <p className="text-link font-bold text-sm">{member.role}</p>
                       {member.qualifications && (
                         <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">{member.qualifications}</p>
                       )}
@@ -192,7 +192,7 @@ export default function About() {
         {/* Milestones Timeline */}
         <div>
           <div className="text-center mb-16">
-            <span className="inline-block px-5 py-2 rounded-full bg-accent/10 text-amber-600 text-xs font-black uppercase tracking-widest mb-4">Our Journey</span>
+            <span className="inline-block px-5 py-2 rounded-full bg-accent/10 text-amber-600 text-xs font-bold uppercase tracking-widest mb-4">Our Journey</span>
             <h2 className="text-4xl font-serif font-bold text-slate-900 dark:text-white">
               Milestones &amp; <span className="text-accent italic">Achievements</span>
             </h2>
@@ -211,12 +211,12 @@ export default function About() {
                 >
                   {/* Card */}
                   <div className="w-full md:w-[45%] bg-white dark:bg-dark-card rounded-[2rem] p-7 border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-lg transition-shadow">
-                    <span className="inline-block px-3 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-3">{m.label}</span>
+                    <span className="inline-block px-3 py-1 rounded-lg bg-primary/10 text-link text-[10px] font-bold uppercase tracking-widest mb-3">{m.label}</span>
                     <p className="text-slate-600 dark:text-slate-300 font-medium text-sm leading-relaxed">{m.desc}</p>
                   </div>
 
                   {/* Year bubble — center */}
-                  <div className="shrink-0 z-10 w-20 h-20 rounded-full border-4 border-white dark:border-dark-bg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-xl shadow-primary/30 text-white font-black text-xs text-center leading-tight px-1">
+                  <div className="shrink-0 z-10 w-20 h-20 rounded-full border-4 border-white dark:border-dark-bg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-xl shadow-primary/30 text-white font-bold text-xs text-center leading-tight px-1">
                     {m.year}
                   </div>
 

@@ -18,7 +18,7 @@ export default function SidebarAds({ page = 'home', className = '' }) {
           rel="noopener noreferrer sponsored"
           className="block relative rounded-2xl overflow-hidden border border-light-border dark:border-dark-border shadow-sm hover:shadow-lg transition-shadow group bg-white dark:bg-dark-card"
         >
-          <span className="absolute top-2 right-2 z-10 text-[8px] font-black uppercase tracking-widest text-white/90 bg-black/40 px-1.5 py-0.5 rounded">
+          <span className="absolute top-2 right-2 z-10 text-[8px] font-bold uppercase tracking-widest text-white/90 bg-black/40 px-1.5 py-0.5 rounded">
             Ad
           </span>
           {b.imageUrl && (
@@ -40,7 +40,7 @@ export default function SidebarAds({ page = 'home', className = '' }) {
                 <p className="text-xs text-slate-500 mt-1 line-clamp-2">{b.subtitle}</p>
               )}
               {b.linkText && (
-                <span className="mt-3 inline-flex items-center gap-1.5 text-primary font-bold text-xs group-hover:gap-2.5 transition-all">
+                <span className="mt-3 inline-flex items-center gap-1.5 text-link font-bold text-xs group-hover:gap-2.5 transition-all">
                   {b.linkText} <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               )}

@@ -25,7 +25,7 @@ export default function ApplicationTracker({ applications = [], onUpdateStatus }
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-black">Application Tracker</h2>
+        <h2 className="text-2xl font-bold">Application Tracker</h2>
         <div className="badge badge-orange">{applications.length} Active Apps</div>
       </div>
 
@@ -42,14 +42,14 @@ export default function ApplicationTracker({ applications = [], onUpdateStatus }
               transition={{ delay: i * 0.1 }}
               className="card p-6 flex flex-col md:flex-row items-center gap-6 group hover:border-primary/30"
             >
-              <div className="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary font-black text-2xl shrink-0 group-hover:scale-110 transition-transform">
+              <div className="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-link font-bold text-2xl shrink-0 group-hover:scale-110 transition-transform">
                 {uni.name?.charAt(0)}
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-1">
                   <h3 className="font-bold text-lg truncate">{uni.name}</h3>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(app.status)}`}>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${getStatusColor(app.status)}`}>
                     {app.status}
                   </span>
                 </div>

@@ -761,7 +761,7 @@ export default function UniversitiesManager() {
             {university.logoUrl ? (
               <img src={university.logoUrl} alt={university.name} className="h-full w-full object-contain p-1.5" />
             ) : (
-              <span className="text-sm font-black text-primary">{university.name?.slice(0, 2)?.toUpperCase()}</span>
+              <span className="text-sm font-bold text-link">{university.name?.slice(0, 2)?.toUpperCase()}</span>
             )}
           </div>
           <div>
@@ -769,7 +769,7 @@ export default function UniversitiesManager() {
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-xs text-light-muted">{university.universityCode || 'No code set'}</p>
               {university.isSponsored && (
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                   university.sponsorTier === 'platinum' ? 'bg-purple-500/10 text-purple-500' :
                   university.sponsorTier === 'gold'     ? 'bg-amber-500/10 text-amber-500' :
                   university.sponsorTier === 'silver'   ? 'bg-slate-400/10 text-slate-400' :
@@ -842,7 +842,7 @@ export default function UniversitiesManager() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <h2 className="text-2xl font-black text-light-text dark:text-dark-text">University Management</h2>
+          <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">University Management</h2>
           <p className="mt-1 text-sm text-light-muted dark:text-dark-muted">
             Manual-first catalogue management with inline course creation for normal, foreign, and twinning universities.
           </p>
@@ -875,12 +875,12 @@ export default function UniversitiesManager() {
             <div key={card.label} className="card p-5 bg-gradient-to-br from-white to-orange-50/70 dark:from-dark-card dark:to-dark-card">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-light-muted dark:text-dark-muted">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-light-muted dark:text-dark-muted">
                     {card.label}
                   </p>
-                  <p className="mt-3 text-3xl font-black text-light-text dark:text-dark-text">{card.value}</p>
+                  <p className="mt-3 text-3xl font-bold text-light-text dark:text-dark-text">{card.value}</p>
                 </div>
-                <div className="rounded-2xl bg-primary/10 p-3 text-primary">
+                <div className="rounded-2xl bg-primary/10 p-3 text-link">
                   <Icon className="w-5 h-5" />
                 </div>
               </div>
@@ -893,12 +893,12 @@ export default function UniversitiesManager() {
         <form onSubmit={(event) => save({ event, targetStatus: form.status })} className="card p-6 md:p-8 space-y-8 shadow-2xl">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="text-xl font-black text-light-text dark:text-dark-text">{editId ? 'Edit University' : 'Create University'}</h3>
+              <h3 className="text-xl font-bold text-light-text dark:text-dark-text">{editId ? 'Edit University' : 'Create University'}</h3>
               <p className="text-sm text-light-muted dark:text-dark-muted">
                 Add the university and its courses together so the team never has to manage separate course uploads. Drafts stay hidden from the public site until published.
               </p>
             </div>
-            <div className="inline-flex rounded-full bg-primary/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
+            <div className="inline-flex rounded-full bg-primary/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-link">
               {editId ? `Editing ${form.status || 'published'}` : 'New Catalogue Entry'}
             </div>
           </div>
@@ -910,9 +910,9 @@ export default function UniversitiesManager() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveFormTab(tab.id)}
-                className={`px-4 py-2 text-xs font-black uppercase tracking-[0.18em] border-b-2 transition-all ${
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] border-b-2 transition-all ${
                   activeFormTab === tab.id
-                    ? 'border-primary text-primary font-bold'
+                    ? 'border-primary text-link font-bold'
                     : 'border-transparent text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text'
                 }`}
               >
@@ -995,7 +995,7 @@ export default function UniversitiesManager() {
               <TextInput value={form.address} onChange={(event) => upd('address', event.target.value)} />
             </FormField>
 
-            <div className="rounded-[1.75rem] border border-dashed border-primary/30 bg-primary/5 p-4 text-sm text-primary">
+            <div className="rounded-[1.75rem] border border-dashed border-primary/30 bg-primary/5 p-4 text-sm text-link">
               {isDraft
                 ? 'Draft mode is active. You can save with only the essential fields and complete the rest later.'
                 : 'Published records should have valid location details and at least one course so they appear correctly on the public site.'}
@@ -1031,7 +1031,7 @@ export default function UniversitiesManager() {
 
             <div className="grid gap-6 md:grid-cols-2">
               <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-3">
-                <p className="text-sm font-black text-light-text dark:text-dark-text">Logo Preview</p>
+                <p className="text-sm font-bold text-light-text dark:text-dark-text">Logo Preview</p>
                 <div className="flex h-32 items-center justify-center rounded-[1.5rem] bg-light-card/60 dark:bg-dark-card/50">
                   {form.logoUrl ? (
                     <img src={form.logoUrl} alt="Logo preview" className="max-h-24 max-w-full object-contain" />
@@ -1041,7 +1041,7 @@ export default function UniversitiesManager() {
                 </div>
               </div>
               <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-3">
-                <p className="text-sm font-black text-light-text dark:text-dark-text">Banner Preview</p>
+                <p className="text-sm font-bold text-light-text dark:text-dark-text">Banner Preview</p>
                 <div className="flex h-32 items-center justify-center overflow-hidden rounded-[1.5rem] bg-light-card/60 dark:bg-dark-card/50">
                   {form.bannerImageUrl ? (
                     <img src={form.bannerImageUrl} alt="Banner preview" className="h-full w-full object-cover" />
@@ -1057,7 +1057,7 @@ export default function UniversitiesManager() {
           <div className={activeFormTab === 'stats' ? 'space-y-6' : 'hidden'}>
             <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
               <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-4">
-                <p className="text-sm font-black text-light-text dark:text-dark-text">Approvals</p>
+                <p className="text-sm font-bold text-light-text dark:text-dark-text">Approvals</p>
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {Object.keys(form.approvals).map((key) => (
                     <CheckboxField
@@ -1071,7 +1071,7 @@ export default function UniversitiesManager() {
               </div>
 
               <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-4">
-                <p className="text-sm font-black text-light-text dark:text-dark-text">Stats</p>
+                <p className="text-sm font-bold text-light-text dark:text-dark-text">Stats</p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField label="Total Students">
                     <div className="space-y-2">
@@ -1178,8 +1178,8 @@ export default function UniversitiesManager() {
             <div className="rounded-[2rem] border border-light-border dark:border-dark-border p-5 md:p-6 space-y-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h4 className="text-lg font-black text-light-text dark:text-dark-text flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-primary" />
+                  <h4 className="text-lg font-bold text-light-text dark:text-dark-text flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-link" />
                     Courses Inside University
                   </h4>
                   <p className="text-sm text-light-muted dark:text-dark-muted">
@@ -1200,14 +1200,14 @@ export default function UniversitiesManager() {
 
               <div className="rounded-[1.5rem] border border-dashed border-primary/30 bg-primary/5 p-4 space-y-4">
                 <div>
-                  <p className="text-sm font-black text-light-text dark:text-dark-text">Fast Add Shortcuts</p>
+                  <p className="text-sm font-bold text-light-text dark:text-dark-text">Fast Add Shortcuts</p>
                   <p className="text-xs text-light-muted dark:text-dark-muted mt-1">Use presets for common bundles or paste multiple course lines in one shot.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => applyCoursePreset('engineering')} className="rounded-full bg-white dark:bg-dark-card px-4 py-2 text-xs font-black text-primary shadow-sm">Engineering Preset</button>
-                  <button type="button" onClick={() => applyCoursePreset('management')} className="rounded-full bg-white dark:bg-dark-card px-4 py-2 text-xs font-black text-primary shadow-sm">Management Preset</button>
-                  <button type="button" onClick={() => applyCoursePreset('law')} className="rounded-full bg-white dark:bg-dark-card px-4 py-2 text-xs font-black text-primary shadow-sm">Law Preset</button>
-                  <button type="button" onClick={() => applyCoursePreset('commerceIt')} className="rounded-full bg-white dark:bg-dark-card px-4 py-2 text-xs font-black text-primary shadow-sm">Commerce / IT Preset</button>
+                  <button type="button" onClick={() => applyCoursePreset('engineering')} className="rounded-full bg-white dark:bg-dark-card px-4 py-2 text-xs font-bold text-link shadow-sm">Engineering Preset</button>
+                  <button type="button" onClick={() => applyCoursePreset('management')} className="rounded-full bg-white dark:bg-dark-card px-4 py-2 text-xs font-bold text-link shadow-sm">Management Preset</button>
+                  <button type="button" onClick={() => applyCoursePreset('law')} className="rounded-full bg-white dark:bg-dark-card px-4 py-2 text-xs font-bold text-link shadow-sm">Law Preset</button>
+                  <button type="button" onClick={() => applyCoursePreset('commerceIt')} className="rounded-full bg-white dark:bg-dark-card px-4 py-2 text-xs font-bold text-link shadow-sm">Commerce / IT Preset</button>
                 </div>
                 <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
                   <div className="space-y-2">
@@ -1230,12 +1230,12 @@ export default function UniversitiesManager() {
                 {form.courses.map((course, index) => (
                   <div key={`${course._id || 'new'}-${index}`} className="rounded-[1.5rem] border border-light-border dark:border-dark-border p-4 md:p-5 space-y-4 bg-light-card/30 dark:bg-dark-card/30">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-black text-light-text dark:text-dark-text">Course #{index + 1}</div>
+                      <div className="text-sm font-bold text-light-text dark:text-dark-text">Course #{index + 1}</div>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
                           onClick={() => cloneCourse(index)}
-                          className="rounded-xl p-2 text-light-muted hover:bg-primary/10 hover:text-primary flex items-center gap-1 text-xs font-bold"
+                          className="rounded-xl p-2 text-light-muted hover:bg-primary/10 hover:text-link flex items-center gap-1 text-xs font-bold"
                           title="Clone this course details"
                         >
                           <Copy className="w-3.5 h-3.5" />
@@ -1324,7 +1324,7 @@ export default function UniversitiesManager() {
           {/* Tab 6: Sponsorship */}
           <div className={activeFormTab === 'sponsorship' ? 'space-y-6' : 'hidden'}>
             <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-6 space-y-6 bg-white dark:bg-dark-card shadow-sm">
-              <h4 className="text-lg font-black text-light-text dark:text-dark-text flex items-center gap-2">
+              <h4 className="text-lg font-bold text-light-text dark:text-dark-text flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-amber-500" />
                 Sponsorship Settings (Phase 1 SaaS MVP)
               </h4>
@@ -1377,7 +1377,7 @@ export default function UniversitiesManager() {
                 </div>
 
                 <div className="p-5 bg-amber-500/5 border border-dashed border-amber-500/30 rounded-2xl space-y-3">
-                  <p className="flex items-center gap-1.5 text-sm font-black text-amber-600 dark:text-amber-400"><Zap className="w-4 h-4" aria-hidden="true" /> Search Priority Boosting</p>
+                  <p className="flex items-center gap-1.5 text-sm font-bold text-amber-600 dark:text-amber-400"><Zap className="w-4 h-4" aria-hidden="true" /> Search Priority Boosting</p>
                   <p className="text-xs text-light-muted dark:text-dark-muted">
                     When active, this university will rank ahead of organic listings in searches.
                   </p>
@@ -1474,7 +1474,7 @@ export default function UniversitiesManager() {
       <div className="card p-5 space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 className="text-lg font-black text-light-text dark:text-dark-text">Manage Universities</h3>
+            <h3 className="text-lg font-bold text-light-text dark:text-dark-text">Manage Universities</h3>
             <p className="text-sm text-light-muted dark:text-dark-muted">
               Review records, clean inactive entries, and take bulk actions from one table.
             </p>
@@ -1494,7 +1494,7 @@ export default function UniversitiesManager() {
               <button
                 key={filter.value}
                 onClick={() => setFilterType(filter.value)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-all ${
                   filterType === filter.value
                     ? 'bg-primary text-white shadow-lg shadow-primary/20'
                     : 'bg-light-card dark:bg-dark-card text-light-muted dark:text-dark-muted'
@@ -1508,18 +1508,18 @@ export default function UniversitiesManager() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3">
-          <span className="text-sm font-bold text-primary">{selectedCount} selected</span>
+          <span className="text-sm font-bold text-link">{selectedCount} selected</span>
           <button
             onClick={handleBulkDelete}
             disabled={!selectedCount}
-            className="rounded-xl bg-red-500 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl bg-red-500 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             Delete Selected
           </button>
           <button
             onClick={() => setSelectedIds([])}
             disabled={!selectedCount}
-            className="rounded-xl border border-light-border dark:border-dark-border px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-light-muted dark:text-dark-muted disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl border border-light-border dark:border-dark-border px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-light-muted dark:text-dark-muted disabled:cursor-not-allowed disabled:opacity-40"
           >
             Clear Selection
           </button>
@@ -1539,7 +1539,7 @@ export default function UniversitiesManager() {
           }}
           actions={(university) => (
             <>
-              <button onClick={() => duplicateUniversity(university._id)} className="p-2 rounded-xl hover:bg-primary/10 text-primary" title="Duplicate as draft">
+              <button onClick={() => duplicateUniversity(university._id)} className="p-2 rounded-xl hover:bg-primary/10 text-link" title="Duplicate as draft">
                 <Copy className="w-4 h-4" />
               </button>
               <button onClick={() => edit(university)} className="p-2 rounded-xl hover:bg-light-card dark:hover:bg-dark-card">
@@ -1577,7 +1577,7 @@ export default function UniversitiesManager() {
               <X className="w-4 h-4" />
             </button>
 
-            <h3 className="flex items-center gap-2 text-lg font-black text-light-text dark:text-dark-text mb-2">
+            <h3 className="flex items-center gap-2 text-lg font-bold text-light-text dark:text-dark-text mb-2">
               <Star className="w-5 h-5" aria-hidden="true" /> Sponsorship Settings
             </h3>
             <p className="text-xs text-light-muted dark:text-dark-muted mb-6">
@@ -1630,14 +1630,14 @@ export default function UniversitiesManager() {
                 <button
                   type="button"
                   onClick={closeSponsorModal}
-                  className="rounded-xl border border-light-border dark:border-dark-border px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-light-muted dark:text-dark-muted hover:bg-light-card dark:hover:bg-dark-card transition-all"
+                  className="rounded-xl border border-light-border dark:border-dark-border px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-light-muted dark:text-dark-muted hover:bg-light-card dark:hover:bg-dark-card transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={sponsorModalSaving}
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white hover:bg-primary/95 transition-all shadow-md shadow-primary/10 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-primary/95 transition-all shadow-md shadow-primary/10 disabled:opacity-50"
                 >
                   {sponsorModalSaving ? 'Saving...' : 'Save Settings'}
                 </button>

@@ -32,10 +32,10 @@ export default function RefundPolicy() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary-dark/20 to-indigo-900/40" />
         <div className="relative max-w-7xl mx-auto px-4 py-24 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-black uppercase tracking-widest mb-6">
+            <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-bold uppercase tracking-widest mb-6">
               <ShieldCheck className="w-3.5 h-3.5 text-accent" /> Policy
             </span>
-            <h1 className="text-4xl md:text-6xl font-serif font-black text-white">
+            <h1 className="text-4xl md:text-6xl font-serif font-bold text-white">
               Refund &amp; <span className="text-accent italic">Cancellation</span>
             </h1>
           </motion.div>
@@ -46,7 +46,7 @@ export default function RefundPolicy() {
       <div className="max-w-4xl mx-auto px-4 py-16">
         <motion.div
           initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-dark-card rounded-[3rem] p-10 md:p-14 border border-slate-100 dark:border-white/5 shadow-sm"
+          className="bg-white dark:bg-dark-card rounded-[2rem] p-10 md:p-14 border border-slate-100 dark:border-white/5 shadow-sm"
         >
           {sections.map((s) => (
             <div key={s.title}>

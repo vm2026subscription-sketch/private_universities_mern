@@ -104,8 +104,8 @@ function EditCourseModal({ course, onClose, onSaved }) {
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-dark-border shrink-0">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Edit Course</p>
-            <h2 className="text-xl font-serif font-black text-slate-800 dark:text-white truncate max-w-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-link mb-1">Edit Course</p>
+            <h2 className="text-xl font-serif font-bold text-slate-800 dark:text-white truncate max-w-sm">
               {course.name}
             </h2>
           </div>
@@ -205,14 +205,14 @@ function EditCourseModal({ course, onClose, onSaved }) {
         <div className="flex items-center justify-end gap-3 px-8 py-5 border-t border-slate-100 dark:border-dark-border shrink-0">
           <button
             onClick={onClose}
-            className="px-6 py-3 rounded-2xl font-black text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-dark-border transition-colors"
+            className="px-6 py-3 rounded-2xl font-bold text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-dark-border transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-2xl font-black text-sm shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-60"
+            className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-60"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Saving…' : 'Save Changes'}
@@ -226,7 +226,7 @@ function EditCourseModal({ course, onClose, onSaved }) {
 function Field({ label, children }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400">{label}</label>
+      <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400">{label}</label>
       {children}
     </div>
   );
@@ -270,7 +270,7 @@ function DeleteConfirmDialog({ course, onClose, onDeleted }) {
             <Trash2 className="w-8 h-8 text-red-500" />
           </div>
           <div>
-            <h3 className="text-xl font-serif font-black text-slate-800 dark:text-white mb-1">Delete Course?</h3>
+            <h3 className="text-xl font-serif font-bold text-slate-800 dark:text-white mb-1">Delete Course?</h3>
             <p className="text-sm font-bold text-slate-400">
               <span className="text-slate-600 dark:text-slate-300">"{course.name}"</span> will be permanently removed. This cannot be undone.
             </p>
@@ -286,14 +286,14 @@ function DeleteConfirmDialog({ course, onClose, onDeleted }) {
           <div className="flex items-center gap-3 w-full pt-2">
             <button
               onClick={onClose}
-              className="flex-1 py-3 rounded-2xl font-black text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 dark:bg-dark-border dark:hover:bg-slate-700 transition-colors"
+              className="flex-1 py-3 rounded-2xl font-bold text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 dark:bg-dark-border dark:hover:bg-slate-700 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 text-white rounded-2xl font-black text-sm hover:bg-red-600 active:scale-95 transition-all disabled:opacity-60"
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500 text-white rounded-2xl font-bold text-sm hover:bg-red-600 active:scale-95 transition-all disabled:opacity-60"
             >
               {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
               {deleting ? 'Deleting…' : 'Delete'}
@@ -582,7 +582,7 @@ export default function Courses() {
         <button
           onClick={() => setEditingCourse(item)}
           title="Edit course"
-          className="w-9 h-9 rounded-full bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border shadow-md flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary transition-colors"
+          className="w-9 h-9 rounded-full bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border shadow-md flex items-center justify-center text-slate-500 hover:text-link hover:border-primary transition-colors"
         >
           <Pencil className="w-4 h-4" />
         </button>
@@ -600,7 +600,7 @@ export default function Courses() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
       {/* Hero */}
-      <div className="relative mb-6 shrink-0 rounded-[3rem] overflow-hidden bg-slate-900 text-white shadow-2xl">
+      <div className="relative mb-6 shrink-0 rounded-[2rem] overflow-hidden bg-slate-900 text-white shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-indigo-500/20" />
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
         
@@ -609,17 +609,17 @@ export default function Courses() {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-xl text-white/80 text-[10px] font-black uppercase tracking-[0.3em] border border-white/10"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-xl text-white/80 text-[10px] font-bold uppercase tracking-[0.3em] border border-white/10"
             >
-              <Sparkles className="w-3.5 h-3.5 text-primary" /> Institutional Course Directory
+              <Sparkles className="w-3.5 h-3.5 text-link" /> Institutional Course Directory
             </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl md:text-6xl font-serif font-black leading-tight tracking-tight"
+              className="text-4xl md:text-6xl font-serif font-bold leading-tight tracking-tight"
             >
-              Explore Your <span className="text-primary italic">Potential.</span>
+              Explore Your <span className="text-link italic">Potential.</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -670,7 +670,7 @@ export default function Courses() {
                   params.delete('course');
                   setSearchParams(params);
                 }} 
-                className="mt-4 mx-auto lg:ml-auto flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-primary transition-colors"
+                className="mt-4 mx-auto lg:ml-auto flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-link transition-colors"
               >
                 <X className="w-3.5 h-3.5" /> Reset active filters
               </motion.button>
@@ -685,7 +685,7 @@ export default function Courses() {
           <div className="space-y-6 pb-10 lg:pb-4">
             {showFilters && (
               <div className="flex items-center justify-between mb-8 lg:hidden">
-                <h3 className="text-xl font-black">Filters</h3>
+                <h3 className="text-xl font-bold">Filters</h3>
                 <button 
                   onClick={() => setShowFilters(false)}
                   className="w-10 h-10 rounded-full bg-slate-100 dark:bg-dark-border flex items-center justify-center"
@@ -696,14 +696,14 @@ export default function Courses() {
             )}
 
             {/* Stream Filter */}
-            <div className="bg-slate-50/50 dark:bg-dark-card/50 backdrop-blur-xl p-7 rounded-[2.5rem] border border-slate-200/60 dark:border-dark-border shadow-sm">
-              <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2.5">
-                <Building2 className="w-4 h-4 text-primary" /> Academic Stream
+            <div className="bg-slate-50/50 dark:bg-dark-card/50 backdrop-blur-xl p-7 rounded-[2rem] border border-slate-200/60 dark:border-dark-border shadow-sm">
+              <h4 className="font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2.5">
+                <Building2 className="w-4 h-4 text-link" /> Academic Stream
               </h4>
               <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 <button 
                   onClick={() => { handleStreamChange('All'); if(showFilters) setShowFilters(false); }}
-                  className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[13px] font-black transition-all ${selectedStream === 'All' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
+                  className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[13px] font-bold transition-all ${selectedStream === 'All' ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
                 >
                   All Streams <ChevronRight className="w-4 h-4 opacity-50" />
                 </button>
@@ -711,7 +711,7 @@ export default function Courses() {
                   <button 
                     key={s.stream}
                     onClick={() => { handleStreamChange(s.stream); if(showFilters) setShowFilters(false); }}
-                    className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[13px] font-black transition-all ${selectedStream === s.stream ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
+                    className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl text-[13px] font-bold transition-all ${selectedStream === s.stream ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
                   >
                     <span className="truncate">{s.stream}</span>
                     <span className={`text-[10px] ${selectedStream === s.stream ? 'text-white/70' : 'text-slate-400'}`}>{s.collegeCount}</span>
@@ -721,12 +721,12 @@ export default function Courses() {
             </div>
 
             {/* State Filter */}
-            <div className="bg-slate-50/50 dark:bg-dark-card/50 backdrop-blur-xl p-7 rounded-[2.5rem] border border-slate-200/60 dark:border-dark-border shadow-sm">
+            <div className="bg-slate-50/50 dark:bg-dark-card/50 backdrop-blur-xl p-7 rounded-[2rem] border border-slate-200/60 dark:border-dark-border shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2.5">
-                  <MapPin className="w-4 h-4 text-primary" /> State / Region
+                <h4 className="font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2.5">
+                  <MapPin className="w-4 h-4 text-link" /> State / Region
                 </h4>
-                <div className="px-3 py-1 rounded-full bg-white dark:bg-dark-border text-[9px] font-black text-slate-400 shadow-sm">
+                <div className="px-3 py-1 rounded-full bg-white dark:bg-dark-border text-[9px] font-bold text-slate-400 shadow-sm">
                   {selectedState === 'All' ? '37 Regions' : '1 Active'}
                 </div>
               </div>
@@ -745,7 +745,7 @@ export default function Courses() {
               <div className="space-y-1 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 <button 
                   onClick={() => { handleStateChange('All'); if(showFilters) setShowFilters(false); }}
-                  className={`state-item w-full text-left px-5 py-3 rounded-xl text-[12px] font-bold transition-all ${selectedState === 'All' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 text-slate-400 dark:hover:bg-dark-border'}`}
+                  className={`state-item w-full text-left px-5 py-3 rounded-xl text-[12px] font-bold transition-all ${selectedState === 'All' ? 'bg-primary/10 text-link' : 'hover:bg-slate-100 text-slate-400 dark:hover:bg-dark-border'}`}
                 >
                   All Regions
                 </button>
@@ -753,7 +753,7 @@ export default function Courses() {
                   <button 
                     key={state}
                     onClick={() => { handleStateChange(state); if(showFilters) setShowFilters(false); }}
-                    className={`state-item w-full text-left px-5 py-3 rounded-xl text-[12px] font-bold transition-all ${selectedState === state ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 text-slate-400 dark:hover:bg-dark-border'}`}
+                    className={`state-item w-full text-left px-5 py-3 rounded-xl text-[12px] font-bold transition-all ${selectedState === state ? 'bg-primary/10 text-link' : 'hover:bg-slate-100 text-slate-400 dark:hover:bg-dark-border'}`}
                   >
                     {state}
                   </button>
@@ -762,16 +762,16 @@ export default function Courses() {
             </div>
 
             {/* Category Filter */}
-            <div className="bg-slate-50/50 dark:bg-dark-card/50 backdrop-blur-xl p-7 rounded-[2.5rem] border border-slate-200/60 dark:border-dark-border shadow-sm">
-              <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2.5">
-                <GraduationCap className="w-4 h-4 text-primary" /> Degree Level
+            <div className="bg-slate-50/50 dark:bg-dark-card/50 backdrop-blur-xl p-7 rounded-[2rem] border border-slate-200/60 dark:border-dark-border shadow-sm">
+              <h4 className="font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2.5">
+                <GraduationCap className="w-4 h-4 text-link" /> Degree Level
               </h4>
               <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
                 {['All', 'UG', 'PG', 'Diploma', 'PhD'].map((cat) => (
                   <button 
                     key={cat}
                     onClick={() => { handleCategoryChange(cat); if(showFilters) setShowFilters(false); }}
-                    className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-[13px] font-black transition-all ${selectedCategory === cat ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 dark:bg-primary' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
+                    className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-[13px] font-bold transition-all ${selectedCategory === cat ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 dark:bg-primary' : 'bg-white dark:bg-dark-bg hover:bg-slate-100 text-slate-500 dark:text-dark-muted dark:hover:bg-dark-border border border-slate-100 dark:border-transparent'}`}
                   >
                     <div className={`w-2.5 h-2.5 rounded-full ${selectedCategory === cat ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-dark-border'}`} />
                     {cat === 'UG' ? 'Undergraduate' : cat === 'PG' ? 'Postgraduate' : cat}
@@ -788,17 +788,17 @@ export default function Courses() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="mb-10 p-10 rounded-[3rem] bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden group shadow-2xl"
+              className="mb-10 p-10 rounded-[2rem] bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden group shadow-2xl"
             >
               <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:scale-110 transition-transform duration-700">
                 {selectedCourse ? <BookOpen className="w-48 h-48" /> : <GraduationCap className="w-48 h-48" />}
               </div>
               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                 <div className="space-y-3">
-                  <span className="text-[11px] font-black uppercase tracking-[0.4em] text-primary">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-link">
                     {selectedCourse ? 'Degree Profile' : `${selectedCategory} Directory`}
                   </span>
-                  <h2 className="text-4xl md:text-5xl font-serif font-black">
+                  <h2 className="text-4xl md:text-5xl font-serif font-bold">
                     {selectedCourse || (selectedCategory === 'UG' ? 'Undergraduate' : selectedCategory === 'PG' ? 'Postgraduate' : selectedCategory)}
                   </h2>
                   <div className="flex flex-wrap items-center gap-4 text-white/50 text-xs font-bold pt-2">
@@ -818,7 +818,7 @@ export default function Courses() {
                     params.delete('specialization');
                     setSearchParams(params);
                   }} 
-                  className="px-8 py-4 bg-white text-slate-900 rounded-[1.25rem] font-black text-xs transition-all hover:scale-105 active:scale-95 flex items-center gap-3 shadow-xl"
+                  className="px-8 py-4 bg-white text-slate-900 rounded-[1.25rem] font-bold text-xs transition-all hover:scale-105 active:scale-95 flex items-center gap-3 shadow-xl"
                 >
                   <ArrowLeft className="w-4 h-4" /> RESET FILTERS
                 </button>
@@ -827,9 +827,9 @@ export default function Courses() {
               {availableSpecs.length > 0 && (
                 <div className="relative z-10 mt-12 pt-8 border-t border-white/10">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Browse by Specialization</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-link">Browse by Specialization</h4>
                     {selectedSpec !== 'All' && (
-                      <button onClick={() => handleSpecChange('All')} className="text-[10px] font-black text-white/30 hover:text-white underline">Clear Selection</button>
+                      <button onClick={() => handleSpecChange('All')} className="text-[10px] font-bold text-white/30 hover:text-white underline">Clear Selection</button>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
@@ -855,23 +855,23 @@ export default function Courses() {
           ) : (
             <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap items-center gap-4 lg:gap-6">
-                <h2 className="text-2xl font-serif font-black text-slate-800 dark:text-white">
+                <h2 className="text-2xl font-serif font-bold text-slate-800 dark:text-white">
                   {selectedStream !== 'All' ? selectedStream : 'Academic Programs'}
                 </h2>
                 <div className="h-px w-24 bg-slate-200 dark:bg-dark-border hidden md:block" />
-                <div className="flex items-center gap-3 px-5 py-2 rounded-full bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-[11px] font-black text-slate-500 uppercase tracking-widest shadow-sm">
+                <div className="flex items-center gap-3 px-5 py-2 rounded-full bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-[11px] font-bold text-slate-500 uppercase tracking-widest shadow-sm">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   {totalCount} RESULTS
                 </div>
                 {search ? (
-                  <div className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                  <div className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
                     Searching for "{deferredSearch || search}"
                   </div>
                 ) : null}
               </div>
               <button 
                 onClick={() => setShowFilters(true)}
-                className="lg:hidden flex items-center gap-3 px-6 py-3 bg-primary text-white rounded-2xl font-black text-xs shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                className="lg:hidden flex items-center gap-3 px-6 py-3 bg-primary text-white rounded-2xl font-bold text-xs shadow-xl shadow-primary/20 active:scale-95 transition-all"
               >
                 <Filter className="w-4 h-4" /> FILTERS
               </button>
@@ -920,7 +920,7 @@ export default function Courses() {
                           <button
                             onClick={() => setEditingCourse(item)}
                             title="Edit course"
-                            className="w-9 h-9 rounded-full bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border shadow-md flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary transition-colors"
+                            className="w-9 h-9 rounded-full bg-white dark:bg-dark-bg border border-slate-200 dark:border-dark-border shadow-md flex items-center justify-center text-slate-500 hover:text-link hover:border-primary transition-colors"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
@@ -939,22 +939,22 @@ export default function Courses() {
                         <div className="flex justify-between items-start">
                           <div className="space-y-4">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-3 py-1 rounded-lg bg-indigo-500/5 text-indigo-500 text-[10px] font-black uppercase tracking-widest border border-indigo-500/10">
+                              <span className="px-3 py-1 rounded-lg bg-indigo-500/5 text-indigo-500 text-[10px] font-bold uppercase tracking-widest border border-indigo-500/10">
                                 {item.category || 'Professional'}
                               </span>
                               {item.stream && (
-                                <span className="px-3 py-1 rounded-lg bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                                <span className="px-3 py-1 rounded-lg bg-primary/5 text-link text-[10px] font-bold uppercase tracking-widest border border-primary/10">
                                   {item.stream}
                                 </span>
                               )}
                               {selectedCourse && item.specializationName && item.specializationName !== 'General' && (
-                                <span className="px-3 py-1 rounded-lg bg-emerald-500/5 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-500/10">
+                                <span className="px-3 py-1 rounded-lg bg-emerald-500/5 text-emerald-600 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/10">
                                   {item.specializationName}
                                 </span>
                               )}
                             </div>
                             <h3
-                              className="text-2xl md:text-3xl font-serif font-black leading-tight group-hover:text-primary transition-colors cursor-pointer"
+                              className="text-2xl md:text-3xl font-serif font-bold leading-tight group-hover:text-link transition-colors cursor-pointer"
                               onClick={() => {
                                 if (!selectedCourse) {
                                   const params = new URLSearchParams(searchParams);
@@ -969,7 +969,7 @@ export default function Courses() {
                               {selectedCourse ? item.universityId?.name : item.name}
                             </h3>
                             <div className="flex items-center gap-2 text-sm font-bold text-slate-400">
-                              <MapPin className="w-4 h-4 text-primary" /> 
+                              <MapPin className="w-4 h-4 text-link" /> 
                               {selectedCourse
                                 ? `${item.universityId?.city}, ${item.universityId?.state}`
                                 : `${item.collegeCount} Participating Institutions`}
@@ -979,9 +979,9 @@ export default function Courses() {
                             {selectedCourse ? (
                               item.universityId?.logoUrl
                                 ? <img src={item.universityId.logoUrl} alt="" className="w-full h-full object-contain" />
-                                : <div className="text-2xl font-black text-primary">{item.universityId?.name?.[0]}</div>
+                                : <div className="text-2xl font-bold text-link">{item.universityId?.name?.[0]}</div>
                             ) : (
-                              <div className="text-primary"><GraduationCap className="w-10 h-10" /></div>
+                              <div className="text-link"><GraduationCap className="w-10 h-10" /></div>
                             )}
                           </div>
                         </div>
@@ -992,25 +992,25 @@ export default function Courses() {
                               {/* Pill Badges */}
                               <div className="flex flex-wrap gap-1.5 mb-2.5">
                                 {item.category && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider">{item.category}</span>
+                                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-wider">{item.category}</span>
                                 )}
                                 {item.specializationName && item.specializationName !== 'General' && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">{item.specializationName}</span>
+                                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-link text-[10px] font-bold uppercase tracking-wider">{item.specializationName}</span>
                                 )}
                                 {item.universityId?.naacGrade && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-100 dark:border-emerald-800">NAAC Grade {item.universityId.naacGrade}</span>
+                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-100 dark:border-emerald-800">NAAC Grade {item.universityId.naacGrade}</span>
                                 )}
                               </div>
 
                               <h3
                                 onClick={() => { const r = item.universityId?.slug || item.universityId?._id; if (r) navigate(`/universities/${r}`, { state: { activeTab: 1 } }); }}
-                                className="text-lg md:text-xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors cursor-pointer leading-snug line-clamp-2"
+                                className="text-lg md:text-xl font-bold text-slate-900 dark:text-white group-hover:text-link transition-colors cursor-pointer leading-snug line-clamp-2"
                               >
                                 {item.universityId?.name}
                               </h3>
 
                               <p className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 mt-2">
-                                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                                <MapPin className="w-4 h-4 text-link shrink-0" />
                                 {item.universityId?.city}{item.universityId?.state ? `, ${item.universityId.state}` : ''}
                               </p>
                             </div>
@@ -1024,7 +1024,7 @@ export default function Courses() {
                                 <span className="text-xs text-slate-400 font-bold mr-1">Exams:</span>
                                 {(item.entranceExams || []).length > 0 ? (
                                   item.entranceExams.slice(0, 3).map(exam => (
-                                    <span key={exam} className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-[10px] font-black border border-amber-200 dark:border-amber-900">{exam}</span>
+                                    <span key={exam} className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-[10px] font-bold border border-amber-200 dark:border-amber-900">{exam}</span>
                                   ))
                                 ) : (
                                   <span className="text-[11px] text-slate-400 font-semibold bg-slate-50 dark:bg-dark-border px-2 py-0.5 rounded-md">Direct Admission</span>
@@ -1033,7 +1033,7 @@ export default function Courses() {
 
                               <button
                                 onClick={() => { const r = item.universityId?.slug || item.universityId?._id; if (r) navigate(`/universities/${r}`, { state: { activeTab: 1 } }); }}
-                                className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-wider hover:opacity-95 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                                className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl font-bold text-[11px] uppercase tracking-wider hover:opacity-95 active:scale-95 transition-all shadow-lg shadow-primary/20"
                               >
                                 View Details <ChevronRight className="w-4 h-4" />
                               </button>
@@ -1048,16 +1048,16 @@ export default function Courses() {
                         >
                           {/* Left Icon Panel */}
                           <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900 group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                            <GraduationCap className="w-7 h-7 text-primary group-hover:text-white transition-colors" />
+                            <GraduationCap className="w-7 h-7 text-link group-hover:text-white transition-colors" />
                           </div>
 
                           {/* Center info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap gap-1.5 mb-1.5">
-                              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase tracking-wider">{item.category || 'UG/PG'}</span>
-                              {item.stream && <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-wider">{item.stream}</span>}
+                              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[9px] font-bold uppercase tracking-wider">{item.category || 'UG/PG'}</span>
+                              {item.stream && <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-link text-[9px] font-bold uppercase tracking-wider">{item.stream}</span>}
                             </div>
-                            <h3 className="text-lg font-black text-slate-800 dark:text-white group-hover:text-primary transition-colors truncate">{item.name}</h3>
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white group-hover:text-link transition-colors truncate">{item.name}</h3>
                             <div className="flex flex-wrap gap-4 mt-2">
                               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                                 <Building2 className="w-4 h-4 text-slate-400" /> {item.collegeCount || 0} Colleges in India
@@ -1076,7 +1076,7 @@ export default function Courses() {
                                   <span key={spec} className="px-2.5 py-0.5 rounded-lg bg-slate-50 dark:bg-dark-border/50 text-slate-500 dark:text-dark-muted text-[10px] font-bold border border-slate-100 dark:border-dark-border">{spec}</span>
                                 ))}
                                 {item.specializations.length > 5 && (
-                                  <span className="px-2.5 py-0.5 rounded-lg bg-slate-50 dark:bg-dark-border/50 text-primary text-[10px] font-black">+{item.specializations.length - 5} more</span>
+                                  <span className="px-2.5 py-0.5 rounded-lg bg-slate-50 dark:bg-dark-border/50 text-link text-[10px] font-bold">+{item.specializations.length - 5} more</span>
                                 )}
                               </div>
                             )}
@@ -1087,12 +1087,12 @@ export default function Courses() {
                           <div className="flex items-center gap-3">
                             <div className="flex -space-x-3">
                               {[1,2,3,4].map(i => (
-                                <div key={i} className="w-8 h-8 rounded-full border-4 border-white dark:border-dark-card bg-slate-100 dark:bg-dark-border flex items-center justify-center text-[10px] font-black overflow-hidden shadow-sm">
-                                  {i === 4 ? <span className="text-primary">+</span> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-indigo-500/20" />}
+                                <div key={i} className="w-8 h-8 rounded-full border-4 border-white dark:border-dark-card bg-slate-100 dark:bg-dark-border flex items-center justify-center text-[10px] font-bold overflow-hidden shadow-sm">
+                                  {i === 4 ? <span className="text-link">+</span> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-indigo-500/20" />}
                                 </div>
                               ))}
                             </div>
-                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest hidden sm:block">A-Grade Accreditation</span>
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block">A-Grade Accreditation</span>
                           </div>
                           <button 
                             onClick={() => {
@@ -1105,7 +1105,7 @@ export default function Courses() {
                                 setSearchParams(params);
                               }
                             }}
-                            className="flex items-center gap-3 pl-6 pr-2 py-2 bg-slate-900 dark:bg-primary text-white rounded-full font-black text-[11px] uppercase tracking-widest group-hover:pr-3 transition-all shadow-xl shadow-slate-900/20"
+                            className="flex items-center gap-3 pl-6 pr-2 py-2 bg-slate-900 dark:bg-primary text-white rounded-full font-bold text-[11px] uppercase tracking-widest group-hover:pr-3 transition-all shadow-xl shadow-slate-900/20"
                           >
                             Explore {selectedCourse ? 'University' : 'Programs'}
                             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
@@ -1127,7 +1127,7 @@ export default function Courses() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setVisibleCount((prev) => prev + 24)}
-                    className="px-16 py-5 bg-white dark:bg-dark-card border-2 border-primary text-primary rounded-[2rem] font-black text-sm tracking-widest shadow-2xl shadow-primary/10 hover:bg-primary hover:text-white transition-all duration-300"
+                    className="px-16 py-5 bg-white dark:bg-dark-card border-2 border-primary text-link rounded-[2rem] font-bold text-sm tracking-widest shadow-2xl shadow-primary/10 hover:bg-primary hover:text-white transition-all duration-300"
                   >
                     {selectedCourse ? 'LOAD MORE UNIVERSITIES' : 'LOAD MORE PROGRAMS'}
                   </motion.button>

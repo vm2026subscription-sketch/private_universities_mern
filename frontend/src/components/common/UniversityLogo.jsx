@@ -47,7 +47,7 @@ export default function UniversityLogo({ logoUrl, name, className = "w-full h-fu
 
     return (
       <div
-        className={`w-full h-full rounded-xl select-none bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black tracking-wide`}
+        className={`w-full h-full rounded-xl select-none bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold tracking-wide`}
         aria-label={name || 'University logo placeholder'}
       >
         <span className="text-lg md:text-xl">{initials}</span>

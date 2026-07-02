@@ -50,7 +50,7 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center gap-2">
-        <LayoutDashboard className="w-5 h-5 text-primary" />
+        <LayoutDashboard className="w-5 h-5 text-link" />
         <h2 className="text-xl font-bold">Dashboard Overview</h2>
       </div>
 
@@ -69,7 +69,7 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
               <card.icon className={`w-6 h-6 ${card.color}`} />
             </div>
             <div>
-              <p className="text-2xl font-black">{card.value}</p>
+              <p className="text-2xl font-bold">{card.value}</p>
               <p className="text-[10px] text-light-muted uppercase tracking-widest font-bold">{card.label}</p>
             </div>
             <div className="absolute top-0 right-0 p-2 opacity-5">
@@ -84,7 +84,7 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
         <div className="card p-6 lg:col-span-2 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="font-bold text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary" /> Activity Stats</h3>
+              <h3 className="font-bold text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5 text-link" /> Activity Stats</h3>
               <p className="text-xs text-light-muted">Your engagement with universities over the last 7 days</p>
             </div>
           </div>
@@ -107,12 +107,12 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
 
         {/* Goal Progress */}
         <div className="card p-6 shadow-sm border-2 border-primary/5 bg-primary/5">
-           <h3 className="font-bold mb-4 flex items-center gap-2 text-lg"><Target className="w-5 h-5 text-primary" /> Active Goals</h3>
+           <h3 className="font-bold mb-4 flex items-center gap-2 text-lg"><Target className="w-5 h-5 text-link" /> Active Goals</h3>
            <div className="space-y-4">
               <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
                 <div className="flex justify-between text-xs font-bold uppercase mb-2">
-                  <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-primary"/> Explore 10 Colleges</span>
-                  <span className="text-primary">{recentlyViewed.length}/10</span>
+                  <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-link"/> Explore 10 Colleges</span>
+                  <span className="text-link">{recentlyViewed.length}/10</span>
                 </div>
                 <div className="h-2 w-full bg-light-bg dark:bg-dark-border rounded-full overflow-hidden">
                   <div className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(255,107,0,0.4)]" style={{ width: `${Math.min(100, (recentlyViewed.length/10)*100)}%` }}></div>
@@ -130,7 +130,7 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
               <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-3">
                  <Lightbulb className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
                  <div>
-                   <p className="text-[10px] font-black text-yellow-700 uppercase mb-1">Recommendation</p>
+                   <p className="text-[10px] font-bold text-yellow-700 uppercase mb-1">Recommendation</p>
                    <p className="text-[11px] font-bold text-yellow-900 dark:text-yellow-100 leading-tight">Complete your budget preferences to unlock personalized fee estimates.</p>
                  </div>
               </div>
@@ -189,7 +189,7 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                 <span className="text-3xl font-black">{fullUser?.savedUniversities?.length || 0}</span>
+                 <span className="text-3xl font-bold">{fullUser?.savedUniversities?.length || 0}</span>
                  <span className="text-[10px] font-bold text-light-muted uppercase">Saved</span>
               </div>
             </div>
@@ -206,18 +206,18 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
       <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-bold text-lg">Recently Viewed</h3>
-          <Link to="/profile?tab=history" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+          <Link to="/profile?tab=history" className="text-xs font-bold text-link hover:underline flex items-center gap-1">
             View All History <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {(recentlyViewed || []).slice(0, 3).map((u, i) => (
             <Link key={i} to={`/universities/${u.slug}`} className="card p-4 flex items-center gap-4 hover:shadow-lg transition-all hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary font-black text-xl shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-link font-bold text-xl shrink-0">
                 {u.name?.charAt(0)}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold truncate group-hover:text-primary">{u.name}</p>
+                <p className="text-sm font-bold truncate group-hover:text-link">{u.name}</p>
                 <p className="text-[10px] text-light-muted flex items-center gap-1"><MapPin className="w-3 h-3" />{u.city}, {u.state}</p>
               </div>
             </Link>
@@ -240,7 +240,7 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
           <h3 className="font-bold mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-indigo-500" /> Popular Courses</h3>
           <div className="flex flex-wrap gap-2">
             {(trends.trendingCourses || []).map((course, i) => (
-              <span key={i} className="px-3 py-1 bg-white dark:bg-dark-card rounded-lg text-[10px] font-black uppercase tracking-widest text-indigo-600 shadow-sm border border-indigo-100 dark:border-indigo-900/30">
+              <span key={i} className="px-3 py-1 bg-white dark:bg-dark-card rounded-lg text-[10px] font-bold uppercase tracking-widest text-indigo-600 shadow-sm border border-indigo-100 dark:border-indigo-900/30">
                 {course._id}
               </span>
             ))}
@@ -252,15 +252,15 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
           animate={{ y: 0, opacity: 1 }}
           className="lg:col-span-2 card p-6 border-2 border-primary/10"
         >
-          <h3 className="font-bold mb-6 flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> Popular Universities</h3>
+          <h3 className="font-bold mb-6 flex items-center gap-2"><Sparkles className="w-5 h-5 text-link" /> Popular Universities</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {(trends.popularUniversities || []).map((uni, i) => (
               <Link key={i} to={`/universities/${uni.slug}`} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white dark:hover:bg-dark-card transition-all group border border-transparent hover:border-primary/10">
-                 <div className="w-10 h-10 rounded-lg bg-light-bg dark:bg-dark-border flex items-center justify-center text-primary font-bold group-hover:scale-110 transition-transform">
+                 <div className="w-10 h-10 rounded-lg bg-light-bg dark:bg-dark-border flex items-center justify-center text-link font-bold group-hover:scale-110 transition-transform">
                    {uni.name?.charAt(0)}
                  </div>
                  <div className="min-w-0">
-                    <p className="text-xs font-bold truncate group-hover:text-primary">{uni.name}</p>
+                    <p className="text-xs font-bold truncate group-hover:text-link">{uni.name}</p>
                     <p className="text-[10px] text-light-muted flex items-center gap-1"><MapPin className="w-3 h-3" /> {uni.city}</p>
                  </div>
               </Link>

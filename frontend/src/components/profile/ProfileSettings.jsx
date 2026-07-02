@@ -48,7 +48,7 @@ export default function ProfileSettings({ user, onUpdateProfile, onChangePasswor
         {/* Profile Update */}
         <div className="card p-6 space-y-6">
           <div className="flex items-center gap-3 border-b border-light-border dark:border-dark-border pb-4">
-            <User className="w-5 h-5 text-primary" />
+            <User className="w-5 h-5 text-link" />
             <h3 className="font-bold text-lg">Update Profile</h3>
           </div>
           
@@ -69,7 +69,7 @@ export default function ProfileSettings({ user, onUpdateProfile, onChangePasswor
                     <img src={url} alt={`Avatar ${i}`} className="w-full h-full object-cover" />
                     {profileData.avatar === url && (
                       <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                        <CheckCircle2 className="w-5 h-5 text-primary bg-white rounded-full" />
+                        <CheckCircle2 className="w-5 h-5 text-link bg-white rounded-full" />
                       </div>
                     )}
                   </button>
@@ -109,7 +109,7 @@ export default function ProfileSettings({ user, onUpdateProfile, onChangePasswor
         {/* Password Update */}
         <div className="card p-6 space-y-6">
           <div className="flex items-center gap-3 border-b border-light-border dark:border-dark-border pb-4">
-            <Lock className="w-5 h-5 text-primary" />
+            <Lock className="w-5 h-5 text-link" />
             <h3 className="font-bold text-lg">Change Password</h3>
           </div>
 

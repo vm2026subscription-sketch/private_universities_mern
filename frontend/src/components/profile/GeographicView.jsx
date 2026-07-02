@@ -210,10 +210,10 @@ export default function GeographicView({ universities = [], savedUniversities = 
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-link uppercase tracking-[0.2em] mb-2">
             <MapIcon className="w-3 h-3" /> Regional Explorer
           </div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Geographic Insights</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Geographic Insights</h2>
           <p className="text-sm text-light-muted font-medium mt-1">
             Exploring <b>{universities.length}</b> institutions across <b>{Object.keys(stateCounts).length}</b> active states.
           </p>
@@ -262,7 +262,7 @@ export default function GeographicView({ universities = [], savedUniversities = 
 
           <button 
             onClick={resetView}
-            className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-lg shadow-primary/10"
+            className="p-2.5 bg-primary/10 text-link rounded-xl hover:bg-primary hover:text-white transition-all shadow-lg shadow-primary/10"
             title="Reset to India View"
           >
             <Crosshair className="w-4 h-4" />
@@ -275,16 +275,16 @@ export default function GeographicView({ universities = [], savedUniversities = 
         <div className="lg:col-span-1 space-y-6">
            <div className="card p-6 bg-gradient-to-br from-primary/5 to-transparent border-primary/10 relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 w-20 h-20 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
-              <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-4 flex items-center gap-2">
+              <p className="text-[10px] font-bold uppercase text-link tracking-widest mb-4 flex items-center gap-2">
                  <Globe className="w-3 h-3" /> Live Data
               </p>
               <div className="space-y-4 relative z-10">
                  <div className="flex justify-between items-end">
-                    <span className="text-3xl font-black">{Object.keys(stateCounts).length}</span>
+                    <span className="text-3xl font-bold">{Object.keys(stateCounts).length}</span>
                     <span className="text-[10px] font-bold text-light-muted pb-1 uppercase">Active States</span>
                  </div>
                  <div className="flex justify-between items-end">
-                    <span className="text-3xl font-black">{universities.length}</span>
+                    <span className="text-3xl font-bold">{universities.length}</span>
                     <span className="text-[10px] font-bold text-light-muted pb-1 uppercase">Total Nodes</span>
                  </div>
               </div>
@@ -292,14 +292,14 @@ export default function GeographicView({ universities = [], savedUniversities = 
 
            <div className="space-y-4 pt-2">
               <h3 className="font-bold text-sm text-light-muted uppercase tracking-wider flex items-center gap-2 px-1">
-                 <MapPin className="w-4 h-4 text-primary" /> Top Distributions
+                 <MapPin className="w-4 h-4 text-link" /> Top Distributions
               </h3>
               <div className="space-y-3 px-1">
                  {sortedStates.map(([state, count], i) => (
                    <div key={state} className="space-y-1.5">
-                      <div className="flex justify-between text-[10px] font-black uppercase">
+                      <div className="flex justify-between text-[10px] font-bold uppercase">
                         <span>{state}</span>
-                        <span className="text-primary font-bold">{count}</span>
+                        <span className="text-link font-bold">{count}</span>
                       </div>
                       <div className="h-1.5 w-full bg-light-bg dark:bg-dark-border rounded-full overflow-hidden">
                         <motion.div 
@@ -319,7 +319,7 @@ export default function GeographicView({ universities = [], savedUniversities = 
         </div>
 
         {/* Map View */}
-        <div className="lg:col-span-3 relative h-[550px] rounded-[2.5rem] overflow-hidden border border-light-border dark:border-dark-border shadow-2xl shadow-primary/5 z-0">
+        <div className="lg:col-span-3 relative h-[550px] rounded-[2rem] overflow-hidden border border-light-border dark:border-dark-border shadow-2xl shadow-primary/5 z-0">
            <MapContainer 
              center={mapView.center} 
              zoom={mapView.zoom} 
@@ -344,14 +344,14 @@ export default function GeographicView({ universities = [], savedUniversities = 
                    <div className="p-2 min-w-[180px]">
                      <div className="flex justify-between items-start mb-1">
                         <h4 className="font-bold text-sm leading-tight flex-1">{uni.name}</h4>
-                        {isSaved(uni._id) && <Bookmark className="w-3 h-3 text-primary fill-primary ml-2 shrink-0" />}
+                        {isSaved(uni._id) && <Bookmark className="w-3 h-3 text-link fill-primary ml-2 shrink-0" />}
                      </div>
                      <p className="text-[10px] text-light-muted flex items-center gap-1 mb-4">
-                        <MapPin className="w-3 h-3 text-primary" /> {uni.city}, {uni.state}
+                        <MapPin className="w-3 h-3 text-link" /> {uni.city}, {uni.state}
                      </p>
                      <Link 
                        to={`/universities/${uni.slug}`} 
-                       className="block w-full py-2.5 bg-primary text-white text-[10px] font-black uppercase text-center rounded-xl hover:bg-primary-600 transition-colors shadow-lg shadow-primary/20"
+                       className="block w-full py-2.5 bg-primary text-white text-[10px] font-bold uppercase text-center rounded-xl hover:bg-primary-600 transition-colors shadow-lg shadow-primary/20"
                      >
                        Explore University &rarr;
                      </Link>
@@ -369,8 +369,8 @@ export default function GeographicView({ universities = [], savedUniversities = 
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white/80 dark:bg-dark-card/80 backdrop-blur-xl p-5 rounded-3xl border border-white/20 shadow-2xl"
               >
-                 <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1.5 opacity-80">Geographic View</p>
-                 <h4 className="text-lg font-black truncate max-w-[200px] tracking-tight">
+                 <p className="text-[10px] font-bold text-link uppercase tracking-widest mb-1.5 opacity-80">Geographic View</p>
+                 <h4 className="text-lg font-bold truncate max-w-[200px] tracking-tight">
                     {selectedCity || selectedState || "National Map"}
                  </h4>
                  <div className="flex items-center gap-3 mt-3">
@@ -389,7 +389,7 @@ export default function GeographicView({ universities = [], savedUniversities = 
            {selectedState && !locationData[selectedState] && (
               <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-[1px] z-[500] flex items-center justify-center pointer-events-none">
                  <div className="bg-white/90 dark:bg-dark-card/90 p-5 rounded-2xl shadow-2xl border border-primary/20 flex items-center gap-3">
-                    <Info className="w-5 h-5 text-primary" />
+                    <Info className="w-5 h-5 text-link" />
                     <p className="text-xs font-bold">No universities currently listed in {selectedState}.</p>
                  </div>
               </div>
@@ -407,7 +407,7 @@ export default function GeographicView({ universities = [], savedUniversities = 
           className="pt-6"
         >
           <div className="flex items-center gap-4 mb-8">
-             <h3 className="text-sm font-black uppercase text-slate-800 dark:text-slate-200 tracking-[0.2em] shrink-0">
+             <h3 className="text-sm font-bold uppercase text-slate-800 dark:text-slate-200 tracking-[0.2em] shrink-0">
                 {selectedState ? `Institutions in ${selectedState}` : "Available Institutions"}
              </h3>
              <div className="h-px flex-1 bg-gradient-to-r from-light-border via-light-border to-transparent dark:from-dark-border dark:via-dark-border"></div>
@@ -426,16 +426,16 @@ export default function GeographicView({ universities = [], savedUniversities = 
                 className={`card p-6 border-l-4 group transition-all duration-300 ${isSaved(u._id) ? 'border-l-primary' : 'border-l-blue-400'}`}
               >
                 <div className="flex justify-between items-start mb-3">
-                   <div className="w-10 h-10 rounded-2xl bg-light-bg dark:bg-dark-border flex items-center justify-center font-bold text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                   <div className="w-10 h-10 rounded-2xl bg-light-bg dark:bg-dark-border flex items-center justify-center font-bold text-link group-hover:bg-primary group-hover:text-white transition-colors">
                       {u.name?.charAt(0)}
                    </div>
-                   {isSaved(u._id) && <Bookmark className="w-4 h-4 text-primary fill-primary" />}
+                   {isSaved(u._id) && <Bookmark className="w-4 h-4 text-link fill-primary" />}
                 </div>
-                <h4 className="font-bold text-sm mb-1 group-hover:text-primary transition-colors line-clamp-1">{u.name}</h4>
+                <h4 className="font-bold text-sm mb-1 group-hover:text-link transition-colors line-clamp-1">{u.name}</h4>
                 <p className="text-[10px] text-light-muted font-bold flex items-center gap-1 mb-5 uppercase tracking-tighter">
-                  <MapPin className="w-3 h-3 text-primary" /> {u.city || "N/A"}, {u.state || "N/A"}
+                  <MapPin className="w-3 h-3 text-link" /> {u.city || "N/A"}, {u.state || "N/A"}
                 </p>
-                <Link to={`/universities/${u.slug}`} className="text-[10px] font-black text-primary uppercase tracking-[0.1em] hover:tracking-[0.2em] transition-all flex items-center gap-2">
+                <Link to={`/universities/${u.slug}`} className="text-[10px] font-bold text-link uppercase tracking-[0.1em] hover:tracking-[0.2em] transition-all flex items-center gap-2">
                   View Profile <span className="text-lg leading-none">&rarr;</span>
                 </Link>
               </motion.div>

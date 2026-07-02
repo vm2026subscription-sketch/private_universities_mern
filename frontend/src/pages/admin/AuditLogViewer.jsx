@@ -17,7 +17,7 @@ export default function AuditLogViewer() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Shield className="w-5 h-5 text-primary" />
+        <Shield className="w-5 h-5 text-link" />
         <h2 className="text-xl font-bold">Audit Logs</h2>
         <span className="text-sm text-light-muted">({total} total actions)</span>
       </div>

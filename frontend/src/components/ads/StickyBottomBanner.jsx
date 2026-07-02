@@ -57,7 +57,7 @@ export default function StickyBottomBanner({ page = 'home' }) {
             className="flex-1 min-w-0 flex items-center justify-between gap-4"
           >
             <div className="min-w-0">
-              <span className="text-[8px] font-black uppercase tracking-widest opacity-60">Ad</span>
+              <span className="text-[8px] font-bold uppercase tracking-widest opacity-60">Ad</span>
               {banner.title && (
                 <p className="font-bold text-sm md:text-base truncate">{banner.title}</p>
               )}
@@ -65,7 +65,7 @@ export default function StickyBottomBanner({ page = 'home' }) {
                 <p className="text-xs opacity-80 truncate hidden sm:block">{banner.subtitle}</p>
               )}
             </div>
-            <span className="shrink-0 inline-flex items-center gap-1.5 bg-white text-slate-900 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow">
+            <span className="shrink-0 inline-flex items-center gap-1.5 bg-white text-slate-900 px-4 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow">
               {banner.linkText || 'View'} <ArrowRight className="w-3.5 h-3.5" />
             </span>
           </a>

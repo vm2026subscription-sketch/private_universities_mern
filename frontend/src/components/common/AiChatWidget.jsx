@@ -486,7 +486,7 @@ export default function AiChatWidget() {
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#9B2A02] flex items-center justify-center shadow-inner shrink-0">
-              <span className="text-lg font-black text-white">VM</span>
+              <span className="text-lg font-bold text-white">VM</span>
             </div>
             <div>
               <p className="font-bold text-base tracking-tight leading-tight">Vidyarthi Mitra AI</p>
@@ -559,8 +559,8 @@ export default function AiChatWidget() {
                         onClick={() => speakMessage(message.content)}
                         className={`transition-colors p-1 rounded hover:bg-light-card dark:hover:bg-dark-bg shrink-0 ${
                           currentlySpeaking === message.content
-                            ? 'text-primary animate-pulse'
-                            : 'text-slate-400 hover:text-primary'
+                            ? 'text-link animate-pulse'
+                            : 'text-slate-400 hover:text-link'
                         }`}
                         title={currentlySpeaking === message.content ? 'Stop speaking' : 'Read message aloud'}
                       >
@@ -594,7 +594,7 @@ export default function AiChatWidget() {
                 key={prompt}
                 type="button"
                 onClick={() => askAssistant(prompt)}
-                className="shrink-0 rounded-full bg-accent/5 hover:bg-accent/10 border border-accent/10 px-3.5 py-1.5 text-xs text-primary font-bold transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+                className="shrink-0 rounded-full bg-accent/5 hover:bg-accent/10 border border-accent/10 px-3.5 py-1.5 text-xs text-link font-bold transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
               >
                 {prompt}
               </button>
@@ -656,7 +656,7 @@ export default function AiChatWidget() {
           type="button"
           aria-label="Resize chat"
           onPointerDown={startResize}
-          className="absolute bottom-2 right-2 h-6 w-6 cursor-se-resize rounded-full text-slate-400 transition-colors hover:bg-light-card hover:text-primary dark:hover:bg-dark-bg"
+          className="absolute bottom-2 right-2 h-6 w-6 cursor-se-resize rounded-full text-slate-400 transition-colors hover:bg-light-card hover:text-link dark:hover:bg-dark-bg"
         >
           <Maximize2 className="mx-auto h-3.5 w-3.5" />
         </button>

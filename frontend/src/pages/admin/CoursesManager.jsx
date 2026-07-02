@@ -147,7 +147,7 @@ export default function CoursesManager() {
         </button>
       </div>
 
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary flex items-start gap-3">
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-link flex items-start gap-3">
         <Info className="w-4 h-4 mt-0.5 shrink-0" />
         <p>Best practice: create courses inside the university form so hierarchy stays synced. This page is still available for direct edits when needed.</p>
       </div>

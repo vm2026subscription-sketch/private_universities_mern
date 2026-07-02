@@ -20,7 +20,7 @@ function StatCard({ icon: Icon, label, value, accent }) {
       </div>
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-light-muted dark:text-dark-muted">{label}</p>
-        <p className="text-2xl font-black">{value}</p>
+        <p className="text-2xl font-bold">{value}</p>
       </div>
     </div>
   );
@@ -85,7 +85,7 @@ export default function BannerAnalytics() {
 
       {/* Top performers */}
       <div className="card p-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" /> Top Performers by CTR</h3>
+        <h3 className="font-semibold mb-4 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-link" /> Top Performers by CTR</h3>
         {topPerformers.length === 0 ? (
           <p className="text-sm text-light-muted dark:text-dark-muted">No banners have impressions yet.</p>
         ) : (

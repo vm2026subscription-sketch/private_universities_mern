@@ -22,7 +22,7 @@ export default function NewsletterManager() {
     <div className="space-y-6">
       <h2 className="text-xl font-bold">Newsletter Subscribers</h2>
       <div className="flex gap-4">
-        <div className="card p-4 flex items-center gap-3"><Users className="w-5 h-5 text-primary" /><div><p className="text-xl font-bold">{stats.total}</p><p className="text-xs text-light-muted">Total</p></div></div>
+        <div className="card p-4 flex items-center gap-3"><Users className="w-5 h-5 text-link" /><div><p className="text-xl font-bold">{stats.total}</p><p className="text-xs text-light-muted">Total</p></div></div>
         <div className="card p-4 flex items-center gap-3"><Users className="w-5 h-5 text-green-500" /><div><p className="text-xl font-bold">{stats.active}</p><p className="text-xs text-light-muted">Active</p></div></div>
       </div>
       <DataTable data={items} columns={[

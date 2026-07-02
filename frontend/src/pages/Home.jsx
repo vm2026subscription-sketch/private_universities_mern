@@ -409,10 +409,10 @@ export default function Home() {
             onClick={() => navigate(getUniversityPath(featuredUniversity))}
             className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/20 hover:bg-primary/80 hover:border-primary transition-all cursor-pointer group"
           >
-            <GraduationCap className="w-4 h-4 text-primary group-hover:text-white" />
+            <GraduationCap className="w-4 h-4 text-link group-hover:text-white" />
             <span className="text-white font-bold text-sm">{featuredUniversity.name}</span>
             <span className="text-white/50 text-xs">- {featuredUniversity.location}</span>
-            <span className="text-primary group-hover:text-white text-xs font-bold ml-1">View -&gt;</span>
+            <span className="text-link group-hover:text-white text-xs font-bold ml-1">View -&gt;</span>
           </motion.button>
         </div>
 
@@ -433,7 +433,7 @@ export default function Home() {
             <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto group">
               <div className="relative flex shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-2xl overflow-hidden bg-white p-1">
                 <div className="flex items-center pl-5 pr-3">
-                  <Search className="w-6 h-6 text-primary" />
+                  <Search className="w-6 h-6 text-link" />
                 </div>
                 <input
                   type="text"
@@ -442,7 +442,7 @@ export default function Home() {
                   placeholder="Search for a university..."
                   className="w-full py-4 bg-transparent text-slate-900 text-lg font-bold placeholder:text-slate-400 focus:outline-none"
                 />
-                <button type="submit" className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-white px-8 md:px-12 font-black text-base transition-all whitespace-nowrap rounded-xl shadow-lg shadow-primary/25 active:scale-95 border border-accent/30">
+                <button type="submit" className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-white px-8 md:px-12 font-bold text-base transition-all whitespace-nowrap rounded-xl shadow-lg shadow-primary/25 active:scale-95 border border-accent/30">
                   Search
                 </button>
               </div>
@@ -457,7 +457,7 @@ export default function Home() {
                       className="flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-3 transition-colors hover:bg-slate-100"
                     >
                       <div>
-                        <p className="text-sm font-black text-slate-900">{suggestion.label}</p>
+                        <p className="text-sm font-bold text-slate-900">{suggestion.label}</p>
                         <p className="text-xs font-bold text-slate-400">{suggestion.sublabel}</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -472,7 +472,7 @@ export default function Home() {
 
       {/* Quick Stats */}
       <section className="max-w-7xl mx-auto px-4 -mt-16 relative z-30">
-        <div className="bg-white dark:bg-dark-card shadow-2xl rounded-[2.5rem] p-8 md:p-10 flex flex-wrap justify-between gap-8 border border-slate-100 dark:border-white/5">
+        <div className="bg-white dark:bg-dark-card shadow-2xl rounded-[2rem] p-8 md:p-10 flex flex-wrap justify-between gap-8 border border-slate-100 dark:border-white/5">
           {stats.map((s, i) => (
             <div key={i} className="relative flex items-center gap-4 flex-1 min-w-[150px] justify-center md:justify-start p-4 rounded-2xl group overflow-hidden cursor-default">
               {/* Left-to-right animated background (Gradient matching SS1) */}
@@ -480,10 +480,10 @@ export default function Home() {
 
               <div className="relative z-10 flex items-center gap-4 w-full justify-center md:justify-start">
                 <div className="p-3 bg-primary-50 dark:bg-primary-900/20 group-hover:bg-white/20 rounded-2xl transition-colors duration-500">
-                  <s.icon className="w-6 h-6 text-primary group-hover:text-white transition-colors duration-500" />
+                  <s.icon className="w-6 h-6 text-link group-hover:text-white transition-colors duration-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-white transition-colors duration-500 leading-none">{s.value}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors duration-500 leading-none">{s.value}</p>
                   <p className="text-[10px] font-bold text-slate-400 group-hover:text-orange-100 uppercase tracking-widest mt-1 transition-colors duration-500">{s.label}</p>
                 </div>
               </div>
@@ -495,7 +495,7 @@ export default function Home() {
       {/* Why Choose Us Section */}
       <section className="max-w-7xl mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <p className="text-primary font-black text-xs uppercase tracking-[0.3em] mb-4">The Vidyarthi Mitra Edge</p>
+          <p className="text-link font-bold text-xs uppercase tracking-[0.3em] mb-4">The Vidyarthi Mitra Edge</p>
           <h2 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white">Why 50,00,000+ Students Trust Us</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -520,7 +520,7 @@ export default function Home() {
                 <div className={`w-16 h-16 ${item.iconBg} group-hover:bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-500`}>
                   <item.icon className={`w-8 h-8 ${item.iconColor} group-hover:text-white transition-colors duration-500`} />
                 </div>
-                <h4 className="font-black text-lg mb-3 text-slate-900 dark:text-white group-hover:text-white transition-colors duration-500">{item.title}</h4>
+                <h4 className="font-bold text-lg mb-3 text-slate-900 dark:text-white group-hover:text-white transition-colors duration-500">{item.title}</h4>
                 <p className="text-sm text-slate-500 group-hover:text-white/90 transition-colors duration-500 leading-relaxed">{item.desc}</p>
               </div>
             </motion.div>
@@ -532,7 +532,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-10">
           <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Explore by State</h2>
-          <button onClick={() => setShowAllStatesModal(true)} className="text-primary font-bold text-sm hover:underline transition-all">View All States →</button>
+          <button onClick={() => setShowAllStatesModal(true)} className="text-link font-bold text-sm hover:underline transition-all">View All States →</button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {[
@@ -551,7 +551,7 @@ export default function Home() {
             >
               {/* Gradient fallback shown behind image */}
               <div className={`absolute inset-0 bg-gradient-to-br ${state.color} flex items-center justify-center`}>
-                <span className="text-white/20 font-black text-6xl">{state.name[0]}</span>
+                <span className="text-white/20 font-bold text-6xl">{state.name[0]}</span>
               </div>
               {state.img ? (
                 <img
@@ -565,8 +565,8 @@ export default function Home() {
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-5">
                 <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest mb-1">{state.landmark}</p>
-                <h4 className="text-white font-black text-lg leading-tight">{state.name}</h4>
-                <p className="text-primary text-[10px] font-bold uppercase tracking-widest mt-1">{state.count}</p>
+                <h4 className="text-white font-bold text-lg leading-tight">{state.name}</h4>
+                <p className="text-link text-[10px] font-bold uppercase tracking-widest mt-1">{state.count}</p>
               </div>
             </motion.div>
           ))}
@@ -579,7 +579,7 @@ export default function Home() {
       {/* Top Recruiters */}
       <section className="bg-white/50 dark:bg-dark-card/50 py-16 border-y border-slate-100 dark:border-white/5 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4">
-          <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-12">Top Companies Hiring from our Partners</p>
+          <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mb-12">Top Companies Hiring from our Partners</p>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 md:gap-x-24 transition-all duration-700">
             {[
               { name: 'Google', logo: img_google },
@@ -635,17 +635,17 @@ export default function Home() {
         <div className="lg:col-span-8 space-y-16">
           <section>
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                 <div className="w-2 h-8 bg-primary rounded-full"></div> Admissions & Tools
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <motion.div whileHover={{ y: -5 }} className="relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br from-primary to-primary-dark text-white shadow-xl group">
                 <div className="relative z-10 flex flex-col h-full">
-                  <span className="bg-white/20 text-[10px] font-black px-3 py-1 rounded-full uppercase self-start">Maharashtra State</span>
-                  <h3 className="font-black text-2xl mt-4 mb-2">DTE Admissions</h3>
+                  <span className="bg-white/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase self-start">Maharashtra State</span>
+                  <h3 className="font-bold text-2xl mt-4 mb-2">DTE Admissions</h3>
                   <p className="text-sm text-white/80 mb-6 flex-grow">Complete guide to Engineering, Pharmacy & MBA admissions.</p>
-                  <button className="w-full bg-white text-primary font-black py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto">
+                  <button className="w-full bg-white text-link font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto">
                     View Updates
                   </button>
                 </div>
@@ -653,10 +653,10 @@ export default function Home() {
 
               <motion.div whileHover={{ y: -5 }} className="relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br from-primary to-orange-500 text-white shadow-xl group">
                 <div className="relative z-10 flex flex-col h-full">
-                  <span className="bg-white/20 text-[10px] font-black px-3 py-1 rounded-full uppercase self-start">Tool</span>
-                  <h3 className="font-black text-2xl mt-4 mb-2">Rank Predictor</h3>
+                  <span className="bg-white/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase self-start">Tool</span>
+                  <h3 className="font-bold text-2xl mt-4 mb-2">Rank Predictor</h3>
                   <p className="text-sm text-white/80 mb-6 flex-grow">Predict potential colleges based on your scores.</p>
-                  <Link to="/rank-predictor" className="w-full bg-white text-primary font-black py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto flex justify-center items-center">
+                  <Link to="/rank-predictor" className="w-full bg-white text-link font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto flex justify-center items-center">
                     Predict Now
                   </Link>
                 </div>
@@ -664,10 +664,10 @@ export default function Home() {
 
               <motion.div whileHover={{ y: -5 }} className="relative overflow-hidden p-6 rounded-[2rem] bg-slate-900 text-white shadow-xl group border border-white/10">
                 <div className="relative z-10 flex flex-col h-full">
-                  <span className="bg-primary text-[10px] font-black px-3 py-1 rounded-full uppercase text-white self-start">Private Unis</span>
-                  <h3 className="font-black text-2xl mt-4 mb-2">PERA CET</h3>
+                  <span className="bg-primary text-[10px] font-bold px-3 py-1 rounded-full uppercase text-white self-start">Private Unis</span>
+                  <h3 className="font-bold text-2xl mt-4 mb-2">PERA CET</h3>
                   <p className="text-sm text-white/80 mb-6 flex-grow">Entrance for top private universities in Maharashtra.</p>
-                  <button className="w-full bg-primary text-white font-black py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto">
+                  <button className="w-full bg-primary text-white font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto">
                     Apply Now
                   </button>
                 </div>
@@ -677,10 +677,10 @@ export default function Home() {
 
           <section>
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                 <div className="w-2 h-8 bg-primary rounded-full"></div> Recommended for You
               </h2>
-              <Link to="/universities" className="group flex items-center gap-1 text-primary text-sm font-bold">
+              <Link to="/universities" className="group flex items-center gap-1 text-link text-sm font-bold">
                 Explore All <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -699,7 +699,7 @@ export default function Home() {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
-                            <h3 className="font-black text-lg line-clamp-1 group-hover:text-white transition-colors">{u.name}</h3>
+                            <h3 className="font-bold text-lg line-clamp-1 group-hover:text-white transition-colors">{u.name}</h3>
                             <div className="flex items-center gap-1 bg-green-50 group-hover:bg-white/20 text-green-600 group-hover:text-white px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors">
                               <Award className="w-3 h-3" />
                               {u.naacGrade || 'A+'}
@@ -707,18 +707,18 @@ export default function Home() {
                           </div>
 
                           <div className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-white/90 transition-colors mt-1 mb-4">
-                            <MapPin className="w-3 h-3 text-primary group-hover:text-white transition-colors shrink-0" />
+                            <MapPin className="w-3 h-3 text-link group-hover:text-white transition-colors shrink-0" />
                             <span className="truncate">{u.city && u.city !== 'Unknown' ? `${u.city}, ` : ''}{u.state || 'India'}</span>
                           </div>
 
                           <div className="flex items-center gap-6">
                             <div>
-                              <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-black tracking-widest">Avg Package</p>
-                              <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-white transition-colors">INR {u.stats?.avgPackageLPA || '4.5'} LPA</p>
+                              <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-bold tracking-widest">Avg Package</p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors">INR {u.stats?.avgPackageLPA || '4.5'} LPA</p>
                             </div>
                             <div>
-                              <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-black tracking-widest">Courses</p>
-                              <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-white transition-colors">{u.stats?.totalCoursesCount || 12}+</p>
+                              <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-bold tracking-widest">Courses</p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors">{u.stats?.totalCoursesCount || 12}+</p>
                             </div>
                           </div>
                         </div>
@@ -743,7 +743,7 @@ export default function Home() {
             )}
             {universities.length > 0 ? (
               <div className="mt-12 text-center">
-                <Link to="/universities" className="inline-flex items-center gap-3 bg-white dark:bg-dark-card border-2 border-primary text-primary hover:bg-primary hover:text-white px-10 py-4 rounded-2xl font-black transition-all group">
+                <Link to="/universities" className="inline-flex items-center gap-3 bg-white dark:bg-dark-card border-2 border-primary text-link hover:bg-primary hover:text-white px-10 py-4 rounded-2xl font-bold transition-all group">
                   EXPLORE ALL UNIVERSITIES
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                 </Link>
@@ -751,13 +751,13 @@ export default function Home() {
             ) : null}
           </section>
 
-          <section className="bg-slate-900 rounded-[3rem] p-10 md:p-16 text-white overflow-hidden relative group">
+          <section className="bg-slate-900 rounded-[2rem] p-10 md:p-16 text-white overflow-hidden relative group">
             <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
               <Users className="w-40 h-40" />
             </div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-10">
-                <h2 className="text-3xl font-black italic">Words of Gratitude</h2>
+                <h2 className="text-3xl font-bold italic">Words of Gratitude</h2>
                 <div className="flex gap-2">
                   {(() => {
                     const fallbackTestimonials = [
@@ -829,7 +829,7 @@ export default function Home() {
                           {activeTestimonial.avatarUrl ? (
                             <img src={activeTestimonial.avatarUrl} alt={activeTestimonial.name} className="w-16 h-16 rounded-2xl shrink-0 object-cover shadow-sm" />
                           ) : (
-                            <div className="w-16 h-16 bg-primary rounded-2xl shrink-0 flex items-center justify-center text-2xl font-black shadow-sm">
+                            <div className="w-16 h-16 bg-primary rounded-2xl shrink-0 flex items-center justify-center text-2xl font-bold shadow-sm">
                               {activeTestimonial.name ? activeTestimonial.name[0].toUpperCase() : 'V'}
                             </div>
                           )}
@@ -839,7 +839,7 @@ export default function Home() {
                             </p>
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-black text-primary uppercase tracking-widest text-sm">{activeTestimonial.name}</p>
+                                <p className="font-bold text-link uppercase tracking-widest text-sm">{activeTestimonial.name}</p>
                                 <p className="text-xs text-slate-500 font-bold">{activeTestimonial.role || activeTestimonial.designation}</p>
                               </div>
                             </div>
@@ -858,16 +858,16 @@ export default function Home() {
           {/* Sidebar advertisements — admin-managed ad placement */}
           <SidebarAds page="home" />
 
-          <section className="bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-2xl">
+          <section className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-2xl">
             <div className="p-6 bg-gradient-to-r from-primary to-orange-400 text-white flex items-center justify-between">
-              <h2 className="font-black text-lg">Alerts</h2>
+              <h2 className="font-bold text-lg">Alerts</h2>
               <Bell className="w-5 h-5" />
             </div>
             <div className="divide-y divide-slate-50 dark:divide-white/5">
               {news.length > 0 ? news.map((n, i) => (
                 <div key={i} className="p-5 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-all group">
-                  <span className="text-[9px] font-black uppercase text-primary">{n.category || 'News'}</span>
-                  <h4 className="text-sm font-bold mt-2 group-hover:text-primary transition-colors line-clamp-2">{n.title}</h4>
+                  <span className="text-[9px] font-bold uppercase text-link">{n.category || 'News'}</span>
+                  <h4 className="text-sm font-bold mt-2 group-hover:text-link transition-colors line-clamp-2">{n.title}</h4>
                 </div>
               )) : (
                 <div className="p-8 text-center text-sm text-light-muted">No news yet. Check back soon!</div>
@@ -875,12 +875,12 @@ export default function Home() {
             </div>
           </section>
 
-          <div className="card border-none shadow-2xl bg-gradient-to-br from-slate-900 to-primary-dark text-white rounded-[2.5rem] p-8 overflow-hidden relative">
+          <div className="card border-none shadow-2xl bg-gradient-to-br from-slate-900 to-primary-dark text-white rounded-[2rem] p-8 overflow-hidden relative">
             <div className="absolute top-0 right-0 p-6 opacity-20">
               <Newspaper className="w-20 h-20" />
             </div>
             <div className="relative z-10">
-              <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <span className="w-2 h-6 bg-primary rounded-full"></span> Latest Updates
               </h3>
               <div className="space-y-6">
@@ -895,48 +895,48 @@ export default function Home() {
                       <item.icon className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h4 className={`text-sm font-bold leading-tight group-hover:text-primary transition-colors ${item.highlight ? 'text-primary' : ''}`}>{item.title}</h4>
+                      <h4 className={`text-sm font-bold leading-tight group-hover:text-link transition-colors ${item.highlight ? 'text-link' : ''}`}>{item.title}</h4>
                       <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase">{item.time}</p>
                     </div>
                   </div>
                 ))}
               </div>
-              <button className="w-full mt-8 bg-white/10 hover:bg-white/20 text-white font-black py-4 rounded-2xl text-xs transition-all border border-white/5">
+              <button className="w-full mt-8 bg-white/10 hover:bg-white/20 text-white font-bold py-4 rounded-2xl text-xs transition-all border border-white/5">
                 READ ALL NEWS
               </button>
             </div>
           </div>
 
-          <section className="bg-white dark:bg-dark-card rounded-[2.5rem] border border-slate-100 dark:border-white/5 p-8 shadow-2xl">
-            <h2 className="font-black text-xl mb-8">Community</h2>
+          <section className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 p-8 shadow-2xl">
+            <h2 className="font-bold text-xl mb-8">Community</h2>
             <div className="space-y-6">
               {questions.map((q, i) => (
                 <div key={i} className="group cursor-pointer border-b border-slate-50 dark:border-white/5 pb-4 last:border-none" onClick={openChat}>
-                  <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{q.title || q.content}</h4>
+                  <h4 className="text-sm font-bold group-hover:text-link transition-colors">{q.title || q.content}</h4>
                 </div>
               ))}
             </div>
-            <button onClick={openChat} className="w-full mt-8 py-4 bg-primary text-white text-xs font-black rounded-2xl shadow-xl shadow-primary/30">
+            <button onClick={openChat} className="w-full mt-8 py-4 bg-primary text-white text-xs font-bold rounded-2xl shadow-xl shadow-primary/30">
               ASK A QUESTION
             </button>
           </section>
 
-          <section className="bg-gradient-to-br from-primary-dark to-primary p-10 rounded-[2.5rem] text-white">
-            <h2 className="text-2xl font-black mb-4">Stay Ahead</h2>
+          <section className="bg-gradient-to-br from-primary-dark to-primary p-10 rounded-[2rem] text-white">
+            <h2 className="text-2xl font-bold mb-4">Stay Ahead</h2>
             <p className="text-sm text-orange-100 mb-8 opacity-90">Get the latest admission alerts and entrance exam tips directly in your inbox.</p>
             <div className="flex gap-2">
               <input type="text" placeholder="Email" className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 text-sm outline-none" />
-              <button className="bg-white text-primary px-6 py-3 rounded-xl font-black text-xs">JOIN</button>
+              <button className="bg-white text-link px-6 py-3 rounded-xl font-bold text-xs">JOIN</button>
             </div>
           </section>
         </div>
       </div>
 
       <section className="max-w-7xl mx-auto px-4 pb-8">
-        <div className="rounded-[2.5rem] border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-dark-card/95 shadow-2xl overflow-hidden">
+        <div className="rounded-[2rem] border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-dark-card/95 shadow-2xl overflow-hidden">
           <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-primary mb-3">Contact and Feedback</p>
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-link mb-3">Contact and Feedback</p>
               <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 dark:text-white">
                 Need help from our team or want to share your experience?
               </h2>
@@ -951,7 +951,7 @@ export default function Home() {
                   <MessageSquare className="w-5 h-5 text-primary-light" />
                 </div>
                 <div>
-                  <p className="text-lg font-black">Share Feedback</p>
+                  <p className="text-lg font-bold">Share Feedback</p>
                   <p className="mt-2 text-sm text-slate-300 leading-relaxed">
                     Tell us what is working well, what feels confusing, or what you want improved before the next release.
                   </p>
@@ -960,7 +960,7 @@ export default function Home() {
 
               <button
                 onClick={() => setShowFeedback(true)}
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-light"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-light"
               >
                 <MessageSquare className="w-4 h-4" />
                 Open Feedback Form
@@ -989,7 +989,7 @@ export default function Home() {
             >
               {/* Form Header */}
               <div className="bg-gradient-to-r from-orange-500 to-primary p-6 md:p-8 flex justify-between items-center">
-                <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter">Feedback Form</h2>
+                <h2 className="text-2xl md:text-4xl font-bold text-white uppercase tracking-tighter">Feedback Form</h2>
                 <button onClick={() => setShowFeedback(false)} className="text-white/50 hover:text-white transition-colors">
                   <X className="w-8 h-8" />
                 </button>
@@ -1001,37 +1001,37 @@ export default function Home() {
                   <div className="lg:col-span-8 space-y-6">
                     <div className="grid grid-cols-1 gap-6">
                       <div>
-                        <label className="text-xs font-black uppercase text-slate-500 block mb-2 tracking-widest">Name *</label>
+                        <label className="text-xs font-bold uppercase text-slate-500 block mb-2 tracking-widest">Name *</label>
                         <input name="name" required type="text" placeholder="Enter your name" className="w-full border border-slate-200 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all" />
                       </div>
                       <div>
-                        <label className="text-xs font-black uppercase text-slate-500 block mb-2 tracking-widest">Mobile</label>
+                        <label className="text-xs font-bold uppercase text-slate-500 block mb-2 tracking-widest">Mobile</label>
                         <input name="mobile" type="text" placeholder="Mobile Number" className="w-full border border-slate-200 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all" />
                       </div>
                       <div>
-                        <label className="text-xs font-black uppercase text-slate-500 block mb-2 tracking-widest">Email ID *</label>
+                        <label className="text-xs font-bold uppercase text-slate-500 block mb-2 tracking-widest">Email ID *</label>
                         <input name="email" required type="email" placeholder="Enter your Email Id" className="w-full border border-slate-200 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all" />
                       </div>
                       <div>
-                        <label className="text-xs font-black uppercase text-slate-500 block mb-2 tracking-widest">Designation *</label>
+                        <label className="text-xs font-bold uppercase text-slate-500 block mb-2 tracking-widest">Designation *</label>
                         <input name="role" required type="text" placeholder="Enter your Designation" className="w-full border border-slate-200 rounded-lg p-4 text-sm focus:border-primary outline-none transition-all" />
                       </div>
                       <div>
-                        <label className="text-xs font-black uppercase text-slate-500 block mb-2 tracking-widest">Feedback *</label>
+                        <label className="text-xs font-bold uppercase text-slate-500 block mb-2 tracking-widest">Feedback *</label>
                         <textarea name="content" required placeholder="Write your review.." className="w-full border border-slate-200 rounded-lg p-4 text-sm h-32 focus:border-primary outline-none resize-none transition-all" />
                       </div>
                     </div>
 
                     <div className="flex gap-4 pt-4">
-                      <button type="submit" className="px-12 bg-green-600 text-white font-black py-4 rounded-lg hover:bg-green-700 transition-all uppercase tracking-widest shadow-lg shadow-green-600/20">Submit</button>
-                      <button type="button" onClick={() => setShowFeedback(false)} className="px-12 bg-red-500 text-white font-black py-4 rounded-lg hover:bg-red-600 transition-all uppercase tracking-widest shadow-lg shadow-red-500/20">Cancel</button>
+                      <button type="submit" className="px-12 bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition-all uppercase tracking-widest shadow-lg shadow-green-600/20">Submit</button>
+                      <button type="button" onClick={() => setShowFeedback(false)} className="px-12 bg-red-500 text-white font-bold py-4 rounded-lg hover:bg-red-600 transition-all uppercase tracking-widest shadow-lg shadow-red-500/20">Cancel</button>
                     </div>
                   </div>
 
                   {/* Right Side: Avatar Section */}
                   <div className="lg:col-span-4 space-y-10">
                     <div>
-                      <label className="text-xs font-black uppercase text-slate-500 block mb-4 tracking-widest">Avatar Upload</label>
+                      <label className="text-xs font-bold uppercase text-slate-500 block mb-4 tracking-widest">Avatar Upload</label>
                       <div className="flex items-center gap-2 border border-slate-200 p-2 rounded-lg">
                         <label className="bg-slate-100 px-4 py-2 rounded border border-slate-300 text-xs font-bold cursor-pointer hover:bg-slate-200">
                           Choose file
@@ -1044,12 +1044,12 @@ export default function Home() {
                     </div>
 
                     <div className="space-y-4">
-                      <label className="text-xs font-black uppercase text-slate-500 block mb-2 tracking-widest">Avatar Preview</label>
+                      <label className="text-xs font-bold uppercase text-slate-500 block mb-2 tracking-widest">Avatar Preview</label>
                       <div className="w-full aspect-[4/3] bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center overflow-hidden relative group">
                         {avatarPreview ? (
                           <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
-                          <div className="w-48 h-48 rounded-full bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center text-5xl font-black text-white/30">
+                          <div className="w-48 h-48 rounded-full bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center text-5xl font-bold text-white/30">
                             VM
                           </div>
                         )}
@@ -1085,7 +1085,7 @@ export default function Home() {
             >
               <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-dark-border shrink-0">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 dark:text-white">Explore by State</h2>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Explore by State</h2>
                   <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">All {ALL_INDIA_STATES.length} states & union territories</p>
                 </div>
                 <button
@@ -1101,10 +1101,10 @@ export default function Home() {
                     <button
                       key={state}
                       onClick={() => { setShowAllStatesModal(false); navigate(`/universities?state=${encodeURIComponent(state)}`); }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-dark-bg hover:bg-primary/10 dark:hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20 transition-all text-left group"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-dark-bg hover:bg-primary/10 dark:hover:bg-primary/10 hover:text-link border border-transparent hover:border-primary/20 transition-all text-left group"
                     >
-                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors truncate">{state}</span>
+                      <MapPin className="w-3.5 h-3.5 text-link shrink-0" />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-link transition-colors truncate">{state}</span>
                     </button>
                   ))}
                 </div>
@@ -1113,7 +1113,7 @@ export default function Home() {
                 <p className="text-xs text-slate-400 font-medium">Click on any state to browse universities</p>
                 <button
                   onClick={() => { setShowAllStatesModal(false); navigate('/universities'); }}
-                  className="px-6 py-2.5 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-colors"
+                  className="px-6 py-2.5 bg-primary text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-colors"
                 >
                   Browse All Universities
                 </button>

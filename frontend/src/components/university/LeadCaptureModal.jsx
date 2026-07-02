@@ -120,10 +120,10 @@ export default function LeadCaptureModal({ isOpen, onClose, university, leadType
           /* Input Form Form */
           <div className="p-8 space-y-6">
             <div>
-              <span className="text-xs font-black uppercase tracking-widest text-primary">
+              <span className="text-xs font-bold uppercase tracking-widest text-link">
                 {leadType === 'apply' ? 'Direct Application' : 'Request Official Brochure'}
               </span>
-              <h3 className="text-2xl font-black text-light-text dark:text-dark-text mt-1">
+              <h3 className="text-2xl font-bold text-light-text dark:text-dark-text mt-1">
                 {university.name}
               </h3>
               <p className="text-xs text-light-muted dark:text-dark-muted mt-1">

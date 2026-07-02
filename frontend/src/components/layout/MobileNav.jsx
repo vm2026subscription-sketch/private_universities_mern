@@ -31,7 +31,7 @@ export default function MobileNav() {
               }`}>
                 <l.icon className="w-5 h-5" />
               </div>
-              <span className={`text-[9px] font-black uppercase tracking-wide ${isActive ? 'text-accent' : ''}`}>
+              <span className={`text-[9px] font-bold uppercase tracking-wide ${isActive ? 'text-accent' : ''}`}>
                 {l.label}
               </span>
             </Link>

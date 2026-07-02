@@ -2,7 +2,7 @@ export function CardSkeleton({ count = 6 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-[2.5rem] p-6 animate-pulse overflow-hidden">
+        <div key={i} className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-[2rem] p-6 animate-pulse overflow-hidden">
           {/* Logo placeholder */}
           <div className="flex items-center gap-4 mb-5">
             <div className="w-16 h-16 rounded-2xl skeleton shrink-0" />

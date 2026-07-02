@@ -47,7 +47,7 @@ export default function LeadsManager() {
       key: 'universityId', 
       label: 'Target University', 
       render: row => row.universityId ? (
-        <span className="font-semibold text-primary">{row.universityId.name}</span>
+        <span className="font-semibold text-link">{row.universityId.name}</span>
       ) : <span className="text-light-muted">N/A</span>
     },
     { 
@@ -85,7 +85,7 @@ export default function LeadsManager() {
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card p-6 flex items-center gap-4 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-sm">
-          <div className="p-3 bg-primary/10 text-primary rounded-xl">
+          <div className="p-3 bg-primary/10 text-link rounded-xl">
             <Mail className="w-6 h-6" />
           </div>
           <div>
@@ -120,7 +120,7 @@ export default function LeadsManager() {
         {/* Leads By University */}
         <div className="card p-6 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-sm">
           <h3 className="text-lg font-semibold mb-4 text-light-text dark:text-dark-text flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" />
+            <FileText className="w-5 h-5 text-link" />
             Top Leads by University
           </h3>
           <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
@@ -137,10 +137,10 @@ export default function LeadsManager() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-primary text-sm">{item.leadCount} leads</span>
+                    <span className="font-bold text-link text-sm">{item.leadCount} leads</span>
                     <button
                       onClick={() => navigate(`/admin/partner/${item._id}`)}
-                      className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      className="p-1.5 rounded-lg bg-primary/10 text-link hover:bg-primary/20 transition-colors"
                       title="View Partner Dashboard"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -199,7 +199,7 @@ export default function LeadsManager() {
             </button>
             <button 
               onClick={loadData}
-              className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-all"
+              className="text-xs font-semibold text-link bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-all"
             >
               Refresh List
             </button>

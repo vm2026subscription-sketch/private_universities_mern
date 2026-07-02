@@ -14,7 +14,7 @@ export default function SponsoredUniversities({ page = 'home' }) {
     <section className="max-w-7xl mx-auto px-4 py-16">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="flex items-center gap-1.5 text-primary font-black text-xs uppercase tracking-[0.3em] mb-2">
+          <p className="flex items-center gap-1.5 text-link font-bold text-xs uppercase tracking-[0.3em] mb-2">
             <Gem className="w-3.5 h-3.5" aria-hidden="true" /> Premium Admissions
           </p>
           <h2 className="text-2xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white">
@@ -34,9 +34,9 @@ export default function SponsoredUniversities({ page = 'home' }) {
               href={bannerClickUrl(b._id)}
               target="_blank"
               rel="noopener noreferrer sponsored"
-              className="relative bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-950/10 rounded-[2.5rem] p-6 border-2 border-amber-400/50 shadow-2xl flex flex-col justify-between group overflow-hidden"
+              className="relative bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-950/10 rounded-[2rem] p-6 border-2 border-amber-400/50 shadow-2xl flex flex-col justify-between group overflow-hidden"
             >
-              <span className="absolute top-4 right-4 text-[8px] font-black uppercase tracking-widest text-amber-500/70">
+              <span className="absolute top-4 right-4 text-[8px] font-bold uppercase tracking-widest text-amber-500/70">
                 Ad
               </span>
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/10 blur-[40px] rounded-full group-hover:scale-110 transition-transform" />
@@ -51,7 +51,7 @@ export default function SponsoredUniversities({ page = 'home' }) {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center gap-1">
+                    <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm flex items-center gap-1">
                       <Star className="w-3 h-3" aria-hidden="true" /> {tier} Partner
                     </span>
                     {u?.naacGrade && (
@@ -62,7 +62,7 @@ export default function SponsoredUniversities({ page = 'home' }) {
                   </div>
                 </div>
 
-                <h3 className="text-lg font-black text-slate-900 dark:text-white line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight group-hover:text-link transition-colors">
                   {name}
                 </h3>
 
@@ -72,7 +72,7 @@ export default function SponsoredUniversities({ page = 'home' }) {
 
                 {u && (
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mt-2">
-                    <MapPin className="w-3.5 h-3.5 text-primary" />
+                    <MapPin className="w-3.5 h-3.5 text-link" />
                     {u.city && u.city !== 'Unknown'
                       ? `${u.city}, ${u.state || ''}`
                       : u.state || 'India'}
@@ -81,7 +81,7 @@ export default function SponsoredUniversities({ page = 'home' }) {
               </div>
 
               <div className="pt-5 mt-4 border-t border-amber-400/10">
-                <span className="w-full py-3 bg-slate-900 dark:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-md group-hover:bg-primary transition-colors">
+                <span className="w-full py-3 bg-slate-900 dark:bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 shadow-md group-hover:bg-primary transition-colors">
                   {b.linkText || 'Apply Now'} <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </div>

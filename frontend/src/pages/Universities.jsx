@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { calculateFitScore } from '../utils/fitScore';
 import UniversityLogo from '../components/common/UniversityLogo';
+import { EmptyState, Button } from '../components/ui';
 import { getUniversityDisplayType } from '../utils/universityType';
 import { generateBrochure } from '../utils/brochureGenerator';
 import LeadCaptureModal from '../components/university/LeadCaptureModal';
@@ -159,7 +160,7 @@ export default function Universities() {
         <meta name="description" content="Explore 500+ private and deemed universities in India. Compare fees, NAAC grades, NIRF rankings, placements and admission process." />
       </Helmet>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-serif font-bold text-primary">Universities</h1>
+        <h1 className="text-3xl font-serif font-bold text-link">Universities</h1>
         <div className="flex items-center gap-3">
           <select value={sort} onChange={e => setSort(e.target.value)} className="input-field !w-auto !py-2 text-sm">
             <option value="ranking">By Ranking</option>
@@ -176,13 +177,13 @@ export default function Universities() {
         <aside className={`${showFilters ? 'fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md p-6 overflow-y-auto' : 'hidden'} md:block md:static md:w-72 shrink-0`}>
           <div className="bg-white dark:bg-dark-card rounded-[2rem] p-6 border border-slate-100 dark:border-white/5 shadow-xl h-full md:h-auto overflow-y-auto md:overflow-visible">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="font-black text-lg">Filters</h3>
+              <h3 className="font-bold text-lg">Filters</h3>
               <button className="md:hidden" onClick={() => setShowFilters(false)}><X className="w-5 h-5" /></button>
             </div>
             
             <div className="space-y-8">
               <div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">State</h4>
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">State</h4>
                 <div className="max-h-60 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                   {states.map(s => (
                     <label key={s} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
@@ -190,16 +191,16 @@ export default function Universities() {
                         type="checkbox" 
                         checked={filters.state.includes(s)} 
                         onChange={() => toggleFilter('state', s)} 
-                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded"
+                        className="w-4 h-4 text-link focus:ring-primary border-slate-300 rounded"
                       />
-                      <span className={`text-sm font-bold transition-colors ${filters.state.includes(s) ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{s}</span>
+                      <span className={`text-sm font-bold transition-colors ${filters.state.includes(s) ? 'text-link' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{s}</span>
                     </label>
                   ))}
                 </div>
               </div>
               
               <div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Institution Type</h4>
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Institution Type</h4>
                 <div className="space-y-2">
                   {['both','private','deemed'].map(t => (
                     <label key={t} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
@@ -208,9 +209,9 @@ export default function Universities() {
                         name="type" 
                         checked={filters.type === t} 
                         onChange={() => { setFilters(f => ({ ...f, type: t })); setPage(1); }} 
-                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
+                        className="w-4 h-4 text-link focus:ring-primary border-slate-300"
                       />
-                      <span className={`text-sm font-bold transition-colors ${filters.type === t ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                      <span className={`text-sm font-bold transition-colors ${filters.type === t ? 'text-link' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
                         {t === 'both' ? 'All Types' : t === 'deemed' ? 'Deemed University' : 'Private University'}
                       </span>
                     </label>
@@ -219,7 +220,7 @@ export default function Universities() {
               </div>
               
               <div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">NAAC Grade</h4>
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">NAAC Grade</h4>
                 <div className="space-y-2">
                   {naacGrades.map(g => (
                     <label key={g} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
@@ -227,33 +228,34 @@ export default function Universities() {
                         type="checkbox"
                         checked={filters.naacGrade.includes(g)} 
                         onChange={() => toggleFilter('naacGrade', g)} 
-                        className="w-4 h-4 text-primary focus:ring-primary border-slate-300 rounded"
+                        className="w-4 h-4 text-link focus:ring-primary border-slate-300 rounded"
                       />
-                      <span className={`text-sm font-bold transition-colors ${filters.naacGrade.includes(g) ? 'text-primary' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{g}</span>
+                      <span className={`text-sm font-bold transition-colors ${filters.naacGrade.includes(g) ? 'text-link' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{g}</span>
                     </label>
                   ))}
                 </div>
               </div>
             </div>
             
-            <button 
-              onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [], city: '' }); setPage(1); }} 
-              className="w-full mt-8 py-3 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all"
+            <Button
+              variant="ghost"
+              onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [], city: '' }); setPage(1); }}
+              className="w-full mt-8 uppercase tracking-widest text-xs bg-slate-100 dark:bg-white/5 hover:bg-primary hover:text-white"
             >
               Reset Filters
-            </button>
+            </Button>
           </div>
         </aside>
 
         <div className="flex-1">
           <p className="text-sm text-light-muted mb-4">{total} universities found</p>
           {loading ? <CardSkeleton /> : universities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <GraduationCap className="w-16 h-16 text-light-muted opacity-20 mb-4" />
-              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">No Universities Found</h3>
-              <p className="text-sm text-light-muted max-w-sm">Try changing your filters or search term.</p>
-              <button onClick={() => setFilters({ state: [], type: 'both', naacGrade: [], city: '' })} className="btn-primary mt-6">Clear Filters</button>
-            </div>
+            <EmptyState
+              icon={GraduationCap}
+              title="No Universities Found"
+              description="Try changing your filters or search term."
+              action={<Button onClick={() => setFilters({ state: [], type: 'both', naacGrade: [], city: '' })}>Clear Filters</Button>}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {universities.map(u => {
@@ -273,7 +275,7 @@ export default function Universities() {
                       {/* Bookmark — outside flip so always visible */}
                       <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleBookmark(u._id); }}
-                        className={`absolute top-5 right-5 z-30 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-90 ${isSaved ? 'bg-primary text-white' : 'bg-white/90 backdrop-blur-md text-slate-400 hover:text-primary hover:bg-white'}`}
+                        className={`absolute top-5 right-5 z-30 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-90 ${isSaved ? 'bg-primary text-white' : 'bg-white/90 backdrop-blur-md text-slate-400 hover:text-link hover:bg-white'}`}
                       >
                         <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
                       </button>
@@ -282,26 +284,26 @@ export default function Universities() {
                        <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDownloadBrochure(u); }}
                           disabled={downloadingId === u._id}
-                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-primary hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-link hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90 disabled:opacity-60 disabled:cursor-not-allowed"
                           title="Download University Brochure (PDF)"
                         >
                           {downloadingId === u._id
-                            ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            ? <Loader2 className="w-4 h-4 animate-spin text-link" />
                             : <Download className="w-4 h-4" />}
                         </button>
 
                       <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${u.description ? 'group-hover:[transform:rotateY(180deg)]' : ''}`}>
                         {/* Front Face */}
-                        <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2.5rem] border shadow-lg flex flex-col overflow-hidden ${u.isSponsored ? 'border-amber-400/60 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent' : 'border-slate-100 dark:border-white/5'}`}>
+                        <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white dark:bg-dark-card rounded-[2rem] border shadow-lg flex flex-col overflow-hidden ${u.isSponsored ? 'border-amber-400/60 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent' : 'border-slate-100 dark:border-white/5'}`}>
                           {/* Top Badges */}
                           <div className="absolute top-5 left-5 z-20 flex flex-wrap gap-2">
                             {displayType && (
-                              <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-slate-100">
+                              <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm border border-slate-100">
                                 {displayType}
                               </div>
                             )}
                             {u.isSponsored && (
-                              <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-amber-400/20 flex items-center gap-1">
+                              <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm border border-amber-400/20 flex items-center gap-1">
                                 <Star className="w-3 h-3" aria-hidden="true" /> {u.sponsorTier || 'Premium'} Partner
                               </div>
                             )}
@@ -316,23 +318,23 @@ export default function Universities() {
                                   <UniversityLogo logoUrl={u.logoUrl} name={u.name} />
                                 </div>
                                 <div>
-                                   <h3 className="text-lg font-black text-slate-900 dark:text-white line-clamp-2 leading-tight">{u.name}</h3>
+                                   <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight">{u.name}</h3>
                                 </div>
                               </div>
 
                               <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-6 px-1">
-                                <MapPin className="w-3.5 h-3.5 text-primary" />
+                                <MapPin className="w-3.5 h-3.5 text-link" />
                                 {u.city === 'Unknown' ? u.state : `${u.city}, ${u.state}`}
                               </div>
 
                               <div className="flex flex-wrap gap-2 mb-6 mt-auto">
                                 {u.naacGrade && (
-                                  <div className="flex items-center gap-1.5 bg-green-50 text-green-600 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                  <div className="flex items-center gap-1.5 bg-green-50 text-green-600 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest">
                                     <Award className="w-3 h-3" /> NAAC {u.naacGrade}
                                   </div>
                                 )}
                                 {u.nirfRank && (
-                                  <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                  <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest">
                                     <Star className="w-3 h-3 fill-orange-600" /> #{u.nirfRank} NIRF
                                   </div>
                                 )}
@@ -341,7 +343,7 @@ export default function Universities() {
                               <div className="flex items-center gap-3">
                                 <Link
                                   to={`/universities/${u.slug}`}
-                                  className="flex-1 py-3 bg-slate-900 dark:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+                                  className="flex-1 py-3 bg-slate-900 dark:bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
                                 >
                                   View Details
                                 </Link>
@@ -354,7 +356,7 @@ export default function Universities() {
                                       setLeadModalOpen(true);
                                       setLeadType('apply');
                                     }}
-                                    className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+                                    className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
                                   >
                                     Apply Now
                                   </button>
@@ -366,14 +368,14 @@ export default function Universities() {
 
                         {/* Back Face (Overview) - Only render if description exists */}
                         {u.description && (
-                          <div className="absolute inset-0 w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden] bg-gradient-to-br from-orange-500 to-primary rounded-[2.5rem] p-8 flex flex-col text-white shadow-2xl overflow-hidden z-30">
-                             <h3 className="text-2xl font-black mb-4 flex items-center gap-2"><BookOpen className="w-6 h-6" /> Overview</h3>
+                          <div className="absolute inset-0 w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden] bg-gradient-to-br from-orange-500 to-primary rounded-[2rem] p-8 flex flex-col text-white shadow-2xl overflow-hidden z-30">
+                             <h3 className="text-2xl font-bold mb-4 flex items-center gap-2"><BookOpen className="w-6 h-6" /> Overview</h3>
                              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 text-sm text-white/90 leading-relaxed font-medium">
                                {u.description}
                              </div>
                              <Link 
                                 to={`/universities/${u.slug}`}
-                                className="mt-6 py-3 w-full bg-white text-primary font-black text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-lg active:scale-95"
+                                className="mt-6 py-3 w-full bg-white text-link font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-lg active:scale-95"
                               >
                                 Explore Full Details
                              </Link>
@@ -388,12 +390,12 @@ export default function Universities() {
 
           {universities.length < total && !loading && (
             <div className="mt-10 text-center">
-              <button 
+              <Button
+                variant="outline"
                 onClick={() => setPage(prev => prev + 1)}
-                className="btn-outline !py-2.5 !px-8"
               >
                 Load More Universities
-              </button>
+              </Button>
             </div>
           )}
 

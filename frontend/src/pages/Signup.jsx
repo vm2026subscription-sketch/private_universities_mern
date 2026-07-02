@@ -172,7 +172,7 @@ export default function Signup() {
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="rounded-2xl border border-light-border dark:border-dark-border bg-light-card/50 dark:bg-dark-card/50 px-4 py-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">Verification Email</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-link mb-1">Verification Email</p>
               <p className="text-sm font-medium break-all">{form.email}</p>
             </div>
 
@@ -204,7 +204,7 @@ export default function Signup() {
               type="button"
               onClick={handleResendOtp}
               disabled={resending}
-              className="text-sm text-light-muted hover:text-primary block text-center w-full"
+              className="text-sm text-light-muted hover:text-link block text-center w-full"
             >
               {resending ? 'Resending OTP...' : 'Resend OTP'}
             </button>
@@ -215,7 +215,7 @@ export default function Signup() {
                 setOtpStep(false);
                 setOtp('');
               }}
-              className="text-sm text-primary hover:underline block text-center w-full"
+              className="text-sm text-link hover:underline block text-center w-full"
             >
               Change account details
             </button>
@@ -237,7 +237,7 @@ export default function Signup() {
         </button>
 
         <p className="text-center text-sm mt-6 text-light-muted">
-          Already have an account? <Link to="/login" className="text-primary font-medium">Login</Link>
+          Already have an account? <Link to="/login" className="text-link font-medium">Login</Link>
         </p>
       </div>
     </div>

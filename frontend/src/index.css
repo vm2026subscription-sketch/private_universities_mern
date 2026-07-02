@@ -26,7 +26,7 @@
     @apply bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-light transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#F97316]/25 inline-flex items-center border border-[#F59E0B]/20;
   }
   .btn-outline {
-    @apply border-2 border-[#F97316]/20 text-primary px-6 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all hover:scale-[1.02] inline-flex items-center;
+    @apply border-2 border-[#F97316]/20 text-[#C2410C] px-6 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all hover:scale-[1.02] inline-flex items-center;
   }
   .btn-accent {
     @apply bg-accent text-white px-6 py-3 rounded-xl font-bold hover:bg-accent-light transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#F59E0B]/25 inline-flex items-center;

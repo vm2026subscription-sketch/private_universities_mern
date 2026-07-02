@@ -184,10 +184,10 @@ export default function ForeignUniversities() {
             <button
               key={segment}
               onClick={() => setActiveTab(segment)}
-              className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border ${
+              className={`px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border ${
                 activeTab === segment
                   ? 'bg-slate-900 text-white shadow-xl border-slate-900'
-                  : 'bg-white dark:bg-dark-card text-slate-400 hover:text-primary border-slate-100 dark:border-white/5 shadow-sm'
+                  : 'bg-white dark:bg-dark-card text-slate-400 hover:text-link border-slate-100 dark:border-white/5 shadow-sm'
               }`}
             >
               {typeCopy[segment].badge}
@@ -197,15 +197,15 @@ export default function ForeignUniversities() {
 
         <div className="grid gap-4 md:grid-cols-3 mb-10">
           <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm">
-            <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Current Segment</div>
-            <div className="text-2xl font-black text-slate-900 dark:text-white">{copy.heading}</div>
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Current Segment</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{copy.heading}</div>
           </div>
           <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm">
-            <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Records Loaded</div>
-            <div className="text-2xl font-black text-primary">{currentUniversities.length}</div>
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Records Loaded</div>
+            <div className="text-2xl font-bold text-link">{currentUniversities.length}</div>
           </div>
           <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm">
-            <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Search Catalogue</div>
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Search Catalogue</div>
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
@@ -233,11 +233,11 @@ export default function ForeignUniversities() {
           {search ? <span>Searching for "{deferredSearch.trim() || search}"</span> : null}
         </div>
 
-        <div className="rounded-[2.5rem] bg-white dark:bg-dark-card border border-light-border dark:border-dark-border p-6 md:p-8 shadow-sm mb-10">
+        <div className="rounded-[2rem] bg-white dark:bg-dark-card border border-light-border dark:border-dark-border p-6 md:p-8 shadow-sm mb-10">
           <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+            <Sparkles className="w-5 h-5 text-link mt-0.5 shrink-0" />
             <div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white">{copy.heading}</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{copy.heading}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{copy.description}</p>
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function ForeignUniversities() {
             {loading ? (
               <ListSkeleton count={4} />
             ) : filteredUniversities.length === 0 ? (
-              <div className="text-center py-24 bg-white dark:bg-dark-card rounded-[2.5rem] border border-light-border dark:border-dark-border">
+              <div className="text-center py-24 bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border">
                 <Globe className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-slate-600 dark:text-slate-200">{copy.emptyTitle}</h3>
                 <p className="text-sm text-slate-400 mt-2">Try a different search or add records from the admin panel.</p>
@@ -282,16 +282,16 @@ export default function ForeignUniversities() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="px-2.5 py-1 text-[10px] font-black bg-indigo-500/10 text-indigo-500 rounded-lg uppercase tracking-widest">
+                          <span className="px-2.5 py-1 text-[10px] font-bold bg-indigo-500/10 text-indigo-500 rounded-lg uppercase tracking-widest">
                             {country} {formatDisplayType(university)}
                           </span>
                           {university.naacGrade && (
-                            <span className="px-2.5 py-1 text-[10px] font-black bg-green-50 text-green-600 rounded-lg uppercase tracking-widest">
+                            <span className="px-2.5 py-1 text-[10px] font-bold bg-green-50 text-green-600 rounded-lg uppercase tracking-widest">
                               NAAC {university.naacGrade}
                             </span>
                           )}
                           {university.nirfRank && (
-                            <span className="px-2.5 py-1 text-[10px] font-black bg-orange-50 text-orange-600 rounded-lg uppercase tracking-widest">
+                            <span className="px-2.5 py-1 text-[10px] font-bold bg-orange-50 text-orange-600 rounded-lg uppercase tracking-widest">
                               NIRF #{university.nirfRank}
                             </span>
                           )}
@@ -300,7 +300,7 @@ export default function ForeignUniversities() {
                           {university.name}
                         </h2>
                         <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-3">
-                          <MapPin className="w-4 h-4 text-primary shrink-0" />
+                          <MapPin className="w-4 h-4 text-link shrink-0" />
                           <span>{university.city !== 'Unknown' ? university.city : ''}{university.city && university.city !== 'Unknown' && university.state ? ', ' : ''}{university.state}</span>
                         </div>
                         {university.description && (
@@ -330,39 +330,39 @@ export default function ForeignUniversities() {
                     <div className="p-6 md:p-8">
                       <div className="grid gap-4 md:grid-cols-4 mb-6">
                         <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4 border border-slate-100 dark:border-white/5">
-                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                            <BookOpen className="w-4 h-4 text-primary" />
+                          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                            <BookOpen className="w-4 h-4 text-link" />
                             Courses
                           </div>
-                          <div className="text-lg font-black text-slate-900 dark:text-white">{courses.length}</div>
+                          <div className="text-lg font-bold text-slate-900 dark:text-white">{courses.length}</div>
                         </div>
                         <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4 border border-slate-100 dark:border-white/5">
-                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                            <Building2 className="w-4 h-4 text-primary" />
+                          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                            <Building2 className="w-4 h-4 text-link" />
                             Segment
                           </div>
-                          <div className="text-lg font-black text-slate-900 dark:text-white capitalize">{formatDisplayType(university)}</div>
+                          <div className="text-lg font-bold text-slate-900 dark:text-white capitalize">{formatDisplayType(university)}</div>
                         </div>
                         <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4 border border-slate-100 dark:border-white/5">
-                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                            <Award className="w-4 h-4 text-primary" />
+                          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                            <Award className="w-4 h-4 text-link" />
                             Avg Package
                           </div>
-                          <div className="text-lg font-black text-slate-900 dark:text-white">{university.stats?.avgPackageLPALabel ? `INR ${university.stats.avgPackageLPALabel} LPA` : university.stats?.avgPackageLPA ? `INR ${university.stats.avgPackageLPA} LPA` : 'N/A'}</div>
+                          <div className="text-lg font-bold text-slate-900 dark:text-white">{university.stats?.avgPackageLPALabel ? `INR ${university.stats.avgPackageLPALabel} LPA` : university.stats?.avgPackageLPA ? `INR ${university.stats.avgPackageLPA} LPA` : 'N/A'}</div>
                         </div>
                         <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4 border border-slate-100 dark:border-white/5">
-                          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                            <Globe className="w-4 h-4 text-primary" />
+                          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                            <Globe className="w-4 h-4 text-link" />
                             Country Tag
                           </div>
-                          <div className="text-lg font-black text-slate-900 dark:text-white">{country}</div>
+                          <div className="text-lg font-bold text-slate-900 dark:text-white">{country}</div>
                         </div>
                       </div>
 
                       {courses.length > 0 ? (
                         <div>
-                          <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-primary" />
+                          <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-link" />
                             Programs Offered
                           </h3>
                           <div className="grid gap-3 md:grid-cols-2">
@@ -407,7 +407,7 @@ export default function ForeignUniversities() {
         </AnimatePresence>
 
         <div className="mt-16 text-center p-10 rounded-[2rem] bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-100 dark:border-indigo-800/30">
-          <h3 className="text-2xl font-black mb-2 text-slate-900 dark:text-white">
+          <h3 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">
             Need India-based options too?
           </h3>
           <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">

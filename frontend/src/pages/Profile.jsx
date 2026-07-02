@@ -390,7 +390,7 @@ export default function Profile() {
       `}>
         <div className="h-full flex flex-col p-6">
           <div className="flex items-center justify-between mb-10 px-2">
-            <Link to="/" className="text-xl font-black text-primary tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-2">
+            <Link to="/" className="text-xl font-bold text-link tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-sm">VM</div>
               VIDYARTHI MITRA
             </Link>
@@ -425,7 +425,7 @@ export default function Profile() {
                   w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200
                   ${activeTab === tab.id
                     ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                    : 'text-light-muted hover:bg-primary-50 dark:hover:bg-dark-border hover:text-primary'}
+                    : 'text-light-muted hover:bg-primary-50 dark:hover:bg-dark-border hover:text-link'}
                 `}
               >
                 <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
@@ -448,12 +448,12 @@ export default function Profile() {
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full overflow-y-auto h-screen">
         <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8">
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-            <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-link uppercase tracking-[0.2em] mb-3">
               <span className="w-10 h-[2px] bg-primary rounded-full" />
               {getPageTitle()}
             </div>
-            <h1 className="text-4xl font-black mb-2 tracking-tight text-slate-900 dark:text-white">
-              Welcome back, <span className="text-primary">{fullUser.name?.split(' ')[0]}!</span>
+            <h1 className="text-4xl font-bold mb-2 tracking-tight text-slate-900 dark:text-white">
+              Welcome back, <span className="text-link">{fullUser.name?.split(' ')[0]}!</span>
             </h1>
             <p className="text-sm text-light-muted font-medium max-w-md">
               Manage your applications, track progress, and find your dream university.
@@ -466,7 +466,7 @@ export default function Profile() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setShowNotifications((current) => !current)}
-                className="w-12 h-12 bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-light-border dark:border-dark-border flex items-center justify-center relative text-light-muted hover:text-primary transition-colors"
+                className="w-12 h-12 bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-light-border dark:border-dark-border flex items-center justify-center relative text-light-muted hover:text-link transition-colors"
               >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 ? (
@@ -484,7 +484,7 @@ export default function Profile() {
                   >
                     <div className="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-primary/5">
                       <span className="font-bold text-sm">Notifications</span>
-                      <span className="text-[10px] font-black text-primary uppercase">{unreadCount} New</span>
+                      <span className="text-[10px] font-bold text-link uppercase">{unreadCount} New</span>
                     </div>
                     <div className="max-h-[350px] overflow-y-auto">
                       {notifications.map((notification) => (
@@ -506,7 +506,7 @@ export default function Profile() {
                       ) : null}
                     </div>
                     <div className="p-3 text-center bg-light-bg dark:bg-dark-border/30">
-                      <button type="button" onClick={handleMarkAllNotificationsRead} className="text-[10px] font-black uppercase text-primary hover:underline">
+                      <button type="button" onClick={handleMarkAllNotificationsRead} className="text-[10px] font-bold uppercase text-link hover:underline">
                         Mark all as read
                       </button>
                     </div>

@@ -50,7 +50,7 @@ export default function AdminLayout() {
     <nav className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b border-light-border dark:border-dark-border">
         <Link to="/admin" className="flex items-center gap-2">
-          <Shield className="w-6 h-6 text-primary" />
+          <Shield className="w-6 h-6 text-link" />
           {sidebarOpen && <span className="font-bold text-lg">Admin Panel</span>}
         </Link>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden md:block p-1 rounded-lg hover:bg-light-card dark:hover:bg-dark-card">
@@ -87,7 +87,7 @@ export default function AdminLayout() {
       </div>
       <div className="p-3 border-t border-light-border dark:border-dark-border space-y-1">
         {sidebarOpen && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold ${isSuperAdmin ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-primary/10 text-primary'}`}>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold ${isSuperAdmin ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-primary/10 text-link'}`}>
             <Shield className="w-3.5 h-3.5 shrink-0" />
             <span>{isSuperAdmin ? 'Super Admin' : 'Admin'}</span>
           </div>
@@ -131,7 +131,7 @@ export default function AdminLayout() {
               <Star className="w-3.5 h-3.5" aria-hidden="true" /> Super Admin
             </span>
           ) : (
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-link">
               <Wrench className="w-3.5 h-3.5" aria-hidden="true" /> Admin
             </span>
           )}

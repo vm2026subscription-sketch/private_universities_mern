@@ -20,7 +20,7 @@ const HighlightMatch = ({ text = '', query = '' }) => {
   return (
     <span>
       {text.slice(0, idx)}
-      <mark className="bg-primary/20 text-primary font-black rounded px-0.5">{text.slice(idx, idx + query.trim().length)}</mark>
+      <mark className="bg-primary/20 text-link font-bold rounded px-0.5">{text.slice(idx, idx + query.trim().length)}</mark>
       {text.slice(idx + query.trim().length)}
     </span>
   );
@@ -164,7 +164,7 @@ export default function UniversityComparison() {
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] border border-indigo-100 dark:border-indigo-500/20 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-[0.2em] border border-indigo-100 dark:border-indigo-500/20 mb-6"
           >
             <Sparkles className="w-3.5 h-3.5" /> AI-Powered Analytics
           </motion.div>
@@ -172,7 +172,7 @@ export default function UniversityComparison() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-serif font-black mb-4 text-slate-900 dark:text-white"
+            className="text-4xl md:text-5xl font-serif font-bold mb-4 text-slate-900 dark:text-white"
           >
             Smart University <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600">Comparison</span>
           </motion.h1>
@@ -193,7 +193,7 @@ export default function UniversityComparison() {
             <div className="relative group z-40">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-indigo-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
               <div className="relative flex items-center bg-white dark:bg-dark-card border-2 border-light-border dark:border-dark-border group-focus-within:border-primary/40 rounded-[2rem] shadow-xl overflow-hidden transition-all duration-300">
-                <Search className="w-6 h-6 ml-6 text-slate-400 group-focus-within:text-primary transition-colors" />
+                <Search className="w-6 h-6 ml-6 text-slate-400 group-focus-within:text-link transition-colors" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -220,7 +220,7 @@ export default function UniversityComparison() {
                   >
                     {loadingResults ? (
                       <div className="p-8 flex flex-col items-center justify-center text-slate-400">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
+                        <Loader2 className="w-8 h-8 animate-spin text-link mb-3" />
                         <p className="text-sm font-bold">Searching database...</p>
                       </div>
                     ) : query?.trim()?.length > 0 ? (
@@ -238,11 +238,11 @@ export default function UniversityComparison() {
                                 {university.logoUrl ? (
                                   <img src={university.logoUrl} alt="" className="w-full h-full object-contain" />
                                 ) : (
-                                  <span className="text-base font-black text-primary">{university.name?.[0]}</span>
+                                  <span className="text-base font-bold text-link">{university.name?.[0]}</span>
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-slate-900 dark:text-white truncate group-hover/item:text-primary transition-colors text-sm">
+                                <p className="font-bold text-slate-900 dark:text-white truncate group-hover/item:text-link transition-colors text-sm">
                                   <HighlightMatch text={university.name} query={query} />
                                 </p>
                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -250,17 +250,17 @@ export default function UniversityComparison() {
                                     <MapPin className="w-3 h-3" />{university.city}, {university.state}
                                   </span>
                                   {university.naacGrade && (
-                                    <span className="px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-[9px] font-black border border-green-100">NAAC {university.naacGrade}</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-[9px] font-bold border border-green-100">NAAC {university.naacGrade}</span>
                                   )}
                                   {university.nirfRank && (
-                                    <span className="px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 text-[9px] font-black border border-orange-100"># {university.nirfRank} NIRF</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 text-[9px] font-bold border border-orange-100"># {university.nirfRank} NIRF</span>
                                   )}
                                 </div>
                               </div>
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                                 selectedIds.has(university._id)
                                   ? 'bg-emerald-100 text-emerald-600'
-                                  : 'bg-primary/10 text-primary opacity-0 group-hover/item:opacity-100'
+                                  : 'bg-primary/10 text-link opacity-0 group-hover/item:opacity-100'
                               }`}>
                                 <Check className="w-4 h-4" />
                               </div>
@@ -279,11 +279,11 @@ export default function UniversityComparison() {
                     ) : (
                       <div className="p-4">
                         <div className="flex items-center justify-between mb-3 px-2">
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Recent Searches</h4>
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Recent Searches</h4>
                           <button 
                             type="button"
                             onClick={(e) => { e.stopPropagation(); clearRecentSearches(); }}
-                            className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
+                            className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
                           >
                             Clear All
                           </button>
@@ -296,7 +296,7 @@ export default function UniversityComparison() {
                                 onClick={() => addUniversity(u)}
                                 className="flex-1 flex items-center gap-3 px-4 py-2 text-left"
                               >
-                                <Search className="w-4 h-4 text-slate-300 group-hover/recent:text-primary shrink-0" />
+                                <Search className="w-4 h-4 text-slate-300 group-hover/recent:text-link shrink-0" />
                                 <span className="font-semibold text-sm text-slate-700 dark:text-slate-300 truncate">{u.name}</span>
                               </button>
                               <button
@@ -320,8 +320,8 @@ export default function UniversityComparison() {
             {/* Selected Universities */}
             <div>
               <div className="flex items-center justify-between mb-4 px-2">
-                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-primary" /> Comparison Bench
+                <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-link" /> Comparison Bench
                 </h3>
                 <span className={`text-xs font-bold px-3 py-1 rounded-full ${selectedUniversities.length >= 4 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 dark:bg-dark-card text-slate-500'}`}>
                   {selectedUniversities.length} / 4 Added
@@ -337,7 +337,7 @@ export default function UniversityComparison() {
                   <div className="w-20 h-20 bg-slate-100 dark:bg-dark-bg rounded-3xl mx-auto flex items-center justify-center mb-6 shadow-inner">
                     <Scale className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                   </div>
-                  <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">Bench is Empty</h3>
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Bench is Empty</h3>
                   <p className="text-sm text-slate-500 font-medium max-w-sm mx-auto">
                     Search and add up to 4 universities to see a detailed head-to-head comparison.
                   </p>
@@ -366,7 +366,7 @@ export default function UniversityComparison() {
                            {university.logoUrl ? (
                              <img src={university.logoUrl} alt="" className="w-full h-full object-contain" />
                            ) : (
-                             <span className="text-lg font-black text-slate-400">{university.name[0]}</span>
+                             <span className="text-lg font-bold text-slate-400">{university.name[0]}</span>
                            )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -399,16 +399,16 @@ export default function UniversityComparison() {
               <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Scale className="w-4 h-4 text-primary" />
+                  <Scale className="w-4 h-4 text-link" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">Ready to Compare?</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Ready to Compare?</h3>
               </div>
               <p className="text-sm text-slate-500 mb-6 font-medium">Add at least 2 universities to generate a comprehensive benchmark report.</p>
               
               <button
                 onClick={runComparison}
                 disabled={selectedUniversities.length < 2 || comparing}
-                className={`w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 ${
+                className={`w-full py-5 rounded-2xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 ${
                   selectedUniversities.length >= 2 && !comparing
                     ? 'bg-gradient-to-r from-primary to-indigo-600 text-white shadow-xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98]'
                     : 'bg-slate-100 dark:bg-dark-border text-slate-400 cursor-not-allowed'
@@ -422,7 +422,7 @@ export default function UniversityComparison() {
               </button>
 
               <div className="mt-6 pt-6 border-t border-slate-100 dark:border-dark-border">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 text-center">Popular Benchmarks</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 text-center">Popular Benchmarks</p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {EXAMPLE_UNIVERSITIES.map((name) => (
                     <button
@@ -435,7 +435,7 @@ export default function UniversityComparison() {
                           searchInputRef.current?.focus();
                         }, 400);
                       }}
-                      className="px-4 py-2.5 rounded-full text-xs font-bold bg-gradient-to-r from-slate-50 to-white dark:from-dark-bg dark:to-dark-bg border border-slate-200 dark:border-dark-border text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary hover:shadow-md hover:shadow-primary/10 active:scale-95 transition-all duration-200"
+                      className="px-4 py-2.5 rounded-full text-xs font-bold bg-gradient-to-r from-slate-50 to-white dark:from-dark-bg dark:to-dark-bg border border-slate-200 dark:border-dark-border text-slate-600 dark:text-slate-300 hover:border-primary hover:text-link hover:shadow-md hover:shadow-primary/10 active:scale-95 transition-all duration-200"
                     >
                       {name}
                     </button>
@@ -457,8 +457,8 @@ export default function UniversityComparison() {
               className="space-y-8"
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                  <ArrowRightLeft className="w-8 h-8 text-primary" />
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                  <ArrowRightLeft className="w-8 h-8 text-link" />
                   Comparison Results
                 </h2>
               </div>
@@ -486,14 +486,14 @@ export default function UniversityComparison() {
                         <Crown className="w-7 h-7 text-amber-500" />
                       </div>
                       <div className="flex-1">
-                        <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-amber-500 mb-1"><Trophy className="w-3.5 h-3.5" aria-hidden="true" /> Overall Top Pick</p>
-                        <p className="font-black text-xl text-slate-900 dark:text-white">{topUni.name}</p>
+                        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500 mb-1"><Trophy className="w-3.5 h-3.5" aria-hidden="true" /> Overall Top Pick</p>
+                        <p className="font-bold text-xl text-slate-900 dark:text-white">{topUni.name}</p>
                         <p className="text-sm text-slate-500 mt-0.5">Leads in {allWinnerCounts[topId]} out of {Object.keys(summaryLabels).length} categories</p>
                       </div>
                       {topUni.naacGrade && (
                         <div className="hidden md:flex flex-col items-center gap-1">
-                          <span className="text-2xl font-black text-primary">{topUni.naacGrade}</span>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">NAAC</span>
+                          <span className="text-2xl font-bold text-link">{topUni.naacGrade}</span>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">NAAC</span>
                         </div>
                       )}
                     </div>
@@ -523,8 +523,8 @@ export default function UniversityComparison() {
                       <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center mb-4 ${colorMap[key]}`}>
                         <IconComp className="w-5 h-5" />
                       </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{label}</p>
-                      <p className="font-black text-base text-slate-800 dark:text-white leading-tight">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{label}</p>
+                      <p className="font-bold text-base text-slate-800 dark:text-white leading-tight">
                         {winnerNames?.length ? winnerNames.join(', ') : 'N/A'}
                       </p>
                     </motion.div>
@@ -535,13 +535,13 @@ export default function UniversityComparison() {
               <section className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.6fr] gap-8">
                 <div className="bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border shadow-lg overflow-x-auto custom-scrollbar relative">
                   <div className="p-8 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-slate-50/50 dark:bg-white/5">
-                    <h3 className="font-black text-lg">Detailed Metrics</h3>
+                    <h3 className="font-bold text-lg">Detailed Metrics</h3>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Head to Head</span>
                   </div>
                   <table className="w-full min-w-[760px] text-sm">
                     <thead>
                       <tr className="border-b border-light-border dark:border-dark-border bg-slate-50/50 dark:bg-dark-bg/50">
-                        <th className="text-left py-5 px-8 font-black text-slate-400 text-[11px] uppercase tracking-widest">Metric</th>
+                        <th className="text-left py-5 px-8 font-bold text-slate-400 text-[11px] uppercase tracking-widest">Metric</th>
                         {comparison.universities.map((university) => (
                           <th key={university._id} className="text-left py-5 px-6 font-bold text-slate-900 dark:text-white w-48">
                             <div className="flex items-center gap-3">
@@ -571,7 +571,7 @@ export default function UniversityComparison() {
                                 <td key={`${row.key}-${entry.universityId}`} className="py-4 px-6 align-top">
                                   <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl ${
                                     isWinner
-                                      ? 'bg-emerald-50 text-emerald-700 font-black border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'
+                                      ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'
                                       : 'text-slate-600 dark:text-slate-400 font-semibold'
                                   }`}>
                                     {isWinner && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
@@ -592,8 +592,8 @@ export default function UniversityComparison() {
 
                 <div className="space-y-6">
                   <div className="bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border shadow-lg p-8">
-                    <h3 className="font-black mb-6 text-slate-900 dark:text-white flex items-center gap-2">
-                      <Layers className="w-5 h-5 text-primary" /> Common Course Categories
+                    <h3 className="font-bold mb-6 text-slate-900 dark:text-white flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-link" /> Common Course Categories
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {(comparison?.summary?.commonCourseCategories || []).length
@@ -607,7 +607,7 @@ export default function UniversityComparison() {
                   </div>
 
                   <div className="bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border shadow-lg p-8">
-                    <h3 className="font-black mb-6 text-slate-900 dark:text-white flex items-center gap-2">
+                    <h3 className="font-bold mb-6 text-slate-900 dark:text-white flex items-center gap-2">
                       <Check className="w-5 h-5 text-orange-500" /> Common Entrance Exams
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -640,18 +640,18 @@ export default function UniversityComparison() {
                            {university.logoUrl ? (
                              <img src={university.logoUrl} alt="" className="w-full h-full object-contain" />
                            ) : (
-                             <GraduationCap className="w-8 h-8 text-primary" />
+                             <GraduationCap className="w-8 h-8 text-link" />
                            )}
                         </div>
                         <div>
-                          <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 line-clamp-2">{university.name}</h3>
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 line-clamp-2">{university.name}</h3>
                           <p className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
                             <MapPin className="w-3.5 h-3.5" /> {university.city}, {university.state}
                           </p>
                         </div>
                       </div>
                       {university.slug && (
-                        <a href={`/universities/${university.slug}`} className="w-10 h-10 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors shrink-0">
+                        <a href={`/universities/${university.slug}`} className="w-10 h-10 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-link hover:bg-primary/10 transition-colors shrink-0">
                           <ArrowUpRight className="w-5 h-5" />
                         </a>
                       )}
@@ -659,15 +659,15 @@ export default function UniversityComparison() {
 
                     <div className="grid grid-cols-2 gap-4 mb-8">
                       <div className="rounded-2xl bg-slate-50 dark:bg-dark-bg border border-slate-100 dark:border-dark-border p-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">NAAC Grade</p>
-                        <p className="font-black text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">NAAC Grade</p>
+                        <p className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
                            {university.naacGrade || 'N/A'}
                            {university.naacGrade && <Award className="w-4 h-4 text-green-500" />}
                         </p>
                       </div>
                       <div className="rounded-2xl bg-slate-50 dark:bg-dark-bg border border-slate-100 dark:border-dark-border p-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">NIRF Rank</p>
-                        <p className="font-black text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">NIRF Rank</p>
+                        <p className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
                            {university.nirfRank ? `#${university.nirfRank}` : 'N/A'}
                            {university.nirfRank && <Star className="w-4 h-4 text-orange-500 fill-orange-500" />}
                         </p>
@@ -676,7 +676,7 @@ export default function UniversityComparison() {
 
                     <div className="space-y-6">
                       <div>
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Key Approvals</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Key Approvals</p>
                         <div className="flex flex-wrap gap-2">
                           {(university.approvals || []).length
                             ? university.approvals.map((approval) => (
@@ -687,7 +687,7 @@ export default function UniversityComparison() {
                       </div>
 
                       <div>
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Top Recruiters</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Top Recruiters</p>
                         <div className="flex flex-wrap gap-2">
                           {(university.topRecruiters || []).length
                             ? university.topRecruiters.slice(0, 5).map((recruiter) => (
@@ -701,7 +701,7 @@ export default function UniversityComparison() {
                       </div>
 
                       <div>
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Popular Courses</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Popular Courses</p>
                         <div className="space-y-3">
                           {(university.featuredCourses || []).length
                             ? university.featuredCourses.slice(0, 3).map((course) => (
@@ -713,7 +713,7 @@ export default function UniversityComparison() {
                                   </p>
                                 </div>
                                 <div className="text-right">
-                                   <p className="font-black text-sm text-primary">{course.feesPerYearLabel ? `₹${course.feesPerYearLabel}` : course.feesPerYear ? `₹${(course.feesPerYear/100000).toFixed(1)}L` : 'N/A'}</p>
+                                   <p className="font-bold text-sm text-link">{course.feesPerYearLabel ? `₹${course.feesPerYearLabel}` : course.feesPerYear ? `₹${(course.feesPerYear/100000).toFixed(1)}L` : 'N/A'}</p>
                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Per Year</p>
                                 </div>
                               </div>

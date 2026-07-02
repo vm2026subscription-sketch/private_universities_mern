@@ -85,7 +85,7 @@ export default function Footer() {
               <img src={logo} alt="Vidyarthi Mitra" className="h-9" />
             </div>
             <div className="mt-6 space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-accent/15 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.24em] text-accent-light">
+              <div className="inline-flex items-center gap-2 rounded-full bg-accent/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-accent-light">
                 <Sparkles className="w-3.5 h-3.5" />
                 Smarter Admission Guidance
               </div>
@@ -101,14 +101,14 @@ export default function Footer() {
               <button
                 type="button"
                 onClick={openChat}
-                className="inline-flex items-center gap-2 rounded-2xl bg-accent px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-accent/20 hover:bg-accent-light"
+                className="inline-flex items-center gap-2 rounded-2xl bg-accent px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-accent/20 hover:bg-accent-light"
               >
                 Talk to AI
                 <ArrowRight className="w-4 h-4" />
               </button>
               <Link
                 to="/contact"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-black text-white hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white hover:bg-white/10"
               >
                 Contact Team
               </Link>
@@ -120,7 +120,7 @@ export default function Footer() {
               <div key={group.title} className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm shadow-xl">
                 <div className="mb-5">
                   <div className="mb-3 h-1.5 w-14 rounded-full bg-gradient-to-r from-accent to-accent-light" />
-                  <h4 className="text-sm font-black uppercase tracking-[0.24em] text-accent-light">
+                  <h4 className="text-sm font-bold uppercase tracking-[0.24em] text-accent-light">
                     {group.title}
                   </h4>
                 </div>
@@ -142,7 +142,7 @@ export default function Footer() {
             <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm shadow-xl">
               <div className="mb-5">
                 <div className="mb-3 h-1.5 w-14 rounded-full bg-gradient-to-r from-accent to-accent-light" />
-                <h4 className="text-sm font-black uppercase tracking-[0.24em] text-accent-light">
+                <h4 className="text-sm font-bold uppercase tracking-[0.24em] text-accent-light">
                   Connect
                 </h4>
               </div>
@@ -163,7 +163,7 @@ export default function Footer() {
               </div>
 
               <div className="mt-6 pt-5 border-t border-white/10">
-                <p className="mb-3 text-[11px] font-black uppercase tracking-[0.24em] text-accent-light">
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.24em] text-accent-light">
                   Follow Us
                 </p>
                 <div className="flex flex-wrap gap-2.5">
@@ -194,7 +194,7 @@ export default function Footer() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <Bell className="w-5 h-5 text-accent-light" />
-                <h4 className="text-base font-black text-white">Stay Updated</h4>
+                <h4 className="text-base font-bold text-white">Stay Updated</h4>
               </div>
               <p className="text-sm text-white/60">Get latest admission dates, exam updates & scholarship alerts directly in your inbox.</p>
             </div>
@@ -210,7 +210,7 @@ export default function Footer() {
               <button
                 type="submit"
                 disabled={subscribing}
-                className="px-5 py-3 rounded-2xl bg-accent text-slate-950 text-sm font-black hover:bg-accent-light transition-all disabled:opacity-60 whitespace-nowrap"
+                className="px-5 py-3 rounded-2xl bg-accent text-slate-950 text-sm font-bold hover:bg-accent-light transition-all disabled:opacity-60 whitespace-nowrap"
               >
                 {subscribing ? 'Subscribing...' : 'Subscribe'}
               </button>

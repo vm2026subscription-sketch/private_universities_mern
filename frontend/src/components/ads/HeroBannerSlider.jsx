@@ -57,7 +57,7 @@ export default function HeroBannerSlider({ page = 'home', interval = 6000 }) {
 
             {(banner.title || banner.subtitle || banner.linkText) && (
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent flex flex-col justify-center p-6 md:p-12">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-300 mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300 mb-2">
                   Sponsored
                 </span>
                 {banner.title && (
@@ -71,7 +71,7 @@ export default function HeroBannerSlider({ page = 'home', interval = 6000 }) {
                   </p>
                 )}
                 {banner.linkText && (
-                  <span className="mt-5 inline-flex items-center gap-2 w-fit bg-white text-slate-900 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg">
+                  <span className="mt-5 inline-flex items-center gap-2 w-fit bg-white text-slate-900 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg">
                     {banner.linkText} <ArrowRight className="w-4 h-4" />
                   </span>
                 )}

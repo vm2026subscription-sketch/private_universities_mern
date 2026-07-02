@@ -7,7 +7,7 @@ export default function NotFound() {
       <div className="text-center max-w-lg mx-auto">
         {/* Animated 404 */}
         <div className="relative mb-8 select-none">
-          <div className="text-[10rem] md:text-[14rem] font-black leading-none tracking-tighter text-gradient opacity-90">
+          <div className="text-[10rem] md:text-[14rem] font-bold leading-none tracking-tighter text-gradient opacity-90">
             404
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -15,7 +15,7 @@ export default function NotFound() {
           </div>
         </div>
 
-        <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-3">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-3">
           Oops! Page not found
         </h1>
         <p className="text-slate-500 dark:text-slate-400 mb-10 text-base leading-relaxed">
@@ -34,7 +34,7 @@ export default function NotFound() {
           </Link>
         </div>
 
-        <button onClick={() => window.history.back()} className="mt-8 flex items-center gap-2 text-sm text-slate-400 hover:text-primary transition-colors mx-auto">
+        <button onClick={() => window.history.back()} className="mt-8 flex items-center gap-2 text-sm text-slate-400 hover:text-link transition-colors mx-auto">
           <ArrowLeft className="w-4 h-4" />
           Go back
         </button>

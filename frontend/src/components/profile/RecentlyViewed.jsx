@@ -34,15 +34,15 @@ export default function RecentlyViewed({ items = [], onClear }) {
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                <Clock className="w-20 h-20" />
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-primary font-black text-2xl mb-4 group-hover:scale-110 transition-transform border border-primary/10">
+            <div className="w-14 h-14 rounded-2xl bg-primary-50 dark:bg-dark-border flex items-center justify-center text-link font-bold text-2xl mb-4 group-hover:scale-110 transition-transform border border-primary/10">
               {u.name?.charAt(0)}
             </div>
-            <h3 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors line-clamp-1">{u.name}</h3>
+            <h3 className="font-bold text-lg mb-1 group-hover:text-link transition-colors line-clamp-1">{u.name}</h3>
             <p className="text-sm text-light-muted flex items-center gap-1 mb-6">
-              <MapPin className="w-4 h-4 text-primary" /> {u.city}, {u.state}
+              <MapPin className="w-4 h-4 text-link" /> {u.city}, {u.state}
             </p>
             <div className="flex gap-2">
-              <Link to={`/universities/${u.slug}`} className="btn-primary !py-2.5 flex-1 text-center text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+              <Link to={`/universities/${u.slug}`} className="btn-primary !py-2.5 flex-1 text-center text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2">
                 <ExternalLink className="w-3 h-3" /> Revisit Profile
               </Link>
             </div>

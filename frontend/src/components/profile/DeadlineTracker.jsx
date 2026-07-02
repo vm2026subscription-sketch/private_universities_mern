@@ -18,9 +18,9 @@ export default function DeadlineTracker({ universities = [] }) {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-black">Admission Deadlines</h2>
+        <h2 className="text-2xl font-bold">Admission Deadlines</h2>
         <div className="flex gap-2">
-           <div className="flex items-center gap-1 text-[10px] font-black text-orange-500 uppercase bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-md">
+           <div className="flex items-center gap-1 text-[10px] font-bold text-orange-500 uppercase bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-md">
               <AlertCircle className="w-3 h-3" /> Urgent
            </div>
         </div>
@@ -42,7 +42,7 @@ export default function DeadlineTracker({ universities = [] }) {
             >
               <div className="flex items-start justify-between mb-4">
                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-light-bg dark:bg-dark-border flex items-center justify-center text-primary font-bold shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-light-bg dark:bg-dark-border flex items-center justify-center text-link font-bold shadow-sm">
                        {uni.name?.charAt(0)}
                     </div>
                     <div>
@@ -52,21 +52,21 @@ export default function DeadlineTracker({ universities = [] }) {
                        </p>
                     </div>
                  </div>
-                 <Link to={`/universities/${uni.slug}`} className="p-2 hover:bg-light-bg dark:hover:bg-dark-border rounded-full transition-colors text-light-muted hover:text-primary">
+                 <Link to={`/universities/${uni.slug}`} className="p-2 hover:bg-light-bg dark:hover:bg-dark-border rounded-full transition-colors text-light-muted hover:text-link">
                     <ExternalLink className="w-4 h-4" />
                  </Link>
               </div>
 
               <div className={`p-4 rounded-2xl ${expired ? 'bg-red-50 dark:bg-red-900/10' : urgent ? 'bg-orange-50 dark:bg-orange-900/10' : 'bg-blue-50 dark:bg-blue-900/10'} mb-4`}>
                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-light-muted">Application Ends</span>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${expired ? 'text-red-600' : urgent ? 'text-orange-600' : 'text-blue-600'}`}>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-light-muted">Application Ends</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${expired ? 'text-red-600' : urgent ? 'text-orange-600' : 'text-blue-600'}`}>
                        {expired ? 'Expired' : urgent ? 'Closing Soon' : 'Active'}
                     </span>
                  </div>
                  <div className="flex items-center gap-2">
                     <Clock className={`w-4 h-4 ${expired ? 'text-red-500' : urgent ? 'text-orange-500' : 'text-blue-500'}`} />
-                    <span className="text-lg font-black">{deadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                    <span className="text-lg font-bold">{deadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                  </div>
               </div>
 
@@ -75,7 +75,7 @@ export default function DeadlineTracker({ universities = [] }) {
                     {expired ? 'Deadline passed' : `${Math.ceil((deadline - new Date()) / (1000 * 60 * 60 * 24))} days left`}
                  </div>
                  {!expired && (
-                    <button className="text-xs font-black text-primary flex items-center gap-1 hover:underline">
+                    <button className="text-xs font-bold text-link flex items-center gap-1 hover:underline">
                        Apply Now <ChevronRight className="w-3 h-3" />
                     </button>
                  )}

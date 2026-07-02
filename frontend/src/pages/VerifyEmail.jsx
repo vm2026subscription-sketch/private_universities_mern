@@ -56,7 +56,7 @@ export default function VerifyEmail() {
           Enter the 6-digit verification code sent to your email after signup.
         </p>
         {codeFromQuery ? (
-          <p className="text-xs text-center text-primary font-medium mb-4">
+          <p className="text-xs text-center text-link font-medium mb-4">
             Local mode code auto-filled for testing.
           </p>
         ) : null}
@@ -71,7 +71,7 @@ export default function VerifyEmail() {
           {resending ? 'Sending...' : 'Resend Code'}
         </button>
         <p className="text-center text-sm mt-6 text-light-muted">
-          Already verified? <Link to="/login" className="text-primary font-medium">Login</Link>
+          Already verified? <Link to="/login" className="text-link font-medium">Login</Link>
         </p>
       </div>
     </div>

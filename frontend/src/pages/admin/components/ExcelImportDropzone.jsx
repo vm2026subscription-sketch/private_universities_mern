@@ -111,19 +111,19 @@ export default function ExcelImportDropzone({
             onChange={(e) => handleFile(e.target.files[0])}
           />
           <div className={`rounded-2xl p-4 transition-colors ${dragging ? 'bg-primary/20' : 'bg-primary/10'}`}>
-            <UploadCloud className={`w-10 h-10 transition-colors ${dragging ? 'text-primary scale-110' : 'text-primary/70'}`} />
+            <UploadCloud className={`w-10 h-10 transition-colors ${dragging ? 'text-link scale-110' : 'text-link/70'}`} />
           </div>
           <div className="text-center space-y-1">
             <p className="font-bold text-light-text dark:text-dark-text">{label}</p>
             <p className="text-sm text-light-muted dark:text-dark-muted">{hint}</p>
-            <p className="text-xs text-primary font-semibold mt-2">Click to browse or drag &amp; drop</p>
+            <p className="text-xs text-link font-semibold mt-2">Click to browse or drag &amp; drop</p>
           </div>
 
           {onDownloadTemplate && (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDownloadTemplate(); }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline mt-1"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-link hover:underline mt-1"
             >
               <Download className="w-3.5 h-3.5" />
               Download sample template
@@ -189,7 +189,7 @@ export default function ExcelImportDropzone({
             <div className="flex items-center justify-between px-4 py-3 bg-light-card/60 dark:bg-dark-card/60 border-b border-light-border dark:border-dark-border">
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-light-muted" />
-                <span className="text-xs font-black uppercase tracking-wider text-light-muted dark:text-dark-muted">
+                <span className="text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted">
                   Data Preview
                 </span>
                 <span className="badge badge-blue text-xs">{rows.length} rows</span>
@@ -222,13 +222,13 @@ export default function ExcelImportDropzone({
               <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-light-card dark:bg-dark-card">
                   <tr>
-                    <th className="px-3 py-2 text-left font-black uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border w-10">
+                    <th className="px-3 py-2 text-left font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border w-10">
                       #
                     </th>
                     {headers.map((h) => (
                       <th
                         key={h}
-                        className="px-3 py-2 text-left font-black uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border whitespace-nowrap"
+                        className="px-3 py-2 text-left font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted border-b border-light-border dark:border-dark-border whitespace-nowrap"
                       >
                         {h}
                       </th>

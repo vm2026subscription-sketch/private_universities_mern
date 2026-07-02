@@ -4,7 +4,7 @@
 const VARIANTS = {
   primary: 'bg-primary text-white hover:bg-primary-dark shadow-card',
   secondary: 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white/10 dark:hover:bg-white/20',
-  outline: 'border-2 border-primary/30 text-primary hover:bg-primary hover:text-white',
+  outline: 'border-2 border-primary/30 text-link hover:bg-primary hover:text-white',
   ghost: 'text-slate-600 dark:text-dark-muted hover:bg-light-card dark:hover:bg-dark-card',
   danger: 'bg-error text-white hover:bg-red-600',
 };

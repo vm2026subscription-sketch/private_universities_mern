@@ -16,7 +16,7 @@ const TIER_CONFIG = {
   none:     { label: 'Organic',  color: 'text-light-muted',bg: 'bg-light-bg',      border: 'border-light-border',  icon: ClipboardList },
 };
 
-function StatCard({ icon: Icon, label, value, sub, color = 'text-primary', bg = 'bg-primary/10' }) {
+function StatCard({ icon: Icon, label, value, sub, color = 'text-link', bg = 'bg-primary/10' }) {
   return (
     <div className="card p-5 flex items-center gap-4 shadow-sm">
       <div className={`p-3 rounded-2xl ${bg} ${color} shrink-0`}>
@@ -24,7 +24,7 @@ function StatCard({ icon: Icon, label, value, sub, color = 'text-primary', bg = 
       </div>
       <div className="min-w-0">
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-light-muted dark:text-dark-muted">{label}</p>
-        <p className="text-2xl font-black text-light-text dark:text-dark-text mt-0.5">{value}</p>
+        <p className="text-2xl font-bold text-light-text dark:text-dark-text mt-0.5">{value}</p>
         {sub && <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">{sub}</p>}
       </div>
     </div>
@@ -114,11 +114,11 @@ export default function PartnerDashboard() {
               <img src={university.logoUrl} alt={university.name} className="w-12 h-12 rounded-xl object-contain border border-light-border dark:border-dark-border bg-white p-1" />
             ) : (
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-primary" />
+                <Building2 className="w-6 h-6 text-link" />
               </div>
             )}
             <div>
-              <h2 className="text-xl font-black text-light-text dark:text-dark-text leading-tight">{university.name}</h2>
+              <h2 className="text-xl font-bold text-light-text dark:text-dark-text leading-tight">{university.name}</h2>
               <p className="text-sm text-light-muted dark:text-dark-muted">{university.city}, {university.state}</p>
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function PartnerDashboard() {
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* Tier badge */}
-          <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black border ${tier.bg} ${tier.color} ${tier.border}`}>
+          <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border ${tier.bg} ${tier.color} ${tier.border}`}>
             <tier.icon className="w-4 h-4" aria-hidden="true" /> {tier.label} Partner
           </span>
 
@@ -148,7 +148,7 @@ export default function PartnerDashboard() {
             className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
               days === d
                 ? 'bg-primary text-white shadow-md'
-                : 'bg-light-card dark:bg-dark-card text-light-muted dark:text-dark-muted hover:text-primary border border-light-border dark:border-dark-border'
+                : 'bg-light-card dark:bg-dark-card text-light-muted dark:text-dark-muted hover:text-link border border-light-border dark:border-dark-border'
             }`}
           >
             {d}d
@@ -159,7 +159,7 @@ export default function PartnerDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Eye}       label="Profile Views"    value={profileViews.toLocaleString()}  color="text-blue-500"   bg="bg-blue-500/10" />
-        <StatCard icon={Users}     label="Total Leads"      value={totalLeads}                      color="text-primary"    bg="bg-primary/10" />
+        <StatCard icon={Users}     label="Total Leads"      value={totalLeads}                      color="text-link"    bg="bg-primary/10" />
         <StatCard icon={CheckCircle2} label="Apply Now"     value={applyLeads}  sub="applications"  color="text-green-500"  bg="bg-green-500/10" />
         <StatCard icon={FileText}  label="Brochure Reqs"   value={brochureLeads} sub="downloads"   color="text-amber-500"  bg="bg-amber-500/10" />
       </div>
@@ -169,8 +169,8 @@ export default function PartnerDashboard() {
         {/* Daily leads chart */}
         <div className="lg:col-span-2 card p-6 space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="font-black text-light-text dark:text-dark-text flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary" />
+            <h3 className="font-bold text-light-text dark:text-dark-text flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-link" />
               Lead Trend — Last {days} Days
             </h3>
             <span className="text-xs text-light-muted dark:text-dark-muted">{dailyLeads.length} active days</span>
@@ -188,7 +188,7 @@ export default function PartnerDashboard() {
 
         {/* Quick Actions */}
         <div className="card p-6 space-y-4 shadow-sm">
-          <h3 className="font-black text-light-text dark:text-dark-text flex items-center gap-2">
+          <h3 className="font-bold text-light-text dark:text-dark-text flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-amber-500" />
             Quick Actions
           </h3>
@@ -203,7 +203,7 @@ export default function PartnerDashboard() {
             <Link
               to={`/universities/${university.slug}`}
               target="_blank"
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all text-sm font-semibold border border-primary/20"
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-primary/10 text-link hover:bg-primary/20 transition-all text-sm font-semibold border border-primary/20"
             >
               <Star className="w-4 h-4" />
               View Public Profile
@@ -219,7 +219,7 @@ export default function PartnerDashboard() {
 
           {/* Tier summary */}
           <div className={`mt-4 p-4 rounded-xl border ${tier.border} ${tier.bg}`}>
-            <p className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest ${tier.color}`}><tier.icon className="w-4 h-4" aria-hidden="true" /> {tier.label} Tier Benefits</p>
+            <p className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest ${tier.color}`}><tier.icon className="w-4 h-4" aria-hidden="true" /> {tier.label} Tier Benefits</p>
             <ul className="mt-2 space-y-1 text-xs text-light-muted dark:text-dark-muted [&>li]:flex [&>li]:items-center [&>li]:gap-1.5 [&>li>svg]:w-3 [&>li>svg]:h-3 [&>li>svg]:shrink-0">
               {university.sponsorTier === 'platinum' && <><li><Check aria-hidden="true" />Slot #1 in all listings</li><li><Check aria-hidden="true" />Hero banner slider placement</li><li><Check aria-hidden="true" />Homepage sponsored showcase</li><li><Check aria-hidden="true" />Sticky bottom & sidebar ads</li></>}
               {university.sponsorTier === 'gold'     && <><li><Check aria-hidden="true" />Top 3 state placement</li><li><Check aria-hidden="true" />Homepage sponsored section</li><li><Check aria-hidden="true" />Sidebar ad placement</li></>}
@@ -234,8 +234,8 @@ export default function PartnerDashboard() {
       {/* Recent Leads Table */}
       <div className="card p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="font-black text-light-text dark:text-dark-text flex items-center gap-2">
-            <Mail className="w-5 h-5 text-primary" />
+          <h3 className="font-bold text-light-text dark:text-dark-text flex items-center gap-2">
+            <Mail className="w-5 h-5 text-link" />
             Recent Student Leads
             <span className="ml-2 text-xs font-normal text-light-muted dark:text-dark-muted">
               (last {days} days — {recentLeads.length} shown)
@@ -258,7 +258,7 @@ export default function PartnerDashboard() {
               <thead>
                 <tr className="border-b border-light-border dark:border-dark-border">
                   {['Student', 'Contact', 'State', 'Course', 'Type', 'Date'].map(h => (
-                    <th key={h} className="pb-3 text-left text-xs font-black uppercase tracking-[0.15em] text-light-muted dark:text-dark-muted">{h}</th>
+                    <th key={h} className="pb-3 text-left text-xs font-bold uppercase tracking-[0.15em] text-light-muted dark:text-dark-muted">{h}</th>
                   ))}
                 </tr>
               </thead>
