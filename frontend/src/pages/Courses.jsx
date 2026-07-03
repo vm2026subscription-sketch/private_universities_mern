@@ -1014,9 +1014,6 @@ export default function Courses() {
                                 {item.universityId?.city}{item.universityId?.state ? `, ${item.universityId.state}` : ''}
                               </p>
                             </div>
-                            <div className="h-1 w-full bg-slate-50 dark:bg-dark-border/30 rounded-full overflow-hidden">
-                              <div className="h-full bg-primary w-2/3" />
-                            </div>
 
                             {/* Footer info: Exams + CTA */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
@@ -1087,18 +1084,8 @@ export default function Courses() {
                           </div>
                           </div>
 
-                        <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center gap-3">
-                            <div className="flex -space-x-3">
-                              {[1,2,3,4].map(i => (
-                                <div key={i} className="w-8 h-8 rounded-full border-4 border-white dark:border-dark-card bg-slate-100 dark:bg-dark-border flex items-center justify-center text-[10px] font-bold overflow-hidden shadow-sm">
-                                  {i === 4 ? <span className="text-link">+</span> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-indigo-500/20" />}
-                                </div>
-                              ))}
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block">A-Grade Accreditation</span>
-                          </div>
-                          <button 
+                        <div className="flex items-center justify-end pt-2">
+                          <button
                             onClick={() => {
                               if (selectedCourse) {
                                 const routeParam = item.universityId?.slug || item.universityId?._id;
