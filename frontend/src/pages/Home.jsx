@@ -21,45 +21,10 @@ import { toast } from 'react-hot-toast';
 import img_gujarat from '../assets/states/gujarat.jpg';
 import img_uttar_pradesh from '../assets/states/uttar-pradesh.jpg';
 import img_madhya_pradesh from '../assets/states/madhya-pradesh.jpg';
-import img_google from '../assets/states/google.png';
-import img_tcs from '../assets/states/tcs.png';
-import img_hp from '../assets/states/hp.png';
-import img_kpmg from '../assets/states/kpmg.png';
-import img_shell from '../assets/states/shell.png';
-import img_ibm from '../assets/states/ibm.png';
 
 // Fallback universities shown when the API is unavailable.
 // Slugs here are verified to exist in the live MongoDB database.
-const mockUniversities = [
-  { name: 'Sage University', city: 'Indore', state: 'MP', slug: 'sage-university', naacGrade: 'A+', stats: { avgPackageLPA: '5.5' } },
-  { name: 'Amity University Haryana', city: 'Gurugram', state: 'HR', slug: 'amity-university-haryana-gurugram-manesar', naacGrade: 'A+', stats: { avgPackageLPA: '4.8' } },
-  { name: 'GD Goenka University', city: 'Gurugram', state: 'HR', slug: 'gd-goenka-university', naacGrade: 'A+', stats: { avgPackageLPA: '5.2' } },
-  { name: 'O.P. Jindal University', city: 'Raigarh', state: 'CG', slug: 'op-jindal-university', naacGrade: null, stats: { avgPackageLPA: '5.0' } },
-  { name: 'Ashoka University', city: 'Sonepat', state: 'HR', slug: 'ashoka-university', naacGrade: 'A+', stats: { avgPackageLPA: '6.2' } },
-  { name: 'Chitkara University', city: 'Solan', state: 'HP', slug: 'chitkara-university', naacGrade: 'A+', stats: { avgPackageLPA: '7.5' } },
-  { name: 'Woxsen University', city: 'Hyderabad', state: 'TS', slug: 'woxsen-university', naacGrade: 'A', stats: { avgPackageLPA: '6.5' } },
-  { name: 'Somaiya Vidyavihar University', city: 'Mumbai', state: 'MH', slug: 'somaiya-vidyavihar-university', naacGrade: 'A+', stats: { avgPackageLPA: '8.2' } },
-  { name: 'ISBM University', city: 'Gariyaband', state: 'CG', slug: 'isbm-university', naacGrade: null, stats: { avgPackageLPA: '4.0' } },
-  { name: 'AAFT University of Media and Arts', city: 'Raipur', state: 'CG', slug: 'aaft-university-of-media-and-arts', naacGrade: null, stats: { avgPackageLPA: '5.8' } },
-];
 
-const mockExams = [
-  { shortName: 'JEE Main', name: 'Joint Entrance Examination', conductingBody: 'NTA', examDate: '2026-04-15' },
-  { shortName: 'MHT CET', name: 'Maharashtra Common Entrance Test', conductingBody: 'State CET Cell', examDate: '2026-05-10' },
-];
-
-const mockQuestions = [
-  { title: 'What is the average package at SAGE University Indore?', upvotes: [1, 2, 3], answers: [1, 2] },
-  { title: 'Best engineering colleges under PERA CET?', upvotes: [1, 2, 3, 4, 5], answers: [1, 2, 3] },
-  { title: 'When will PERA CET 2026 applications start?', upvotes: [1, 2], answers: [1] },
-];
-
-const stats = [
-  { icon: MapPin, value: '29+', label: 'States' },
-  { icon: GraduationCap, value: '1000+', label: 'Universities' },
-  { icon: BookOpen, value: '200+', label: 'Courses' },
-  { icon: Users, value: '50L+', label: 'Students' },
-];
 
 const mainStreams = [
   { name: 'MBA/PGDM', icon: Briefcase, color: 'text-orange-500', bg: 'bg-orange-50' },
@@ -188,11 +153,21 @@ export default function Home() {
   const navigate = useNavigate();
   const [cachedHomeData] = useState(() => getCachedHomeData());
   const [searchTerm, setSearchTerm] = useState('');
-  const [exams, setExams] = useState(() => cachedHomeData?.exams || mockExams);
+  const [exams, setExams] = useState(() => cachedHomeData?.exams || []);
   const [universities, setUniversities] = useState(() => cachedHomeData?.universities || []);
-  const [questions, setQuestions] = useState(() => cachedHomeData?.questions || mockQuestions);
+  const [questions, setQuestions] = useState(() => cachedHomeData?.questions || []);
   const [news, setNews] = useState(() => cachedHomeData?.news || []);
   const [testimonials, setTestimonials] = useState(() => cachedHomeData?.testimonials || []);
+  const [uniTotal, setUniTotal] = useState(() => cachedHomeData?.uniTotal ?? null);
+
+  // Honest, real headline stats. The university count is live from the API;
+  // the rest are conservative, verifiable figures (no fabricated numbers).
+  const displayStats = useMemo(() => ([
+    { icon: MapPin, value: '30+', label: 'States Covered' },
+    { icon: GraduationCap, value: uniTotal ? uniTotal.toLocaleString() : '500+', label: 'Universities' },
+    { icon: BookOpen, value: '8,000+', label: 'Courses' },
+    { icon: Award, value: '20+', label: 'Entrance Exams' },
+  ]), [uniTotal]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -262,10 +237,11 @@ export default function Home() {
 
         const nextHomeData = {
           universities: sortedUniversities.slice(0, 6),
-          exams: fetchedExams.length > 0 ? fetchedExams : mockExams,
-          questions: fetchedQuestions.length > 0 ? fetchedQuestions : mockQuestions,
+          exams: fetchedExams,
+          questions: fetchedQuestions,
           news: fetchedNews,
           testimonials: fetchedTestimonials,
+          uniTotal: typeof uniRes?.data?.total === 'number' ? uniRes.data.total : null,
         };
 
         setCachedHomeData(nextHomeData);
@@ -275,6 +251,7 @@ export default function Home() {
           setQuestions(nextHomeData.questions);
           setNews(nextHomeData.news);
           setTestimonials(nextHomeData.testimonials);
+          setUniTotal(nextHomeData.uniTotal);
         });
       } catch (error) {
         console.error('Data fetch failed:', error);
@@ -473,7 +450,7 @@ export default function Home() {
       {/* Quick Stats */}
       <section className="max-w-7xl mx-auto px-4 -mt-16 relative z-30">
         <div className="bg-white dark:bg-dark-card shadow-2xl rounded-[2rem] p-8 md:p-10 flex flex-wrap justify-between gap-8 border border-slate-100 dark:border-white/5">
-          {stats.map((s, i) => (
+          {displayStats.map((s, i) => (
             <div key={i} className="relative flex items-center gap-4 flex-1 min-w-[150px] justify-center md:justify-start p-4 rounded-2xl group overflow-hidden cursor-default">
               {/* Left-to-right animated background (Gradient matching SS1) */}
               <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
@@ -576,30 +553,6 @@ export default function Home() {
       {/* Sponsored hero banner slider — admin-managed ad placement */}
       <HeroBannerSlider page="home" />
 
-      {/* Top Recruiters */}
-      <section className="bg-white/50 dark:bg-dark-card/50 py-16 border-y border-slate-100 dark:border-white/5 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mb-12">Top Companies Hiring from our Partners</p>
-          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 md:gap-x-24 transition-all duration-700">
-            {[
-              { name: 'Google', logo: img_google },
-              { name: 'TCS', logo: img_tcs },
-              { name: 'HP', logo: img_hp },
-              { name: 'KPMG', logo: img_kpmg },
-              { name: 'Shell', logo: img_shell },
-              { name: 'IBM', logo: img_ibm }
-            ].map((c) => (
-              <img
-                key={c.name}
-                src={c.logo}
-                alt={c.name}
-                className="h-8 md:h-12 w-auto object-contain transition-transform duration-500 hover:scale-110"
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Streams */}
       <section className="max-w-7xl mx-auto px-4 py-16">
         <motion.div
@@ -700,10 +653,12 @@ export default function Home() {
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
                             <h3 className="font-bold text-lg line-clamp-1 group-hover:text-white transition-colors">{u.name}</h3>
-                            <div className="flex items-center gap-1 bg-green-50 group-hover:bg-white/20 text-green-600 group-hover:text-white px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors">
-                              <Award className="w-3 h-3" />
-                              {u.naacGrade || 'A+'}
-                            </div>
+                            {u.naacGrade && (
+                              <div className="flex items-center gap-1 bg-green-50 group-hover:bg-white/20 text-green-600 group-hover:text-white px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors">
+                                <Award className="w-3 h-3" />
+                                NAAC {u.naacGrade}
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-white/90 transition-colors mt-1 mb-4">
@@ -714,11 +669,11 @@ export default function Home() {
                           <div className="flex items-center gap-6">
                             <div>
                               <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-bold tracking-widest">Avg Package</p>
-                              <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors">INR {u.stats?.avgPackageLPA || '4.5'} LPA</p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors">{u.stats?.avgPackageLPA ? `INR ${u.stats.avgPackageLPA} LPA` : 'N/A'}</p>
                             </div>
                             <div>
                               <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-bold tracking-widest">Courses</p>
-                              <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors">{u.stats?.totalCoursesCount || 12}+</p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors">{u.stats?.totalCoursesCount ? `${u.stats.totalCoursesCount}+` : 'N/A'}</p>
                             </div>
                           </div>
                         </div>
