@@ -367,7 +367,7 @@ export default function Universities() {
 
                         {/* Back Face (Overview) - Only render if description exists */}
                         {u.description && (
-                          <div className="absolute inset-0 w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden] bg-gradient-to-br from-orange-500 to-primary rounded-[2rem] p-8 flex flex-col text-white shadow-2xl overflow-hidden z-30">
+                          <div className="absolute inset-0 w-full h-full [transform:rotateY(180deg)] [backface-visibility:hidden] bg-gradient-to-br from-orange-500 to-primary rounded-[2rem] p-8 flex flex-col text-white shadow-lg overflow-hidden z-30">
                              <h3 className="text-2xl font-bold mb-4 flex items-center gap-2"><BookOpen className="w-6 h-6" /> Overview</h3>
                              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 text-sm text-white/90 leading-relaxed font-medium">
                                {u.description}

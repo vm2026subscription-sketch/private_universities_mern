@@ -283,10 +283,10 @@ export default function UniversityDetail() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 -mt-24 relative z-10">
-        <div className="bg-white dark:bg-dark-card rounded-[2rem] p-8 md:p-10 shadow-2xl border border-slate-100 dark:border-white/5 mb-10">
+        <div className="bg-white dark:bg-dark-card rounded-[2rem] p-8 md:p-10 shadow-lg border border-slate-100 dark:border-white/5 mb-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="flex flex-col md:flex-row gap-8 items-center md:items-end">
-              <div className="w-32 h-32 rounded-[2rem] bg-white shadow-2xl border-4 border-white flex items-center justify-center overflow-hidden shrink-0 p-4">
+              <div className="w-32 h-32 rounded-[2rem] bg-white shadow-lg border-4 border-white flex items-center justify-center overflow-hidden shrink-0 p-4">
                 <UniversityLogo logoUrl={uni.logoUrl} name={uni.name} />
               </div>
               <div className="text-center md:text-left">
@@ -570,8 +570,8 @@ export default function UniversityDetail() {
               {activeTab === 3 && (
                 <div className="space-y-12">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 text-center">
-                      <p className="text-4xl font-serif font-bold text-indigo-600 mb-2">{formatCurrencyMetric(uni.stats?.avgPackageLPA, uni.stats?.avgPackageLPALabel, 'LPA')}</p>
+                    <div className="p-8 rounded-[2rem] bg-slate-500/5 border border-slate-500/10 text-center">
+                      <p className="text-4xl font-serif font-bold text-slate-600 mb-2">{formatCurrencyMetric(uni.stats?.avgPackageLPA, uni.stats?.avgPackageLPALabel, 'LPA')}</p>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Average Package</p>
                     </div>
                     <div className="p-8 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 text-center">
@@ -631,11 +631,11 @@ export default function UniversityDetail() {
                   {uni.scholarships?.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {uni.scholarships.map((s, idx) => (
-                        <div key={idx} className="p-8 rounded-[2rem] bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/10">
-                          <h3 className="font-bold text-xl text-indigo-700 dark:text-indigo-400 mb-3">{s.name}</h3>
+                        <div key={idx} className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-500/5 border border-slate-100 dark:border-slate-500/10">
+                          <h3 className="font-bold text-xl text-slate-700 dark:text-slate-400 mb-3">{s.name}</h3>
                           <p className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-4">{s.description}</p>
                           <div className="flex flex-wrap gap-3">
-                            {s.amount && <span className="px-3 py-1 bg-white dark:bg-dark-bg rounded-lg text-xs font-bold text-indigo-600">Value: {s.amount}</span>}
+                            {s.amount && <span className="px-3 py-1 bg-white dark:bg-dark-bg rounded-lg text-xs font-bold text-slate-600">Value: {s.amount}</span>}
                             {s.deadline && <span className="px-3 py-1 bg-white dark:bg-dark-bg rounded-lg text-xs font-bold text-orange-600">Deadline: {new Date(s.deadline).toLocaleDateString()}</span>}
                           </div>
                         </div>
@@ -724,7 +724,7 @@ export default function UniversityDetail() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-dark-card rounded-3xl max-w-md w-full p-6 shadow-2xl"
+              className="bg-white dark:bg-dark-card rounded-3xl max-w-md w-full p-6 shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">

@@ -367,7 +367,7 @@ export default function Profile() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setSidebarOpen(true)}
-        className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-2xl shadow-2xl z-50 flex items-center justify-center"
+        className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-2xl shadow-lg z-50 flex items-center justify-center"
       >
         <Menu className="w-6 h-6" />
       </motion.button>
@@ -480,7 +480,7 @@ export default function Profile() {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-4 w-80 bg-white dark:bg-dark-card rounded-3xl shadow-2xl border border-light-border dark:border-dark-border z-[100] overflow-hidden"
+                    className="absolute right-0 mt-4 w-80 bg-white dark:bg-dark-card rounded-3xl shadow-lg border border-light-border dark:border-dark-border z-[100] overflow-hidden"
                   >
                     <div className="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between bg-primary/5">
                       <span className="font-bold text-sm">Notifications</span>

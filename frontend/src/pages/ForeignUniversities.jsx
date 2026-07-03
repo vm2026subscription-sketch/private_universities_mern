@@ -50,7 +50,7 @@ const countryLabel = (description = '') => {
 
 const accentBySegment = {
   foreign: 'from-primary to-orange-400',
-  twinning: 'from-indigo-600 to-sky-500',
+  twinning: 'from-slate-600 to-sky-500',
 };
 const FOREIGN_CACHE_TTL_MS = 10 * 60 * 1000;
 const getForeignCacheKey = (segment) => `vm_foreign_catalog_${segment}_v1`;
@@ -166,7 +166,7 @@ export default function ForeignUniversities() {
 
       <div className="max-w-7xl mx-auto px-4 py-12 pb-28 md:pb-16 page-enter">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-full text-sm font-bold mb-5 border border-indigo-100 dark:border-indigo-500/20">
+          <div className="inline-flex items-center gap-2 bg-slate-50 dark:bg-slate-500/10 text-slate-600 dark:text-slate-400 px-4 py-2 rounded-full text-sm font-bold mb-5 border border-slate-100 dark:border-slate-500/20">
             <Globe className="w-4 h-4" />
             Study Abroad Options
           </div>
@@ -283,7 +283,7 @@ export default function ForeignUniversities() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="px-2.5 py-1 text-[10px] font-bold bg-indigo-500/10 text-indigo-500 rounded-lg uppercase tracking-widest">
+                          <span className="px-2.5 py-1 text-[10px] font-bold bg-slate-500/10 text-slate-500 rounded-lg uppercase tracking-widest">
                             {country} {formatDisplayType(university)}
                           </span>
                           {university.naacGrade && (
@@ -407,7 +407,7 @@ export default function ForeignUniversities() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="mt-16 text-center p-10 rounded-[2rem] bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-100 dark:border-indigo-800/30">
+        <div className="mt-16 text-center p-10 rounded-[2rem] bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900/20 dark:to-blue-900/20 border border-slate-100 dark:border-slate-800/30">
           <h3 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">
             Need India-based options too?
           </h3>

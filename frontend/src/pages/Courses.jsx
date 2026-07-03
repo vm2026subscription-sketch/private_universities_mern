@@ -99,7 +99,7 @@ function EditCourseModal({ course, onClose, onSaved }) {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-2xl bg-white dark:bg-dark-card rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-2xl bg-white dark:bg-dark-card rounded-[2rem] shadow-lg overflow-hidden max-h-[90vh] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-dark-border shrink-0">
@@ -263,7 +263,7 @@ function DeleteConfirmDialog({ course, onClose, onDeleted }) {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-md bg-white dark:bg-dark-card rounded-[2rem] shadow-2xl p-8"
+        className="relative w-full max-w-md bg-white dark:bg-dark-card rounded-[2rem] shadow-lg p-8"
       >
         <div className="flex flex-col items-center text-center gap-4">
           <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
@@ -600,10 +600,9 @@ export default function Courses() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
       {/* Hero */}
-      <div className="relative mb-6 shrink-0 rounded-[2rem] overflow-hidden bg-slate-900 text-white shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-indigo-500/20" />
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-        
+      <div className="relative mb-6 shrink-0 rounded-[2rem] overflow-hidden bg-slate-900 text-white shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
+
         <div className="relative px-8 py-12 md:px-16 md:py-16 flex flex-col lg:flex-row items-center justify-between gap-12">
           <div className="max-w-xl space-y-6 text-center lg:text-left">
             <motion.div 
@@ -611,7 +610,7 @@ export default function Courses() {
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-xl text-white/80 text-[10px] font-bold uppercase tracking-[0.3em] border border-white/10"
             >
-              <Sparkles className="w-3.5 h-3.5 text-link" /> Institutional Course Directory
+              Course Directory
             </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
@@ -619,7 +618,7 @@ export default function Courses() {
               transition={{ delay: 0.1 }}
               className="text-4xl md:text-6xl font-serif font-bold leading-tight tracking-tight"
             >
-              Explore Your <span className="text-link italic">Potential.</span>
+              Explore Courses &amp; Programs
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -637,8 +636,7 @@ export default function Courses() {
             className="w-full lg:w-[500px]"
           >
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-indigo-500 rounded-[2rem] blur opacity-25 group-focus-within:opacity-50 transition duration-1000"></div>
-              <div className="relative flex items-center bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] overflow-hidden shadow-2xl">
+              <div className="relative flex items-center bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] overflow-hidden shadow-lg">
                 <Search className="w-6 h-6 ml-8 text-white/40" />
                 <input
                   type="text"
@@ -788,7 +786,7 @@ export default function Courses() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="mb-10 p-10 rounded-[2rem] bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden group shadow-2xl"
+              className="mb-10 p-10 rounded-[2rem] bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden group shadow-lg"
             >
               <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:scale-110 transition-transform duration-700">
                 {selectedCourse ? <BookOpen className="w-48 h-48" /> : <GraduationCap className="w-48 h-48" />}
@@ -909,7 +907,7 @@ export default function Courses() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.97 }}
                       transition={{ duration: 0.3, delay: Math.min(idx * 0.04, 0.3) }}
-                      className="group relative bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/40 transition-all duration-300 overflow-hidden"
+                      className="group relative bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl hover:shadow-lg hover:shadow-primary/5 hover:border-primary/40 transition-all duration-300 overflow-hidden"
                     >
                       {/* Admin edit/delete buttons — only shown in college (selectedCourse) view */}
                       {isAdmin && selectedCourse && (
@@ -939,7 +937,7 @@ export default function Courses() {
                         <div className="flex justify-between items-start">
                           <div className="space-y-4">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-3 py-1 rounded-lg bg-indigo-500/5 text-indigo-500 text-[10px] font-bold uppercase tracking-widest border border-indigo-500/10">
+                              <span className="px-3 py-1 rounded-lg bg-slate-500/5 text-slate-500 text-[10px] font-bold uppercase tracking-widest border border-slate-500/10">
                                 {item.category || 'Professional'}
                               </span>
                               {item.stream && (
@@ -992,7 +990,7 @@ export default function Courses() {
                               {/* Pill Badges */}
                               <div className="flex flex-wrap gap-1.5 mb-2.5">
                                 {item.category && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-wider">{item.category}</span>
+                                  <span className="px-2.5 py-0.5 rounded-full bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">{item.category}</span>
                                 )}
                                 {item.specializationName && item.specializationName !== 'General' && (
                                   <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-link text-[10px] font-bold uppercase tracking-wider">{item.specializationName}</span>
@@ -1030,7 +1028,7 @@ export default function Courses() {
 
                               <button
                                 onClick={() => { const r = item.universityId?.slug || item.universityId?._id; if (r) navigate(`/universities/${r}`, { state: { activeTab: 1 } }); }}
-                                className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl font-bold text-[11px] uppercase tracking-wider hover:opacity-95 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                                className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-[11px] uppercase tracking-wider hover:bg-primary-dark active:scale-95 transition-all shadow-sm"
                               >
                                 View Details <ChevronRight className="w-4 h-4" />
                               </button>
@@ -1048,14 +1046,14 @@ export default function Courses() {
                           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const params = new URLSearchParams(searchParams); params.set('course', item.name || ''); setSearchParams(params); } }}
                         >
                           {/* Left Icon Panel */}
-                          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                          <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-950/30 flex items-center justify-center shrink-0 border border-slate-100 dark:border-slate-900 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                             <GraduationCap className="w-7 h-7 text-link group-hover:text-white transition-colors" />
                           </div>
 
                           {/* Center info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap gap-1.5 mb-1.5">
-                              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[9px] font-bold uppercase tracking-wider">{item.category || 'UG/PG'}</span>
+                              <span className="px-2.5 py-0.5 rounded-full bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 text-[9px] font-bold uppercase tracking-wider">{item.category || 'UG/PG'}</span>
                               {item.stream && <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-link text-[9px] font-bold uppercase tracking-wider">{item.stream}</span>}
                             </div>
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white group-hover:text-link transition-colors truncate">{item.name}</h3>
@@ -1118,7 +1116,7 @@ export default function Courses() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setVisibleCount((prev) => prev + 24)}
-                    className="px-16 py-5 bg-white dark:bg-dark-card border-2 border-primary text-link rounded-[2rem] font-bold text-sm tracking-widest shadow-2xl shadow-primary/10 hover:bg-primary hover:text-white transition-all duration-300"
+                    className="px-16 py-5 bg-white dark:bg-dark-card border-2 border-primary text-link rounded-[2rem] font-bold text-sm tracking-widest shadow-lg shadow-primary/10 hover:bg-primary hover:text-white transition-all duration-300"
                   >
                     {selectedCourse ? 'LOAD MORE UNIVERSITIES' : 'LOAD MORE PROGRAMS'}
                   </motion.button>

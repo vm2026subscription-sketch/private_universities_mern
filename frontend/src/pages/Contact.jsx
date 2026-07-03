@@ -91,7 +91,7 @@ export default function Contact() {
 
       {/* Hero */}
       <div className="relative bg-slate-900 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary-dark/20 to-indigo-900/40" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary-dark/20 to-slate-900/40" />
         <div className="absolute inset-0" style={{backgroundImage:'radial-gradient(circle at 20% 50%, rgba(var(--color-primary-rgb),0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(99,102,241,0.1) 0%, transparent 50%)'}} />
         <div className="relative max-w-7xl mx-auto px-4 py-24 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>

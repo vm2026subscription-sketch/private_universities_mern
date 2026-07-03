@@ -157,16 +157,16 @@ export default function UniversityComparison() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-dark-bg dark:via-dark-bg dark:to-indigo-900/10 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/30 dark:from-dark-bg dark:via-dark-bg dark:to-slate-900/10 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-16 space-y-12">
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-[0.2em] border border-indigo-100 dark:border-indigo-500/20 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-50 dark:bg-slate-500/10 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] border border-slate-100 dark:border-slate-500/20 mb-6"
           >
-            <Sparkles className="w-3.5 h-3.5" /> AI-Powered Analytics
+            Side-by-Side Comparison
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
@@ -174,7 +174,7 @@ export default function UniversityComparison() {
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-5xl font-serif font-bold mb-4 text-slate-900 dark:text-white"
           >
-            Smart University <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600">Comparison</span>
+            Compare <span className="text-primary">Universities</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -191,7 +191,6 @@ export default function UniversityComparison() {
           <div className="space-y-6">
             {/* Search Bar */}
             <div className="relative group z-40">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-indigo-500/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
               <div className="relative flex items-center bg-white dark:bg-dark-card border-2 border-light-border dark:border-dark-border group-focus-within:border-primary/40 rounded-[2rem] shadow-xl overflow-hidden transition-all duration-300">
                 <Search className="w-6 h-6 ml-6 text-slate-400 group-focus-within:text-link transition-colors" />
                 <input
@@ -216,7 +215,7 @@ export default function UniversityComparison() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl shadow-2xl overflow-hidden z-50"
+                    className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-3xl shadow-lg overflow-hidden z-50"
                   >
                     {loadingResults ? (
                       <div className="p-8 flex flex-col items-center justify-center text-slate-400">
@@ -395,7 +394,7 @@ export default function UniversityComparison() {
           <div className="space-y-6">
             <div className="relative bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border p-8 shadow-xl sticky top-24 overflow-hidden">
               {/* Decorative background orb */}
-              <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-primary/10 to-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-primary/10 to-slate-500/10 rounded-full blur-2xl pointer-events-none" />
               <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -410,7 +409,7 @@ export default function UniversityComparison() {
                 disabled={selectedUniversities.length < 2 || comparing}
                 className={`w-full py-5 rounded-2xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 ${
                   selectedUniversities.length >= 2 && !comparing
-                    ? 'bg-gradient-to-r from-primary to-indigo-600 text-white shadow-xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98]'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]'
                     : 'bg-slate-100 dark:bg-dark-border text-slate-400 cursor-not-allowed'
                 }`}
               >
@@ -519,7 +518,7 @@ export default function UniversityComparison() {
                       transition={{ delay: idx * 0.1 }}
                       className="bg-white dark:bg-dark-card rounded-[2rem] p-6 border border-light-border dark:border-dark-border shadow-sm hover:shadow-xl transition-shadow relative overflow-hidden group"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-indigo-500/3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-slate-500/3 opacity-0 group-hover:opacity-100 transition-opacity" />
                       <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center mb-4 ${colorMap[key]}`}>
                         <IconComp className="w-5 h-5" />
                       </div>
@@ -598,7 +597,7 @@ export default function UniversityComparison() {
                     <div className="flex flex-wrap gap-2">
                       {(comparison?.summary?.commonCourseCategories || []).length
                         ? comparison?.summary?.commonCourseCategories.map((category) => (
-                          <span key={category} className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                          <span key={category} className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-50 text-slate-600 border border-slate-100">
                             {category}
                           </span>
                         ))
@@ -632,7 +631,7 @@ export default function UniversityComparison() {
                     transition={{ delay: idx * 0.1 }}
                     className="bg-white dark:bg-dark-card rounded-[2rem] border border-light-border dark:border-dark-border shadow-lg p-8 group relative overflow-hidden"
                   >
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute top-0 left-0 w-full h-2 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                     
                     <div className="flex items-start justify-between gap-4 mb-8">
                       <div className="flex gap-5">

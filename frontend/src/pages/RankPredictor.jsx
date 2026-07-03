@@ -88,7 +88,7 @@ export default function RankPredictor() {
         </div>
 
         {/* Form / Results Area */}
-        <div className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-2xl overflow-hidden min-h-[500px]">
+        <div className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-lg overflow-hidden min-h-[500px]">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div 
@@ -199,7 +199,7 @@ export default function RankPredictor() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="group relative bg-[#fcfdfe] dark:bg-dark-bg p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-primary hover:shadow-2xl transition-all"
+                      className="group relative bg-[#fcfdfe] dark:bg-dark-bg p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-primary hover:shadow-lg transition-all"
                     >
                       {/* Probability Badge */}
                       <div className={`absolute top-6 right-6 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${
