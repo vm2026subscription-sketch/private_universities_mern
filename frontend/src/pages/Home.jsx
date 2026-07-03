@@ -78,7 +78,7 @@ const featuredUniversities = [
     name: 'Sage University',
     slug: 'sage-university',
     location: 'Indore, Madhya Pradesh',
-    accent: 'from-violet-950 via-fuchsia-700 to-orange-500',
+    accent: 'from-violet-950 via-orange-700 to-orange-500',
     image: 'https://spiderimg.amarujala.com/assets/images/2020/06/27/750x506/sage-university_1593237922.jpeg',
   },
   {
@@ -453,11 +453,11 @@ export default function Home() {
 
       {/* Quick Stats */}
       <section className="max-w-7xl mx-auto px-4 -mt-16 relative z-30">
-        <div className="bg-white dark:bg-dark-card shadow-2xl rounded-[2rem] p-8 md:p-10 flex flex-wrap justify-between gap-8 border border-slate-100 dark:border-white/5">
+        <div className="bg-white dark:bg-dark-card shadow-lg rounded-[2rem] p-8 md:p-10 flex flex-wrap justify-between gap-8 border border-slate-100 dark:border-white/5">
           {displayStats.map((s, i) => (
             <div key={i} className="relative flex items-center gap-4 flex-1 min-w-[150px] justify-center md:justify-start p-4 rounded-2xl group overflow-hidden cursor-default">
               {/* Left-to-right animated background (Gradient matching SS1) */}
-              <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
 
               <div className="relative z-10 flex items-center gap-4 w-full justify-center md:justify-start">
                 <div className="p-3 bg-primary-50 dark:bg-primary-900/20 group-hover:bg-white/20 rounded-2xl transition-colors duration-500">
@@ -483,7 +483,7 @@ export default function Home() {
           {[
             { icon: ShieldCheck, title: 'Verified Information', desc: 'Directly sourced from university administration.', bgClass: 'bg-orange-50/50 dark:bg-orange-900/10', iconColor: 'text-orange-500', iconBg: 'bg-orange-100 dark:bg-orange-900/20' },
             { icon: FileDown, title: 'One-Click Brochures', desc: 'Download official prospectuses instantly.', bgClass: 'bg-blue-50/50 dark:bg-blue-900/10', iconColor: 'text-blue-500', iconBg: 'bg-blue-100 dark:bg-blue-900/20' },
-            { icon: Users, title: 'Student Community', desc: 'Connect with peers and alumni.', bgClass: 'bg-fuchsia-50/50 dark:bg-fuchsia-900/10', iconColor: 'text-fuchsia-500', iconBg: 'bg-fuchsia-100 dark:bg-fuchsia-900/20' },
+            { icon: Users, title: 'Student Community', desc: 'Connect with peers and alumni.', bgClass: 'bg-orange-50/50 dark:bg-orange-900/10', iconColor: 'text-orange-500', iconBg: 'bg-orange-100 dark:bg-orange-900/20' },
             { icon: PhoneCall, title: 'Direct Campus Connect', desc: 'Speak directly with admission officers.', bgClass: 'bg-emerald-50/50 dark:bg-emerald-900/10', iconColor: 'text-emerald-500', iconBg: 'bg-emerald-100 dark:bg-emerald-900/20' },
           ].map((item, i) => (
             <motion.div
@@ -495,7 +495,7 @@ export default function Home() {
               className={`relative p-8 ${item.bgClass} rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl hover:shadow-primary/20 transition-all group text-center overflow-hidden`}
             >
               {/* Left-to-right animated background (Gradient matching SS1) */}
-              <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
 
               <div className="relative z-10">
                 <div className={`w-16 h-16 ${item.iconBg} group-hover:bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-500`}>
@@ -604,9 +604,9 @@ export default function Home() {
                   <span className="bg-white/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase self-start">Maharashtra State</span>
                   <h3 className="font-bold text-2xl mt-4 mb-2">DTE Admissions</h3>
                   <p className="text-sm text-white/80 mb-6 flex-grow">Complete guide to Engineering, Pharmacy & MBA admissions.</p>
-                  <button className="w-full bg-white text-link font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto">
+                  <Link to="/exams" className="w-full bg-white text-link font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-lg mt-auto flex justify-center items-center">
                     View Updates
-                  </button>
+                  </Link>
                 </div>
               </motion.div>
 
@@ -615,7 +615,7 @@ export default function Home() {
                   <span className="bg-white/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase self-start">Tool</span>
                   <h3 className="font-bold text-2xl mt-4 mb-2">Rank Predictor</h3>
                   <p className="text-sm text-white/80 mb-6 flex-grow">Predict potential colleges based on your scores.</p>
-                  <Link to="/rank-predictor" className="w-full bg-white text-link font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto flex justify-center items-center">
+                  <Link to="/rank-predictor" className="w-full bg-white text-link font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-lg mt-auto flex justify-center items-center">
                     Predict Now
                   </Link>
                 </div>
@@ -626,9 +626,9 @@ export default function Home() {
                   <span className="bg-primary text-[10px] font-bold px-3 py-1 rounded-full uppercase text-white self-start">Private Unis</span>
                   <h3 className="font-bold text-2xl mt-4 mb-2">PERA CET</h3>
                   <p className="text-sm text-white/80 mb-6 flex-grow">Entrance for top private universities in Maharashtra.</p>
-                  <button className="w-full bg-primary text-white font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-2xl mt-auto">
+                  <Link to="/universities" className="w-full bg-primary text-white font-bold py-3 rounded-2xl text-sm transition-all hover:shadow-lg mt-auto flex justify-center items-center">
                     Apply Now
-                  </button>
+                  </Link>
                 </div>
               </motion.div>
             </div>
@@ -647,9 +647,9 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {universities.map((u, i) => (
                   <motion.div key={i} whileHover={{ y: -5 }}>
-                    <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-transparent hover:shadow-2xl hover:shadow-primary/20 transition-all overflow-hidden block">
+                    <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-transparent hover:shadow-lg hover:shadow-primary/20 transition-all overflow-hidden block">
                       {/* Left-to-right animated background (Gradient matching SS1) */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
 
                       <div className="relative z-10 flex gap-6 items-center">
                         <div className="w-24 h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-50 group-hover:border-transparent transition-colors p-2 shrink-0">
@@ -712,6 +712,7 @@ export default function Home() {
             ) : null}
           </section>
 
+          {testimonials.length > 0 && (
           <section className="bg-slate-900 rounded-[2rem] p-10 md:p-16 text-white overflow-hidden relative group">
             <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
               <Users className="w-40 h-40" />
@@ -813,13 +814,14 @@ export default function Home() {
               </div>
             </div>
           </section>
+          )}
         </div>
 
         <div className="lg:col-span-4 space-y-10">
           {/* Sidebar advertisements — admin-managed ad placement */}
           <SidebarAds page="home" />
 
-          <section className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-2xl">
+          <section className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-lg">
             <div className="p-6 bg-gradient-to-r from-primary to-orange-400 text-white flex items-center justify-between">
               <h2 className="font-bold text-lg">Alerts</h2>
               <Bell className="w-5 h-5" />
@@ -836,7 +838,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 p-8 shadow-2xl">
+          <section className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 p-8 shadow-lg">
             <h2 className="font-bold text-xl mb-8">Community</h2>
             <div className="space-y-6">
               {questions.map((q, i) => (
@@ -862,7 +864,7 @@ export default function Home() {
       </div>
 
       <section className="max-w-7xl mx-auto px-4 pb-8">
-        <div className="rounded-[2rem] border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-dark-card/95 shadow-2xl overflow-hidden">
+        <div className="rounded-[2rem] border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-dark-card/95 shadow-lg overflow-hidden">
           <div className="grid gap-8 p-8 md:p-10 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.28em] text-link mb-3">Contact and Feedback</p>
@@ -914,7 +916,7 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white dark:bg-dark-card w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh]"
+              className="relative bg-white dark:bg-dark-card w-full max-w-5xl rounded-3xl shadow-lg overflow-hidden overflow-y-auto max-h-[90vh]"
             >
               {/* Form Header */}
               <div className="bg-gradient-to-r from-orange-500 to-primary p-6 md:p-8 flex justify-between items-center">
@@ -1010,7 +1012,7 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white dark:bg-dark-card rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col z-10 overflow-hidden"
+              className="relative bg-white dark:bg-dark-card rounded-[2rem] shadow-lg w-full max-w-4xl max-h-[85vh] flex flex-col z-10 overflow-hidden"
             >
               <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-dark-border shrink-0">
                 <div>
