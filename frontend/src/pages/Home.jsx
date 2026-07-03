@@ -159,6 +159,7 @@ export default function Home() {
   const [news, setNews] = useState(() => cachedHomeData?.news || []);
   const [testimonials, setTestimonials] = useState(() => cachedHomeData?.testimonials || []);
   const [uniTotal, setUniTotal] = useState(() => cachedHomeData?.uniTotal ?? null);
+  const [stateCounts, setStateCounts] = useState(() => cachedHomeData?.stateCounts || {});
 
   // Honest, real headline stats. The university count is live from the API;
   // the rest are conservative, verifiable figures (no fabricated numbers).
@@ -206,12 +207,13 @@ export default function Home() {
 
     const fetchData = async () => {
       try {
-        const [uniRes, examRes, testRes, newsRes, testmRes] = await Promise.all([
+        const [uniRes, examRes, testRes, newsRes, testmRes, stateCountRes] = await Promise.all([
           api.get('/universities?limit=12').catch(() => ({ data: { data: [] } })),
           api.get('/exams/upcoming?limit=4').catch(() => ({ data: { data: [] } })),
           api.get('/questions?limit=4').catch(() => ({ data: { data: [] } })),
           api.get('/news?limit=4').catch(() => ({ data: { data: [] } })),
-          api.get('/testimonials').catch(() => ({ data: { data: [] } }))
+          api.get('/testimonials').catch(() => ({ data: { data: [] } })),
+          api.get('/universities/state-counts').catch(() => ({ data: { data: {} } }))
         ]);
 
         const fetchedUniversities = Array.isArray(uniRes?.data?.data) ? [...uniRes.data.data] : [];
@@ -242,6 +244,7 @@ export default function Home() {
           news: fetchedNews,
           testimonials: fetchedTestimonials,
           uniTotal: typeof uniRes?.data?.total === 'number' ? uniRes.data.total : null,
+          stateCounts: (stateCountRes?.data?.data && typeof stateCountRes.data.data === 'object') ? stateCountRes.data.data : {},
         };
 
         setCachedHomeData(nextHomeData);
@@ -252,6 +255,7 @@ export default function Home() {
           setNews(nextHomeData.news);
           setTestimonials(nextHomeData.testimonials);
           setUniTotal(nextHomeData.uniTotal);
+          setStateCounts(nextHomeData.stateCounts);
         });
       } catch (error) {
         console.error('Data fetch failed:', error);
@@ -543,7 +547,9 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-5">
                 <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest mb-1">{state.landmark}</p>
                 <h4 className="text-white font-bold text-lg leading-tight">{state.name}</h4>
-                <p className="text-link text-[10px] font-bold uppercase tracking-widest mt-1">{state.count}</p>
+                {stateCounts[state.name] > 0 && (
+                  <p className="text-link text-[10px] font-bold uppercase tracking-widest mt-1">{stateCounts[state.name]} Universities</p>
+                )}
               </div>
             </motion.div>
           ))}
@@ -829,38 +835,6 @@ export default function Home() {
               )}
             </div>
           </section>
-
-          <div className="card border-none shadow-2xl bg-gradient-to-br from-slate-900 to-primary-dark text-white rounded-[2rem] p-8 overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-6 opacity-20">
-              <Newspaper className="w-20 h-20" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <span className="w-2 h-6 bg-primary rounded-full"></span> Latest Updates
-              </h3>
-              <div className="space-y-6">
-                {[
-                  { title: 'MAH-CET 2026 Registration Dates Announced', time: '2 hours ago', icon: Calendar },
-                  { title: 'Top Engineering Colleges in Pune 2024 Ranking', time: '5 hours ago', icon: Award },
-                  { title: 'New Scholarship for Private University Students', time: '1 day ago', icon: DollarSign },
-                  { title: 'View Today\'s Educational E-Paper', time: 'Daily', icon: BookOpen, highlight: true },
-                ].map((item, i) => (
-                  <div key={i} className={`flex gap-4 group cursor-pointer ${item.highlight ? 'bg-primary/20 p-4 rounded-2xl border border-primary/30' : ''}`}>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.highlight ? 'bg-primary' : 'bg-white/10'}`}>
-                      <item.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h4 className={`text-sm font-bold leading-tight group-hover:text-link transition-colors ${item.highlight ? 'text-link' : ''}`}>{item.title}</h4>
-                      <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase">{item.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button className="w-full mt-8 bg-white/10 hover:bg-white/20 text-white font-bold py-4 rounded-2xl text-xs transition-all border border-white/5">
-                READ ALL NEWS
-              </button>
-            </div>
-          </div>
 
           <section className="bg-white dark:bg-dark-card rounded-[2rem] border border-slate-100 dark:border-white/5 p-8 shadow-2xl">
             <h2 className="font-bold text-xl mb-8">Community</h2>

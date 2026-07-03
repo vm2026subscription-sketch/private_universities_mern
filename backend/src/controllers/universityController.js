@@ -534,6 +534,35 @@ exports.getTrends = async (req, res) => {
   }
 };
 
+// Real per-state university counts (published, normal segment) for the homepage.
+exports.getStateCounts = async (req, res) => {
+  try {
+    const rows = await University.aggregate([
+      {
+        $match: {
+          $and: [
+            PUBLISHED_UNIVERSITY_FILTER,
+            {
+              $or: [
+                { segment: 'normal' },
+                { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
+              ],
+            },
+          ],
+        },
+      },
+      { $match: { state: { $nin: [null, ''] } } },
+      { $group: { _id: '$state', count: { $sum: 1 } } },
+    ]);
+    const counts = {};
+    rows.forEach((r) => { counts[r._id] = r.count; });
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
+    res.json({ success: true, data: counts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const recommender = require('../utils/recommender');
 
 exports.getSimilarUniversities = async (req, res) => {

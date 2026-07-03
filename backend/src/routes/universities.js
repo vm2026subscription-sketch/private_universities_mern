@@ -1,9 +1,10 @@
 const router = require('express').Router();
-const { getUniversities, getUniversity, createUniversity, updateUniversity, deleteUniversity, searchUniversities, compareUniversities, getTrends, getSimilarUniversities } = require('../controllers/universityController');
+const { getUniversities, getUniversity, createUniversity, updateUniversity, deleteUniversity, searchUniversities, compareUniversities, getTrends, getSimilarUniversities, getStateCounts } = require('../controllers/universityController');
 const { protect, admin, superadmin } = require('../middleware/auth');
 
 router.get('/search', searchUniversities);
 router.get('/trends', getTrends);
+router.get('/state-counts', getStateCounts);
 router.post('/compare', compareUniversities);
 router.route('/').get(getUniversities).post(protect, admin, createUniversity);
 router.get('/:id/similar', getSimilarUniversities);
