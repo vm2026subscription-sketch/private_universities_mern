@@ -626,6 +626,29 @@ async function findExistingUniversity(u) {
   return University.findOne(query);
 }
 
+// Fields the importer should never touch on an UPDATE — they are derived or
+// admin-curated, not part of the spreadsheet.
+const PROTECTED_ON_UPDATE = new Set([
+  'slug', 'views', 'stats.rating', 'stats.avgFees', 'stats.totalCoursesCount',
+]);
+
+// Build a dot-notation update that ONLY sets fields carrying a real value.
+// Empty cells in a re-import must not blank existing data (that is what made
+// universities lose their state/logo/description — or drop to draft — and
+// "disappear" a day later). Nested objects are flattened so we never replace a
+// whole subdocument (e.g. clobbering curated stats while setting one metric).
+function buildSafeUpdate(obj, prefix = '', out = {}) {
+  for (const [k, v] of Object.entries(obj)) {
+    const key = prefix ? `${prefix}.${k}` : k;
+    if (PROTECTED_ON_UPDATE.has(key)) continue;
+    if (v === null || v === undefined || v === '') continue;               // don't blank existing fields
+    if (Array.isArray(v)) { if (v.length) out[key] = v; continue; }         // don't wipe curated arrays
+    if (typeof v === 'object') { buildSafeUpdate(v, key, out); continue; }  // recurse; skip empty {}
+    out[key] = v;
+  }
+  return out;
+}
+
 // Persist one university. insertMany (not create) is used so the unique slug we
 // computed survives — create() would let the model's pre-save hook overwrite it.
 async function persistUniversity(u, mode, slugFactory) {
@@ -634,7 +657,21 @@ async function persistUniversity(u, mode, slugFactory) {
     if (mode !== 'upsert') {
       return { action: 'skipped', error: `"${u.name}" already exists (matched by ${u.universityCode ? 'university code' : 'name + state'}) — enable Upsert mode to update it` };
     }
-    const doc = await University.findByIdAndUpdate(existing._id, { $set: u }, { new: true });
+    // Guard against a universityCode collision between two DIFFERENT institutions.
+    // Overwriting would delete the existing university, so skip and warn instead.
+    if (u.universityCode && existing.universityCode === u.universityCode) {
+      const sameInstitution = String(existing.name || '').trim().toLowerCase() === String(u.name || '').trim().toLowerCase();
+      if (!sameInstitution) {
+        return { action: 'skipped', error: `University code "${u.universityCode}" already belongs to "${existing.name}". "${u.name}" was NOT imported to avoid overwriting it — give it a unique code.` };
+      }
+    }
+    const update = buildSafeUpdate(u);
+    // Never downgrade an already-visible university to draft because a later,
+    // partial re-import row is missing city/state.
+    if (update.status === 'draft' && existing.status && existing.status !== 'draft') {
+      delete update.status;
+    }
+    const doc = await University.findByIdAndUpdate(existing._id, { $set: update }, { new: true });
     return { action: 'updated', doc };
   }
 
