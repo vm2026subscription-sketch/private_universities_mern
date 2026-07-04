@@ -164,7 +164,7 @@ export default function Home() {
   // Honest, real headline stats. The university count is live from the API;
   // the rest are conservative, verifiable figures (no fabricated numbers).
   const displayStats = useMemo(() => ([
-    { icon: MapPin, value: '30+', label: 'States Covered' },
+    { icon: MapPin, value: '30+', label: 'States & UTs' },
     { icon: GraduationCap, value: uniTotal ? uniTotal.toLocaleString() : '500+', label: 'Universities' },
     { icon: BookOpen, value: '8,000+', label: 'Courses' },
     { icon: Award, value: '20+', label: 'Entrance Exams' },
