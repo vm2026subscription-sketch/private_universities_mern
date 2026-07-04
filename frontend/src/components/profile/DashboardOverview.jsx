@@ -23,7 +23,7 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
     { label: 'Saved Colleges', value: stats?.savedCollegesCount || 0, icon: Bookmark, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     { label: 'Selected Courses', value: stats?.savedCoursesCount || 0, icon: BookOpen, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
     { label: 'Recently Viewed', value: stats?.recentCount || 0, icon: Clock, color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-    { label: 'Profile Strength', value: '85%', icon: Activity, color: 'text-violet-500', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
+    { label: 'Profile Strength', value: '85%', icon: Activity, color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-slate-500/20' },
   ];
 
   const activityData = [
@@ -235,12 +235,12 @@ export default function DashboardOverview({ stats = {}, recentlyViewed = [], ful
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="lg:col-span-1 card p-6 border-2 border-indigo-500/10 bg-indigo-500/5"
+          className="lg:col-span-1 card p-6 border-2 border-slate-500/10 bg-slate-500/5"
         >
-          <h3 className="font-bold mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-indigo-500" /> Popular Courses</h3>
+          <h3 className="font-bold mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-slate-500" /> Popular Courses</h3>
           <div className="flex flex-wrap gap-2">
             {(trends.trendingCourses || []).map((course, i) => (
-              <span key={i} className="px-3 py-1 bg-white dark:bg-dark-card rounded-lg text-[10px] font-bold uppercase tracking-widest text-indigo-600 shadow-sm border border-indigo-100 dark:border-indigo-900/30">
+              <span key={i} className="px-3 py-1 bg-white dark:bg-dark-card rounded-lg text-[10px] font-bold uppercase tracking-widest text-slate-600 shadow-sm border border-slate-100 dark:border-slate-900/30">
                 {course._id}
               </span>
             ))}

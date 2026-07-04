@@ -148,7 +148,7 @@ export default function ProfileSettings({ user, onUpdateProfile, onChangePasswor
               />
             </div>
             <div className="pt-2">
-              <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-700">
+              <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 py-3 bg-slate-600 hover:bg-slate-700">
                 <ShieldAlert className="w-4 h-4" /> Update Password
               </button>
             </div>

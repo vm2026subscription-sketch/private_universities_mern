@@ -441,14 +441,14 @@ export default function AiChatWidget() {
   if (minimized) {
     return (
       <motion.div
-        className="fixed bottom-24 md:bottom-6 left-6 z-[90] shadow-2xl overflow-hidden"
+        className="fixed bottom-24 md:bottom-6 left-6 z-[90] shadow-lg overflow-hidden"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
       >
         <button
           type="button"
           onClick={() => setMinimized(false)}
-          className="rounded-full bg-[#E05404] px-5 py-3 text-sm font-bold text-white shadow-2xl inline-flex items-center gap-2 hover:scale-105 transition-transform"
+          className="rounded-full bg-[#E05404] px-5 py-3 text-sm font-bold text-white shadow-lg inline-flex items-center gap-2 hover:scale-105 transition-transform"
         >
           <Bot className="w-5 h-5" />
           Vidyarthi Mitra AI

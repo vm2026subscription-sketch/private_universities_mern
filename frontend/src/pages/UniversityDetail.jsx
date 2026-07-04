@@ -12,7 +12,8 @@ import { toast } from 'react-hot-toast';
 import { Helmet } from 'react-helmet-async';
 import QASection from '../components/QASection';
 import UniversityLogo from '../components/common/UniversityLogo';
-import { generateBrochure } from '../utils/brochureGenerator';
+// generateBrochure (jspdf ~1MB) is loaded on demand inside the download handler
+// so the PDF library never ships with the initial page load.
 import LeadCaptureModal from '../components/university/LeadCaptureModal';
 
 const tabs = ['Overview', 'Courses', 'Admissions', 'Placements', 'Campus', 'Scholarships', 'Q&A', 'News'];
@@ -207,6 +208,7 @@ export default function UniversityDetail() {
 
   const handleDownloadBrochure = async () => {
     try {
+      const { generateBrochure } = await import('../utils/brochureGenerator');
       generateBrochure(uni);
       toast.success('Brochure downloaded successfully!');
     } catch (error) {

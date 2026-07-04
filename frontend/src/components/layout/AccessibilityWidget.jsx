@@ -183,7 +183,7 @@ const AccessibilityWidget = ({ inline = false }) => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className={`bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-72 border border-slate-100 dark:border-dark-border flex flex-col z-[120] overflow-hidden ${
+            className={`bg-white dark:bg-dark-card rounded-2xl shadow-lg w-72 border border-slate-100 dark:border-dark-border flex flex-col z-[120] overflow-hidden ${
               inline ? 'absolute right-0 top-full mt-3' : 'absolute bottom-full left-0 mb-4'
             }`}
             style={{ maxHeight: inline ? 'calc(100vh - 90px)' : 'calc(100vh - 120px)' }}

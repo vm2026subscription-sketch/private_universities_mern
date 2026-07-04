@@ -80,7 +80,7 @@ export default function Footer() {
     <footer className="mt-20 bg-primary text-white border-t border-primary-dark/60">
       <div className="max-w-[90rem] mx-auto px-4 pt-16 pb-8">
         <div className="grid gap-8 lg:grid-cols-[1.5fr_2fr] mb-14">
-          <div className="rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-sm p-8 shadow-2xl">
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-sm p-8 shadow-lg">
             <div className="inline-flex items-center rounded-2xl bg-white px-4 py-3 shadow-lg">
               <img src={logo} alt="Vidyarthi Mitra" className="h-9" />
             </div>

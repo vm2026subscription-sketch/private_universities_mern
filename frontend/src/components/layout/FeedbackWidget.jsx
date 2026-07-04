@@ -41,7 +41,7 @@ export default function FeedbackWidget() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-dark-bg w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col"
+              className="bg-white dark:bg-dark-bg w-full max-w-4xl rounded-xl shadow-lg overflow-hidden flex flex-col"
             >
               {/* Header */}
               <div className="bg-[#FF6B00] px-6 py-4 flex items-center justify-between relative">

@@ -49,6 +49,7 @@ exports.getPublished = async (req, res) => {
     const filter = { isPublished: true };
     if (category) filter.category = category;
     const faqs = await FAQ.find(filter).sort({ order: 1 });
+    res.set('Cache-Control', 'public, max-age=600, s-maxage=3600');
     res.json({ success: true, data: faqs });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

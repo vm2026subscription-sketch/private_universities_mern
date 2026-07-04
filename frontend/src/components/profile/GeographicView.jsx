@@ -319,7 +319,7 @@ export default function GeographicView({ universities = [], savedUniversities = 
         </div>
 
         {/* Map View */}
-        <div className="lg:col-span-3 relative h-[550px] rounded-[2rem] overflow-hidden border border-light-border dark:border-dark-border shadow-2xl shadow-primary/5 z-0">
+        <div className="lg:col-span-3 relative h-[550px] rounded-[2rem] overflow-hidden border border-light-border dark:border-dark-border shadow-lg shadow-primary/5 z-0">
            <MapContainer 
              center={mapView.center} 
              zoom={mapView.zoom} 
@@ -367,7 +367,7 @@ export default function GeographicView({ universities = [], savedUniversities = 
                 key={selectedCity || selectedState}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white/80 dark:bg-dark-card/80 backdrop-blur-xl p-5 rounded-3xl border border-white/20 shadow-2xl"
+                className="bg-white/80 dark:bg-dark-card/80 backdrop-blur-xl p-5 rounded-3xl border border-white/20 shadow-lg"
               >
                  <p className="text-[10px] font-bold text-link uppercase tracking-widest mb-1.5 opacity-80">Geographic View</p>
                  <h4 className="text-lg font-bold truncate max-w-[200px] tracking-tight">
@@ -388,7 +388,7 @@ export default function GeographicView({ universities = [], savedUniversities = 
 
            {selectedState && !locationData[selectedState] && (
               <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-[1px] z-[500] flex items-center justify-center pointer-events-none">
-                 <div className="bg-white/90 dark:bg-dark-card/90 p-5 rounded-2xl shadow-2xl border border-primary/20 flex items-center gap-3">
+                 <div className="bg-white/90 dark:bg-dark-card/90 p-5 rounded-2xl shadow-lg border border-primary/20 flex items-center gap-3">
                     <Info className="w-5 h-5 text-link" />
                     <p className="text-xs font-bold">No universities currently listed in {selectedState}.</p>
                  </div>

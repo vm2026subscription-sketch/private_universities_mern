@@ -36,7 +36,7 @@ export default function StickyBottomBanner({ page = 'home' }) {
         className="fixed bottom-20 md:bottom-0 inset-x-0 z-40 px-3 pb-3"
       >
         <div
-          className="max-w-5xl mx-auto relative rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex items-center gap-4 pr-12 pl-4 py-3"
+          className="max-w-5xl mx-auto relative rounded-2xl shadow-lg border border-white/10 overflow-hidden flex items-center gap-4 pr-12 pl-4 py-3"
           style={{
             backgroundColor: banner.backgroundColor || '#0f172a',
             color: banner.textColor || '#ffffff',

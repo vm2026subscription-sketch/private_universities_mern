@@ -4,6 +4,9 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE,
+  // Fail fast instead of hanging forever if the server is slow/unreachable
+  // (important on Render free tier where the first request after idle is slow).
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -15,7 +18,19 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
+  async (error) => {
+    // Fault tolerance: retry idempotent GET requests ONCE on a timeout or a
+    // network error (no response) — e.g. a Render free-tier cold start. Never
+    // retry POST/PUT/DELETE, to avoid duplicate writes.
+    const config = error.config;
+    const isGet = config && (config.method || 'get').toLowerCase() === 'get';
+    const isTransient = error.code === 'ECONNABORTED' || !error.response;
+    if (config && isGet && isTransient && !config._retried) {
+      config._retried = true;
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      return api(config);
+    }
+
     if (error.response?.status === 401) {
       const token = localStorage.getItem('vm_token');
       const requestUrl = String(error.config?.url || '');

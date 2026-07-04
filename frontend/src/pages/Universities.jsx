@@ -11,7 +11,8 @@ import { calculateFitScore } from '../utils/fitScore';
 import UniversityLogo from '../components/common/UniversityLogo';
 import { EmptyState, Button } from '../components/ui';
 import { getUniversityDisplayType } from '../utils/universityType';
-import { generateBrochure } from '../utils/brochureGenerator';
+// generateBrochure (jspdf ~1MB) is loaded on demand inside the download handler
+// so the PDF library never ships with the initial page load.
 import LeadCaptureModal from '../components/university/LeadCaptureModal';
 
 
@@ -99,6 +100,7 @@ export default function Universities() {
   };
 
   const handleDownloadBrochure = async (university) => {
+    const { generateBrochure } = await import('../utils/brochureGenerator');
     try {
       setDownloadingId(university._id);
       // Fetch full university data so the brochure has all details
@@ -279,16 +281,13 @@ export default function Universities() {
                         <Bookmark className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
                       </button>
 
-                      {/* Download Brochure */}
+                      {/* Download Brochure — captures the student's details (lead) before download */}
                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDownloadBrochure(u); }}
-                          disabled={downloadingId === u._id}
-                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-link hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedUni(u); setLeadType('brochure'); setLeadModalOpen(true); }}
+                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-link hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90"
                           title="Download University Brochure (PDF)"
                         >
-                          {downloadingId === u._id
-                            ? <Loader2 className="w-4 h-4 animate-spin text-link" />
-                            : <Download className="w-4 h-4" />}
+                          <Download className="w-4 h-4" />
                         </button>
 
                       <div className="relative w-full h-full [transform-style:preserve-3d]">
@@ -400,11 +399,16 @@ export default function Universities() {
 
         </div>
       </div>
-      <LeadCaptureModal 
-        isOpen={leadModalOpen} 
-        onClose={() => setLeadModalOpen(false)} 
-        university={selectedUni} 
-        leadType={leadType} 
+      <LeadCaptureModal
+        isOpen={leadModalOpen}
+        onClose={() => setLeadModalOpen(false)}
+        university={selectedUni}
+        leadType={leadType}
+        onSuccess={() => {
+          if (leadType === 'brochure' && selectedUni) {
+            handleDownloadBrochure(selectedUni);
+          }
+        }}
       />
     </div>
   );

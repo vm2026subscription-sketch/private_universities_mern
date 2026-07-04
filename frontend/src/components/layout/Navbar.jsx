@@ -126,7 +126,7 @@ export default function Navbar() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-hidden z-[110]"
+                    className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-lg overflow-hidden z-[110]"
                   >
                     {searchResults.map(r => (
                       <button key={r._id} onClick={() => { 
@@ -137,7 +137,7 @@ export default function Navbar() {
                         }}
                         className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-dark-border flex items-center gap-3 transition-colors">
                         <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                           {r._type === 'university' ? <Building2 className="w-4 h-4 text-link" /> : <BookOpen className="w-4 h-4 text-indigo-500" />}
+                           {r._type === 'university' ? <Building2 className="w-4 h-4 text-link" /> : <BookOpen className="w-4 h-4 text-slate-500" />}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold truncate">{r.name}</p>
@@ -171,7 +171,7 @@ export default function Navbar() {
                       initial={{ opacity: 0, scale: 0.95, y: 10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-hidden z-[110]"
+                      className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-lg overflow-hidden z-[110]"
                     >
                       <div className="px-5 py-4 bg-slate-50 dark:bg-white/5 border-b border-light-border dark:border-dark-border">
                         <p className="text-sm font-bold truncate">{user.name}</p>

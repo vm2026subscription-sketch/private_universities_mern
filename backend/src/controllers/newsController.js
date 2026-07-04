@@ -9,6 +9,7 @@ exports.getNews = async (req, res) => {
       News.find(filter).sort({ publishedAt: -1 }).skip(skip).limit(parseInt(limit)),
       News.countDocuments(filter)
     ]);
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, data: news, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

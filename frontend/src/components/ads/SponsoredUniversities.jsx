@@ -34,7 +34,7 @@ export default function SponsoredUniversities({ page = 'home' }) {
               href={bannerClickUrl(b._id)}
               target="_blank"
               rel="noopener noreferrer sponsored"
-              className="relative bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-950/10 rounded-[2rem] p-6 border-2 border-amber-400/50 shadow-2xl flex flex-col justify-between group overflow-hidden"
+              className="relative bg-gradient-to-br from-amber-500/5 to-transparent dark:from-amber-950/10 rounded-[2rem] p-6 border-2 border-amber-400/50 shadow-lg flex flex-col justify-between group overflow-hidden"
             >
               <span className="absolute top-4 right-4 text-[8px] font-bold uppercase tracking-widest text-amber-500/70">
                 Ad

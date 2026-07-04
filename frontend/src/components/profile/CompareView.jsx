@@ -12,7 +12,7 @@ export default function CompareView({ compareList, onRemove }) {
   if (compareList.length === 0) {
     return (
       <div className="card p-12 text-center">
-        <GitCompare className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
+        <GitCompare className="w-12 h-12 text-slate-400 mx-auto mb-3" />
         <h3 className="font-bold text-lg mb-2">Comparison List is Empty</h3>
         <p className="text-light-muted text-sm mb-4">Select up to 3 colleges from your "Saved Colleges" tab to compare them side-by-side.</p>
       </div>
@@ -61,7 +61,7 @@ export default function CompareView({ compareList, onRemove }) {
     <div className="space-y-6 overflow-x-auto">
       <div className="flex items-center justify-between min-w-[600px]">
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <GitCompare className="w-5 h-5 text-indigo-500" /> Comparison View
+          <GitCompare className="w-5 h-5 text-slate-500" /> Comparison View
         </h2>
         <span className="text-sm text-light-muted">{compareList.length}/3 Colleges</span>
       </div>
@@ -85,16 +85,16 @@ export default function CompareView({ compareList, onRemove }) {
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="card p-4 h-28 flex flex-col justify-between hover:border-indigo-500 transition-colors">
+              <div className="card p-4 h-28 flex flex-col justify-between hover:border-slate-500 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-dark-border flex items-center justify-center text-indigo-600 font-bold shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-dark-border flex items-center justify-center text-slate-600 font-bold shrink-0">
                     {university.name?.charAt(0)}
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold line-clamp-2">{university.name}</p>
                   </div>
                 </div>
-                <Link to={`/universities/${university.slug}`} className="text-[10px] text-indigo-500 hover:underline flex items-center gap-1">
+                <Link to={`/universities/${university.slug}`} className="text-[10px] text-slate-500 hover:underline flex items-center gap-1">
                   View Profile <ExternalLink className="w-2 h-2" />
                 </Link>
               </div>

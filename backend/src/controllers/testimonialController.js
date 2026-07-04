@@ -59,6 +59,7 @@ exports.submitPublic = async (req, res) => {
 exports.getApproved = async (req, res) => {
   try {
     const testimonials = await Testimonial.find({ isApproved: true }).sort({ isFeatured: -1, createdAt: -1 }).limit(20);
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, data: testimonials });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -172,7 +172,7 @@ export default function SavedColleges({ savedUnis, ratings, notes, compareList, 
             </button>
             <button
               onClick={() => onToggleCompare(u)}
-              className={`btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1 ${compareList.find(c=>c._id===u._id)?'bg-indigo-100 text-indigo-700 border-indigo-300':''}`}>
+              className={`btn-outline !py-1.5 !px-3 text-xs flex items-center gap-1 ${compareList.find(c=>c._id===u._id)?'bg-slate-100 text-slate-700 border-slate-300':''}`}>
               <GitCompare className="w-3 h-3" /> {compareList.find(c=>c._id===u._id)?'Remove from Compare':'Compare'}
             </button>
             <button onClick={() => onShare(u)}

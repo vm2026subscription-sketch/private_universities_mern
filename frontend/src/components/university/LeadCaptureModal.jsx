@@ -82,7 +82,7 @@ export default function LeadCaptureModal({ isOpen, onClose, university, leadType
       />
 
       {/* Modal box */}
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-2xl transition-all duration-300 transform scale-100 z-10">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg transition-all duration-300 transform scale-100 z-10">
         
         {/* Decorative Top Accent */}
         <div className="h-2 bg-gradient-to-r from-primary to-accent" />

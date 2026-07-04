@@ -138,8 +138,9 @@ exports.getCourses = async (req, res) => {
 
     const courses = await Course.aggregate(pipeline);
 
-    res.json({ 
-      success: true, 
+    res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
+    res.json({
+      success: true,
       data: courses,
       pagination: {
         total,
