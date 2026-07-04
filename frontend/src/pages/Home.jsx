@@ -10,6 +10,8 @@ import {
   Calendar, Award, DollarSign, Plus, X, Star
 } from 'lucide-react';
 import api from '../utils/api';
+import Seo from '../components/common/Seo';
+import { siteJsonLd } from '../utils/seo';
 import { useAiChat } from '../context/AiChatContext';
 import UniversityLogo from '../components/common/UniversityLogo';
 import LeadCaptureModal from '../components/university/LeadCaptureModal';
@@ -340,6 +342,12 @@ export default function Home() {
 
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 overflow-x-hidden">
+      <Seo
+        title="Vidyarthi Mitra – Find Your Perfect University in India"
+        description="Explore 700+ private, deemed and international universities across India. Compare fees, NAAC grades, NIRF rankings, courses, placements and admissions 2026."
+        path="/"
+        jsonLd={siteJsonLd()}
+      />
       {/* Hero Section - Shiksha-style rotating campus background */}
       <section className="relative min-h-[600px] md:h-[85vh] flex items-center justify-center overflow-hidden">
         {/* Rotating Campus Background */}

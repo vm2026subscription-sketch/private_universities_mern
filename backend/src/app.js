@@ -20,6 +20,7 @@ const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 const uploadRoutes = require('./routes/upload');
 const bhashiniRoutes = require('./routes/bhashini');
+const sitemapRoutes = require('./routes/sitemap');
 
 const errorHandler = require('./middleware/errorHandler');
 const compression = require('compression');
@@ -114,6 +115,9 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => res.status(200).json(healthPayload()));
 app.get('/api/v1/health', (req, res) => res.status(200).json(healthPayload()));
+
+// SEO: XML sitemaps served from the site root (proxied onto the public domain).
+app.use('/', sitemapRoutes);
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/universities', universityRoutes);

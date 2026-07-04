@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useDeferredValue } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
@@ -599,6 +599,11 @@ export default function Courses() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
+      <Seo
+        title="Courses & Programs in India | B.Tech, MBA, Law, Medical & More | Vidyarthi Mitra"
+        description="Browse UG, PG, diploma and doctoral programs across Indian private and deemed universities. Compare fees, seats, eligibility and entrance exams."
+        path="/courses"
+      />
       {/* Hero */}
       <div className="relative mb-6 shrink-0 rounded-[2rem] overflow-hidden bg-slate-900 text-white shadow-lg">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />

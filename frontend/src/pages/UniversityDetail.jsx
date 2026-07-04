@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
+import { buildUniversitySeo, universityJsonLd } from '../utils/seo';
 import QASection from '../components/QASection';
 import UniversityLogo from '../components/common/UniversityLogo';
 // generateBrochure (jspdf ~1MB) is loaded on demand inside the download handler
@@ -237,6 +238,12 @@ export default function UniversityDetail() {
   );
   if (!uni) return (
     <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+      <Seo
+        title={`University Not Found | ${'Vidyarthi Mitra'}`}
+        description="The university you're looking for doesn't exist or may have been removed."
+        path={location.pathname}
+        noindex
+      />
       <div className="bg-white dark:bg-dark-card rounded-[2rem] shadow-xl border border-slate-100 dark:border-white/5 p-14 max-w-xl mx-auto">
         <GraduationCap className="w-16 h-16 mx-auto mb-6 text-link" aria-hidden="true" />
         <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-3">
@@ -268,11 +275,20 @@ export default function UniversityDetail() {
 
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
-      <Helmet>
-        <title>{uni.name} | Fees, Placements, Admissions 2026 | VidyarthiMitra</title>
-        <meta name="description" content={`Explore ${uni.name}, ${uni.city}. Get details on fees structure, placement statistics, NIRF ranking, courses, and admission process for 2026.`} />
-        <meta name="keywords" content={`${uni.name}, ${uni.city} university, ${uni.name} fees, ${uni.name} placement, ${uni.name} admission 2026`} />
-      </Helmet>
+      {(() => {
+        const s = buildUniversitySeo(uni);
+        return (
+          <Seo
+            title={s.title}
+            description={s.description}
+            canonical={s.canonical}
+            image={s.image}
+            noindex={s.noindex}
+            keywords={`${uni.name}, ${uni.city} university, ${uni.name} fees, ${uni.name} placement, ${uni.name} admission ${new Date().getFullYear()}`}
+            jsonLd={s.noindex ? undefined : universityJsonLd(uni)}
+          />
+        );
+      })()}
       
       {/* Header Banner */}
       <div className="h-48 md:h-64 bg-slate-900 relative overflow-hidden">

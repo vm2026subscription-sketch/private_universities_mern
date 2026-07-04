@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import { Eye, EyeOff, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -80,10 +80,12 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pb-20 md:pb-0">
-      <Helmet>
-        <title>Create Account | VidyarthiMitra</title>
-        <meta name="description" content="Create your free VidyarthiMitra account. Get personalized university recommendations, track applications and compare colleges." />
-      </Helmet>
+      <Seo
+        title="Create Account | Vidyarthi Mitra"
+        description="Create your free Vidyarthi Mitra account. Get personalized university recommendations, track applications and compare colleges."
+        path="/signup"
+        noindex
+      />
       <div className="card p-8 w-full max-w-md">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold">Sign Up</h1>

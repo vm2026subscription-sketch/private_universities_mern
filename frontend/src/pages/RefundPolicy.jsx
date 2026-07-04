@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
 
@@ -22,10 +22,11 @@ If paid by credit card, refunds will be issued to the original credit card provi
 export default function RefundPolicy() {
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
-      <Helmet>
-        <title>Refund & Cancellation Policy | Vidyarthi Mitra</title>
-        <meta name="description" content="Read the Refund and Cancellation Policy for Vidyarthi Mitra's products and services." />
-      </Helmet>
+      <Seo
+        title="Refund & Cancellation Policy | Vidyarthi Mitra"
+        description="Read the Refund and Cancellation Policy for Vidyarthi Mitra's products and services."
+        path="/refund-cancellation"
+      />
 
       {/* Hero */}
       <div className="relative bg-slate-900 overflow-hidden">

@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import { Rocket, TrendingUp, Award, Users, BookOpen, Globe } from 'lucide-react';
 
@@ -47,10 +47,11 @@ const stats = [
 export default function About() {
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 md:pb-0">
-      <Helmet>
-        <title>About Us | Vidyarthi Mitra – Our Mission, Team & Story</title>
-        <meta name="description" content="Learn about Vidyarthi Mitra — India's trusted education portal. Our mission, vision, founding team, and milestones since 1981." />
-      </Helmet>
+      <Seo
+        title="About Us | Vidyarthi Mitra – Our Mission, Team & Story"
+        description="Learn about Vidyarthi Mitra — India's trusted education portal. Our mission, vision, founding team, and milestones since 1981."
+        path="/about"
+      />
 
       {/* Hero */}
       <div className="relative bg-slate-900 overflow-hidden">

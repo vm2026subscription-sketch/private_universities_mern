@@ -109,7 +109,19 @@ const universitySchema = new mongoose.Schema({
   isSponsored: { type: Boolean, default: false },
   sponsorTier: { type: String, enum: ['bronze', 'silver', 'gold', 'platinum', 'none'], default: 'none' },
   sponsorPriority: { type: Number, default: 0 },
-  sponsorExpiry: Date
+  sponsorExpiry: Date,
+  // SEO overrides. All optional — when a field is blank the site generates a
+  // sensible default (see utils/seo.js). indexStatus lets admins pull a page
+  // out of Google without unpublishing it.
+  seo: {
+    seoTitle: String,
+    metaDescription: String,
+    canonicalUrl: String,
+    ogTitle: String,
+    ogDescription: String,
+    ogImage: String,
+    indexStatus: { type: String, enum: ['index', 'noindex'], default: 'index' }
+  }
 }, { timestamps: true });
 
 universitySchema.pre('validate', function(next) {

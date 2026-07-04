@@ -1,0 +1,23 @@
+# Vidyarthi Mitra — Private Universities
+# Public university, course and info pages are open to all crawlers.
+
+User-agent: *
+Allow: /
+
+# Private / non-indexable areas
+Disallow: /admin
+Disallow: /admin-legacy
+Disallow: /login
+Disallow: /signup
+Disallow: /profile
+Disallow: /auth/
+Disallow: /verify-email
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /uploadxl
+Disallow: /ask
+
+# Do not crawl filtered / search-parameter URLs (avoids duplicate content)
+Disallow: /*?
+
+Sitemap: https://privateuniversity.vidyarthimitra.org/sitemap.xml

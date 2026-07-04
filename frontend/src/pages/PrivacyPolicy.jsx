@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 
@@ -21,10 +21,11 @@ const sections = [
 export default function PrivacyPolicy() {
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
-      <Helmet>
-        <title>Privacy Policy | Vidyarthi Mitra</title>
-        <meta name="description" content="Read the Privacy Policy of Vidyarthi Mitra. Learn how we collect, use and protect your personal information." />
-      </Helmet>
+      <Seo
+        title="Privacy Policy | Vidyarthi Mitra"
+        description="Read the Privacy Policy of Vidyarthi Mitra. Learn how we collect, use and protect your personal information."
+        path="/privacy-policy"
+      />
 
       {/* Hero */}
       <div className="relative bg-slate-900 overflow-hidden">

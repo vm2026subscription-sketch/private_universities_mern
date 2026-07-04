@@ -3,6 +3,7 @@ import { ArrowRightLeft, Check, GraduationCap, Search, Trash2, MapPin, X, Scale,
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import api from '../utils/api';
+import Seo from '../components/common/Seo';
 
 const EXAMPLE_UNIVERSITIES = ['BITS Pilani', 'MAHE Manipal', 'Symbiosis International', 'Amity University'];
 
@@ -158,6 +159,11 @@ export default function UniversityComparison() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/30 dark:from-dark-bg dark:via-dark-bg dark:to-slate-900/10 transition-colors duration-300">
+      <Seo
+        title="Compare Universities Side-by-Side | Fees, Rankings & Placements | Vidyarthi Mitra"
+        description="Compare Indian universities side-by-side on fees, NAAC grade, NIRF rank, placements and courses to choose the right one for you."
+        path="/compare-universities"
+      />
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-16 space-y-12">
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto">

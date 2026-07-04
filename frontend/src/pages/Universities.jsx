@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap, Loader2 } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -157,10 +157,11 @@ export default function Universities() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20 md:pb-8">
-      <Helmet>
-        <title>Universities in India | Fees, Rankings & Admissions 2026 | VidyarthiMitra</title>
-        <meta name="description" content="Explore 500+ private and deemed universities in India. Compare fees, NAAC grades, NIRF rankings, placements and admission process." />
-      </Helmet>
+      <Seo
+        title="Universities in India | Fees, Rankings & Admissions 2026 | Vidyarthi Mitra"
+        description="Explore 500+ private and deemed universities in India. Compare fees, NAAC grades, NIRF rankings, placements and admission process."
+        path="/universities"
+      />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-serif font-bold text-link">Universities</h1>
         <div className="flex items-center gap-3">

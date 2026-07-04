@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Mail, Send, CheckCircle2, MessageSquare, Clock, Globe } from 'lucide-react';
 import api from '../utils/api';
@@ -84,10 +84,11 @@ export default function Contact() {
 
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 md:pb-0">
-      <Helmet>
-        <title>Contact Us | Vidyarthi Mitra – Pune & Mumbai Office</title>
-        <meta name="description" content="Get in touch with Vidyarthi Mitra. Visit our Pune or Mumbai offices, call us, or send a message. We're here to help you find the right career path." />
-      </Helmet>
+      <Seo
+        title="Contact Us | Vidyarthi Mitra – Pune & Mumbai Office"
+        description="Get in touch with Vidyarthi Mitra. Visit our Pune or Mumbai offices, call us, or send a message. We're here to help you find the right career path."
+        path="/contact"
+      />
 
       {/* Hero */}
       <div className="relative bg-slate-900 overflow-hidden">

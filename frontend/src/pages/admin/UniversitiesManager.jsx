@@ -112,7 +112,18 @@ const FORM_TABS = [
   { id: 'highlights', label: '4. Highlights & Links' },
   { id: 'courses', label: '5. Course Catalog' },
   { id: 'sponsorship', label: '6. Sponsorship' },
+  { id: 'seo', label: '7. SEO' },
 ];
+
+const emptySeo = () => ({
+  seoTitle: '',
+  metaDescription: '',
+  canonicalUrl: '',
+  ogTitle: '',
+  ogDescription: '',
+  ogImage: '',
+  indexStatus: 'index',
+});
 
 const SUGGESTED_FACILITIES = ['Hostel', 'Library', 'Labs', 'Sports Complex', 'Wi-Fi', 'Medical Room', 'Transport', 'Auditorium'];
 const SUGGESTED_RECRUITERS = ['TCS', 'Infosys', 'Wipro', 'Accenture', 'Deloitte', 'Amazon', 'Microsoft', 'HCL'];
@@ -191,6 +202,7 @@ const emptyForm = () => ({
     hostelLink: '',
     mapLink: '',
   },
+  seo: emptySeo(),
   courses: [emptyCourse()],
 });
 
@@ -483,7 +495,12 @@ export default function UniversitiesManager() {
       highlights: { complete: false, requiredMissing: [] },
       courses: { complete: false, requiredMissing: [] },
       sponsorship: { complete: true, requiredMissing: [] },
+      seo: { complete: false, requiredMissing: [] },
     };
+
+    tabState.seo.complete = Boolean(
+      form.seo?.seoTitle?.trim() || form.seo?.metaDescription?.trim() || form.seo?.indexStatus === 'noindex'
+    );
 
     if (!form.name?.trim()) tabState.general.requiredMissing.push('University name');
     if (!isDraft && !form.state?.trim()) tabState.general.requiredMissing.push('State');
@@ -543,6 +560,15 @@ export default function UniversitiesManager() {
         topRecruiters: splitLines(form.topRecruitersText),
         facilities: splitLines(form.facilitiesText),
         links: { ...form.links },
+        seo: {
+          seoTitle: toPayloadValue(form.seo?.seoTitle),
+          metaDescription: toPayloadValue(form.seo?.metaDescription),
+          canonicalUrl: toPayloadValue(form.seo?.canonicalUrl),
+          ogTitle: toPayloadValue(form.seo?.ogTitle),
+          ogDescription: toPayloadValue(form.seo?.ogDescription),
+          ogImage: toPayloadValue(form.seo?.ogImage),
+          indexStatus: form.seo?.indexStatus || 'index',
+        },
         courses: form.courses
           .map((course) => ({
             _id: course._id || undefined,
@@ -664,6 +690,15 @@ export default function UniversitiesManager() {
         scholarshipLink: university.links?.scholarshipLink || '',
         hostelLink: university.links?.hostelLink || '',
         mapLink: university.links?.mapLink || '',
+      },
+      seo: {
+        seoTitle: university.seo?.seoTitle || '',
+        metaDescription: university.seo?.metaDescription || '',
+        canonicalUrl: university.seo?.canonicalUrl || '',
+        ogTitle: university.seo?.ogTitle || '',
+        ogDescription: university.seo?.ogDescription || '',
+        ogImage: university.seo?.ogImage || '',
+        indexStatus: university.seo?.indexStatus || 'index',
       },
       courses: university.courses?.length ? university.courses.map((course) => ({
         _id: course._id || '',
@@ -1389,6 +1424,93 @@ export default function UniversitiesManager() {
                   </ul>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Tab 7: SEO */}
+          <div className={activeFormTab === 'seo' ? 'space-y-6' : 'hidden'}>
+            <div className="rounded-[1.75rem] border border-dashed border-primary/30 bg-primary/5 p-4 text-sm text-link">
+              Leave any field blank to use an automatic, SEO-friendly default generated from the
+              university name, type and location. Fill a field only when you want to override it.
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <FormField label="SEO Title (browser tab & Google result)">
+                <div className="space-y-2">
+                  <TextInput
+                    value={form.seo.seoTitle}
+                    onChange={(event) => updNested('seo', 'seoTitle', event.target.value)}
+                    placeholder={form.name ? `${form.name} — ${getDisplayType(form)} University in ${form.city || 'City'}, ${form.state || 'State'}` : 'Auto from name, type & location'}
+                  />
+                  <p className="text-xs text-light-muted dark:text-dark-muted">Aim for 50–60 characters. Blank = auto.</p>
+                </div>
+              </FormField>
+              <FormField label="Index Status">
+                <div className="space-y-2">
+                  <SelectInput
+                    value={form.seo.indexStatus}
+                    onChange={(event) => updNested('seo', 'indexStatus', event.target.value)}
+                    options={[
+                      { value: 'index', label: 'Index — allow Google to list this page' },
+                      { value: 'noindex', label: 'No-index — keep out of Google (stays live)' },
+                    ]}
+                  />
+                  <p className="text-xs text-light-muted dark:text-dark-muted">Use No-index to hide a page from search without unpublishing it.</p>
+                </div>
+              </FormField>
+            </div>
+
+            <FormField label="Meta Description (Google result snippet)">
+              <div className="space-y-2">
+                <TextArea
+                  value={form.seo.metaDescription}
+                  onChange={(event) => updNested('seo', 'metaDescription', event.target.value)}
+                  className="min-h-[90px]"
+                  placeholder="Blank = auto-generated from the university description."
+                />
+                <p className="text-xs text-light-muted dark:text-dark-muted">Aim for 140–160 characters. Blank = auto.</p>
+              </div>
+            </FormField>
+
+            <FormField label="Canonical URL (advanced — override only if this page duplicates another)">
+              <TextInput
+                value={form.seo.canonicalUrl}
+                onChange={(event) => updNested('seo', 'canonicalUrl', event.target.value)}
+                placeholder="Blank = the page's own slug URL (recommended)"
+              />
+            </FormField>
+
+            <div className="rounded-[1.75rem] border border-light-border dark:border-dark-border p-5 space-y-4">
+              <p className="text-sm font-bold text-light-text dark:text-dark-text">Social Share (Open Graph / Twitter Card)</p>
+              <div className="grid gap-6 md:grid-cols-2">
+                <FormField label="Share Title">
+                  <TextInput
+                    value={form.seo.ogTitle}
+                    onChange={(event) => updNested('seo', 'ogTitle', event.target.value)}
+                    placeholder="Blank = SEO title"
+                  />
+                </FormField>
+                <FormField label="Share Image URL">
+                  <TextInput
+                    value={form.seo.ogImage}
+                    onChange={(event) => updNested('seo', 'ogImage', event.target.value)}
+                    placeholder="Blank = banner or logo"
+                  />
+                </FormField>
+              </div>
+              <FormField label="Share Description">
+                <TextArea
+                  value={form.seo.ogDescription}
+                  onChange={(event) => updNested('seo', 'ogDescription', event.target.value)}
+                  className="min-h-[70px]"
+                  placeholder="Blank = meta description"
+                />
+              </FormField>
+              {form.seo.ogImage && (
+                <div className="flex h-32 items-center justify-center overflow-hidden rounded-[1.5rem] bg-light-card/60 dark:bg-dark-card/50">
+                  <img src={form.seo.ogImage} alt="Share preview" className="h-full w-full object-cover" />
+                </div>
+              )}
             </div>
           </div>
 

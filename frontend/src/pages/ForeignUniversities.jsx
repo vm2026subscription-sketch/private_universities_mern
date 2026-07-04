@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import {
   MapPin,
   Globe,
@@ -156,13 +156,11 @@ export default function ForeignUniversities() {
 
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
-      <Helmet>
-        <title>Abroad | Foreign & Twinning Universities | VidyarthiMitra</title>
-        <meta
-          name="description"
-          content="Explore foreign universities in India and twinning pathways managed directly through the VidyarthiMitra catalogue."
-        />
-      </Helmet>
+      <Seo
+        title="Foreign & Twinning Universities in India | Vidyarthi Mitra"
+        description="Explore foreign universities in India and twinning pathways managed directly through the Vidyarthi Mitra catalogue."
+        path="/foreign-universities"
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-12 pb-28 md:pb-16 page-enter">
         <div className="text-center mb-10">

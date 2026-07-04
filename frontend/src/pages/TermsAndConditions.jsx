@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async';
+import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import { FileText } from 'lucide-react';
 
@@ -48,10 +48,11 @@ const sections = [
 export default function TermsAndConditions() {
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
-      <Helmet>
-        <title>Terms and Conditions | Vidyarthi Mitra</title>
-        <meta name="description" content="Read the Terms and Conditions governing your use of Vidyarthi Mitra's website and services." />
-      </Helmet>
+      <Seo
+        title="Terms and Conditions | Vidyarthi Mitra"
+        description="Read the Terms and Conditions governing your use of Vidyarthi Mitra's website and services."
+        path="/terms-and-conditions"
+      />
 
       {/* Hero */}
       <div className="relative bg-slate-900 overflow-hidden">

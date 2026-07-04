@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "https://private-universities-mern.onrender.com/sitemap.xml" },
+    { "source": "/sitemap-static.xml", "destination": "https://private-universities-mern.onrender.com/sitemap-static.xml" },
+    { "source": "/sitemap-universities.xml", "destination": "https://private-universities-mern.onrender.com/sitemap-universities.xml" },
+    { "source": "/universities/:slug", "destination": "/api/render?slug=:slug" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
