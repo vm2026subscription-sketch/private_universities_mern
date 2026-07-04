@@ -134,6 +134,29 @@ exports.getAnalytics = async (req, res) => {
   }
 };
 
+// Append UTM tracking params to a sponsor's link so the university can see the
+// traffic in their OWN analytics (Google Analytics, etc.) as coming from us.
+// Existing utm_* params on the link are respected and never overwritten.
+function withUtm(link, banner) {
+  try {
+    const url = new URL(link);
+    if (!url.searchParams.has('utm_source')) url.searchParams.set('utm_source', 'vidyarthimitra');
+    if (!url.searchParams.has('utm_medium')) url.searchParams.set('utm_medium', 'banner');
+    if (!url.searchParams.has('utm_campaign')) {
+      const campaign = (banner.title || 'ad')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40) || 'ad';
+      url.searchParams.set('utm_campaign', campaign);
+    }
+    return url.toString();
+  } catch {
+    // Relative or malformed URL — redirect as-is without UTM.
+    return link;
+  }
+}
+
 // Public: click redirect + track CTR
 exports.trackClick = async (req, res) => {
   try {
@@ -146,11 +169,13 @@ exports.trackClick = async (req, res) => {
       : 0;
     await banner.save();
 
-    // Redirect to banner link, or return JSON if no link
+    // Redirect to the sponsor's link (with UTM tags appended). If no link is
+    // configured, fall back to where the user came from instead of showing raw
+    // JSON — never leave a visitor stranded on an API response.
     if (banner.link) {
-      return res.redirect(banner.link);
+      return res.redirect(withUtm(banner.link, banner));
     }
-    res.json({ success: true, clicks: banner.clicks });
+    return res.redirect(req.get('referer') || process.env.FRONTEND_URL || '/');
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

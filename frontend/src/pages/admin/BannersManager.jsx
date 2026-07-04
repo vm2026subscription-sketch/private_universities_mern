@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2, Plus, Eye, EyeOff } from 'lucide-react';
+import { Pencil, Trash2, Plus, Eye, EyeOff, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, CheckboxField, FormActions } from './components/FormFields';
 
-const emptyForm = () => ({ title: '', subtitle: '', imageUrl: '', link: '', linkText: '', position: 'hero', page: 'home', isActive: true, priority: 0, startDate: '', endDate: '', backgroundColor: '', textColor: '', universityId: '' });
+const emptyForm = () => ({ title: '', subtitle: '', imageUrl: '', mediaType: 'image', videoUrl: '', link: '', linkText: '', position: 'hero', page: 'home', isActive: true, priority: 0, startDate: '', endDate: '', backgroundColor: '', textColor: '', universityId: '' });
 
 export default function BannersManager() {
   const { canDelete } = useRole();
@@ -52,6 +52,34 @@ export default function BannersManager() {
     await api.delete(`/admin/banners/${id}`); toast.success('Deleted'); load();
   };
 
+  // Export a per-banner performance report as CSV (opens in Excel / Sheets).
+  // Share this with universities to show impressions, clicks and CTR of their ad.
+  const exportReport = () => {
+    if (!banners.length) return toast.error('No banners to export');
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = banners.map(b => {
+      const ctr = b.impressions > 0 ? ((b.clicks / b.impressions) * 100).toFixed(2) : '0.00';
+      return [
+        b.title, b.position, b.page,
+        b.isActive ? 'Active' : 'Inactive',
+        b.impressions || 0, b.clicks || 0, `${ctr}%`,
+        b.startDate ? b.startDate.slice(0, 10) : '',
+        b.endDate ? b.endDate.slice(0, 10) : '',
+        b.link || '',
+      ].map(esc).join(',');
+    });
+    const header = ['Title', 'Position', 'Page', 'Status', 'Impressions', 'Clicks', 'CTR', 'Start Date', 'End Date', 'Link'].join(',');
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `banner-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Report exported');
+  };
+
   const columns = [
     { key: 'title', label: 'Title' },
     { key: 'position', label: 'Position', render: b => <span className="badge badge-blue">{b.position}</span> },
@@ -82,9 +110,14 @@ export default function BannersManager() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Banners</h2>
-        <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm(emptyForm()); }} className="btn-primary text-sm flex items-center gap-1.5">
-          <Plus className="w-4 h-4" /> Add Banner
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={exportReport} className="btn-outline text-sm flex items-center gap-1.5">
+            <Download className="w-4 h-4" /> Export Report
+          </button>
+          <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm(emptyForm()); }} className="btn-primary text-sm flex items-center gap-1.5">
+            <Plus className="w-4 h-4" /> Add Banner
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -93,7 +126,17 @@ export default function BannersManager() {
           <div className="grid md:grid-cols-2 gap-4">
             <FormField label="Title"><TextInput value={form.title} onChange={e => upd('title', e.target.value)} required /></FormField>
             <FormField label="Subtitle"><TextInput value={form.subtitle} onChange={e => upd('subtitle', e.target.value)} /></FormField>
-            <FormField label="Image URL"><TextInput value={form.imageUrl} onChange={e => upd('imageUrl', e.target.value)} /></FormField>
+            <FormField label="Media Type">
+              <SelectInput value={form.mediaType} onChange={e => upd('mediaType', e.target.value)} options={[{value:'image',label:'Image'},{value:'video',label:'Video (premium)'}]} />
+            </FormField>
+            <FormField label={form.mediaType === 'video' ? 'Poster Image URL (optional)' : 'Image URL'}>
+              <TextInput value={form.imageUrl} onChange={e => upd('imageUrl', e.target.value)} />
+            </FormField>
+            {form.mediaType === 'video' && (
+              <FormField label="Video URL (.mp4 / YouTube / Vimeo)">
+                <TextInput value={form.videoUrl} onChange={e => upd('videoUrl', e.target.value)} placeholder="https://youtu.be/…  or  https://cdn.site.com/ad.mp4" />
+              </FormField>
+            )}
             <FormField label="Link URL"><TextInput value={form.link} onChange={e => upd('link', e.target.value)} /></FormField>
             <FormField label="Link Text"><TextInput value={form.linkText} onChange={e => upd('linkText', e.target.value)} /></FormField>
             <FormField label="Position">

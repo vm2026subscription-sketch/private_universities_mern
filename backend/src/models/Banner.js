@@ -4,6 +4,10 @@ const bannerSchema = new mongoose.Schema({
   title: { type: String, required: true },
   subtitle: String,
   imageUrl: String,
+  // Media: 'image' (default) or 'video'. Video ads are a premium placement.
+  // videoUrl accepts a direct file (.mp4/.webm) or a YouTube/Vimeo watch/share link.
+  mediaType: { type: String, enum: ['image', 'video'], default: 'image' },
+  videoUrl: String,
   link: String,
   linkText: String,
   position: { type: String, enum: ['hero', 'sponsored', 'sidebar', 'popup', 'ticker', 'footer'], default: 'hero' },

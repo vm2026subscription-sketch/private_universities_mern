@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
-import { useAdBanners, bannerClickUrl } from '../../hooks/useAdBanners';
+import { useAdBanners, bannerClickUrl, bannerVideo } from '../../hooks/useAdBanners';
 
 // Homepage hero banner slider. Driven entirely by admin ad banners
 // (position = "hero"). Renders nothing when no hero banners are scheduled,
@@ -22,6 +22,7 @@ export default function HeroBannerSlider({ page = 'home', interval = 6000 }) {
 
   const safeIndex = index % banners.length;
   const banner = banners[safeIndex];
+  const video = bannerVideo(banner);
   const go = (dir) =>
     setIndex((i) => (i + dir + banners.length) % banners.length);
 
@@ -44,7 +45,28 @@ export default function HeroBannerSlider({ page = 'home', interval = 6000 }) {
               color: banner.textColor || '#ffffff',
             }}
           >
-            {banner.imageUrl ? (
+            {video ? (
+              video.kind === 'embed' ? (
+                <iframe
+                  src={video.src}
+                  title={banner.title || 'Sponsored video'}
+                  className="w-full h-56 md:h-80 pointer-events-none"
+                  frameBorder="0"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={video.src}
+                  poster={banner.imageUrl || undefined}
+                  className="w-full h-56 md:h-80 object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              )
+            ) : banner.imageUrl ? (
               <img
                 src={banner.imageUrl}
                 alt={banner.title}

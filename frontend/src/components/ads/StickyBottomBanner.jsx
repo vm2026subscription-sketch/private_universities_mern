@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight } from 'lucide-react';
-import { useAdBanners, bannerClickUrl } from '../../hooks/useAdBanners';
+import { useAdBanners, bannerClickUrl, bannerVideo } from '../../hooks/useAdBanners';
 
 const DISMISS_KEY = 'vm_sticky_ad_dismissed';
 
@@ -16,6 +16,8 @@ export default function StickyBottomBanner({ page = 'home' }) {
 
   const banner = banners[0];
   if (!banner || dismissed) return null;
+
+  const video = bannerVideo(banner);
 
   const dismiss = () => {
     setDismissed(true);
@@ -42,13 +44,35 @@ export default function StickyBottomBanner({ page = 'home' }) {
             color: banner.textColor || '#ffffff',
           }}
         >
-          {banner.imageUrl && (
-            <img
-              src={banner.imageUrl}
-              alt={banner.title}
-              className="h-12 w-12 md:h-14 md:w-14 object-cover rounded-xl shrink-0"
-              loading="lazy"
-            />
+          {video ? (
+            video.kind === 'embed' ? (
+              <iframe
+                src={video.src}
+                title={banner.title || 'Sponsored video'}
+                className="h-12 w-12 md:h-14 md:w-14 rounded-xl shrink-0 pointer-events-none"
+                frameBorder="0"
+                allow="autoplay; encrypted-media"
+              />
+            ) : (
+              <video
+                src={video.src}
+                poster={banner.imageUrl || undefined}
+                className="h-12 w-12 md:h-14 md:w-14 object-cover rounded-xl shrink-0"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            )
+          ) : (
+            banner.imageUrl && (
+              <img
+                src={banner.imageUrl}
+                alt={banner.title}
+                className="h-12 w-12 md:h-14 md:w-14 object-cover rounded-xl shrink-0"
+                loading="lazy"
+              />
+            )
           )}
           <a
             href={bannerClickUrl(banner._id)}
