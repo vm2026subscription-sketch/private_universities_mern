@@ -1,17 +1,18 @@
-  import { Suspense, lazy, useEffect, useState } from 'react';
-  import { Routes, Route, Navigate } from 'react-router-dom';
-  import { Toaster } from 'react-hot-toast';
-  import { ThemeProvider } from './context/ThemeContext';
-  import { AuthProvider } from './context/AuthContext';
-  import { AiChatProvider } from './context/AiChatContext';
-  import ErrorBoundary from './components/common/ErrorBoundary';
-  import ProtectedRoute from './components/common/ProtectedRoute';
-  import Navbar from './components/layout/Navbar';
-  import Footer from './components/layout/Footer';
-  import MobileNav from './components/layout/MobileNav';
-  import StickyBottomBanner from './components/ads/StickyBottomBanner';
-  import SocialFloatButtons from './components/layout/SocialFloatButtons';
-  import ExcelUploader from "./pages/admin/ExcelUploader";
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import { AiChatProvider } from './context/AiChatContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+import MobileNav from './components/layout/MobileNav';
+import StickyBottomBanner from './components/ads/StickyBottomBanner';
+import SocialFloatButtons from './components/layout/SocialFloatButtons';
+import BackToTop from './components/ui/BackToTop';
+import ExcelUploader from "./pages/admin/ExcelUploader";
 
   const Home = lazy(() => import('./pages/Home'));
   const Universities = lazy(() => import('./pages/Universities'));
@@ -59,7 +60,12 @@
   function PageLoader() {
     return (
       <div className="min-h-[50vh] flex items-center justify-center px-4">
-        <div className="card p-6 text-sm text-light-muted dark:text-dark-muted">Loading page...</div>
+        <div className="card p-8 w-full max-w-md space-y-4" role="status" aria-busy="true">
+          <div className="h-6 skeleton w-1/2 mx-auto" />
+          <div className="h-4 skeleton w-3/4 mx-auto" />
+          <div className="h-10 skeleton w-full" />
+          <span className="sr-only">Loading page...</span>
+        </div>
       </div>
     );
   }
@@ -92,15 +98,11 @@
 
   function PublicLayout() {
     return (
-      <div className="min-h-screen bg-transparent text-light-text dark:text-dark-text relative">
-        <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#f8fafc] dark:bg-dark-bg transition-colors duration-500">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[100px] animate-blob mix-blend-multiply dark:mix-blend-screen" />
-          <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen" />
-          <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-primary-light/15 rounded-full blur-[150px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen" />
-        </div>
-
+      <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text">
+        <a href="#main-content" className="skip-link">Skip to main content</a>
         <Navbar />
-        <Routes>
+        <main id="main-content" className="page-enter">
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/universities" element={<Universities />} />
           <Route path="/foreign-universities" element={<ForeignUniversities />} />
@@ -125,11 +127,13 @@
           <Route path="/uploadxl" element={<ExcelUploader />} />
 
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
+        </main>
         <Footer />
         <MobileNav />
         <StickyBottomBanner page="home" />
         <SocialFloatButtons />
+        <BackToTop />
         <DeferredAiChatWidget />
       </div>
     );
@@ -141,7 +145,13 @@
         <ThemeProvider>
           <AuthProvider>
             <AiChatProvider>
-              <Toaster position="top-right" toastOptions={{ style: { borderRadius: '12px' } }} />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  className: 'text-body-sm',
+                  style: { borderRadius: '12px', boxShadow: '0 4px 12px rgba(15,23,42,0.12)' },
+                }}
+              />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
 

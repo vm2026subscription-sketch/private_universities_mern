@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Eye, EyeOff, Mail, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,11 +21,9 @@ export default function Login() {
   const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
-
     try {
       const data = await login(email, password);
       if (data.token) {
-        // Admin / superadmin direct login — redirect to admin panel
         const role = data.user?.role;
         toast.success('Login successful');
         navigate(role === 'admin' || role === 'superadmin' ? '/admin' : '/');
@@ -40,7 +41,6 @@ export default function Login() {
   const handleVerifyOtp = async (event) => {
     event.preventDefault();
     if (otp.length !== 6) return toast.error('Enter a valid 6-digit OTP');
-
     setLoading(true);
     try {
       const otpData = await verifyLoginOtp(email, otp);
@@ -54,119 +54,99 @@ export default function Login() {
     }
   };
 
-  const resetStep = () => {
-    setOtpSent(false);
-    setOtp('');
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 pb-20 md:pb-0">
+    <div className="flex min-h-[80vh] items-center justify-center px-4 pb-20 md:pb-8">
       <Helmet>
         <title>Login | VidyarthiMitra</title>
         <meta name="description" content="Login to VidyarthiMitra to track applications, save universities and get personalized college recommendations." />
       </Helmet>
-      <div className="card p-8 w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold">Login</h1>
-          <p className="text-sm text-light-muted mt-2">
-            Sign in with your password, then verify the one-time OTP sent to your email.
+      <Card className="w-full max-w-md" padding="lg">
+        <div className="mb-8 text-center">
+          <h1 className="text-h1">Welcome back</h1>
+          <p className="mt-2 text-body-sm text-light-muted">
+            Sign in to save universities, track applications, and get recommendations.
           </p>
         </div>
 
         {!otpSent ? (
           <form onSubmit={handleLogin} className="space-y-4">
+            <Input
+              type="email"
+              label="Email"
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
             <div className="relative">
-              <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-light-muted" />
-              <input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="input-field pl-11"
-                required
-              />
-            </div>
-
-            <div className="relative">
-              <input
+              <Input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
+                label="Password"
+                placeholder="Enter your password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="input-field pr-12"
+                onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
+                className="pr-12"
               />
               <button
                 type="button"
-                onClick={() => setShowPassword((current) => !current)}
+                onClick={() => setShowPassword((c) => !c)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
+                className="absolute right-3 top-[38px] text-light-muted hover:text-light-text"
               >
-                {showPassword ? <EyeOff className="w-5 h-5 text-light-muted" /> : <Eye className="w-5 h-5 text-light-muted" />}
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline block text-right">
-              Forgot Password?
+            <Link to="/forgot-password" className="block text-right text-body-sm text-primary hover:underline">
+              Forgot password?
             </Link>
-
-            <button type="submit" disabled={loading} className="btn-primary w-full">
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? 'Sending OTP...' : 'Continue'}
-            </button>
+            </Button>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <div className="rounded-2xl border border-light-border dark:border-dark-border bg-light-card/50 dark:bg-dark-card/50 px-4 py-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">OTP Sent To</p>
-              <p className="text-sm font-medium break-all">{email}</p>
+            <div className="rounded-md border border-light-border bg-slate-50 px-4 py-3 dark:border-dark-border dark:bg-dark-border/50">
+              <p className="text-caption font-semibold uppercase tracking-wide text-primary">OTP sent to</p>
+              <p className="mt-1 text-body-sm font-medium break-all">{email}</p>
             </div>
-
-            <div className="relative">
-              <ShieldCheck className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-light-muted" />
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={(event) => setOtp(event.target.value.replace(/\D/g, ''))}
-                className="input-field pl-11 text-center text-lg tracking-[0.3em] font-mono"
-                maxLength={6}
-                autoFocus
-              />
-            </div>
-
-            <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? 'Verifying...' : 'Verify & Login'}
-            </button>
-
-            <button type="button" onClick={resetStep} className="text-sm text-primary hover:underline block text-center w-full">
+            <Input
+              type="text"
+              label="Verification code"
+              inputMode="numeric"
+              placeholder="000000"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              maxLength={6}
+              autoFocus
+              className="text-center text-lg tracking-widest font-mono"
+            />
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Verifying...' : 'Verify & sign in'}
+            </Button>
+            <button type="button" onClick={() => { setOtpSent(false); setOtp(''); }} className="btn-ghost w-full !min-h-0">
               Change email or password
-            </button>
-
-            <button type="button" onClick={handleLogin} disabled={loading} className="text-sm text-light-muted hover:text-primary block text-center w-full">
-              Resend OTP
             </button>
           </form>
         )}
 
         <div className="my-6 flex items-center gap-3">
-          <div className="flex-1 h-px bg-light-border dark:bg-dark-border" />
-          <span className="text-sm text-light-muted">OR</span>
-          <div className="flex-1 h-px bg-light-border dark:bg-dark-border" />
+          <div className="h-px flex-1 bg-light-border dark:bg-dark-border" />
+          <span className="text-caption text-light-muted">OR</span>
+          <div className="h-px flex-1 bg-light-border dark:bg-dark-border" />
         </div>
 
-        <button
-          type="button"
-          onClick={continueWithGoogle}
-          className="w-full py-3 border border-light-border dark:border-dark-border rounded-xl font-medium hover:bg-light-card dark:hover:bg-dark-card transition text-sm"
-        >
+        <Button type="button" variant="outline" className="w-full" onClick={continueWithGoogle}>
           Continue with Google
-        </button>
+        </Button>
 
-        <p className="text-center text-sm mt-6 text-light-muted">
-          Don&apos;t have an account? <Link to="/signup" className="text-primary font-medium">Sign Up</Link>
+        <p className="mt-6 text-center text-body-sm text-light-muted">
+          Don&apos;t have an account?{' '}
+          <Link to="/signup" className="font-semibold text-primary hover:underline">Sign up</Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

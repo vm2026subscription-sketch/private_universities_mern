@@ -1,43 +1,45 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, GraduationCap, Globe, BookOpen, User } from 'lucide-react';
+import { cn } from '../../utils/cn';
+
+const LINKS = [
+  { to: '/', icon: Home, label: 'Home' },
+  { to: '/universities', icon: GraduationCap, label: 'Universities' },
+  { to: '/courses', icon: BookOpen, label: 'Courses' },
+  { to: '/foreign-universities', icon: Globe, label: 'Abroad' },
+  { to: '/profile', icon: User, label: 'Profile' },
+];
 
 export default function MobileNav() {
   const { pathname } = useLocation();
-  const links = [
-    { to: '/',                    icon: Home,          label: 'Home'        },
-    { to: '/universities',        icon: GraduationCap, label: 'Universities' },
-    { to: '/courses',             icon: BookOpen,      label: 'Courses'     },
-    { to: '/foreign-universities',icon: Globe,         label: 'Abroad'      },
-    { to: '/profile',             icon: User,          label: 'Profile'     },
-  ];
+
+  const isActive = (path) =>
+    pathname === path || (path !== '/' && pathname.startsWith(path + '/'));
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-dark-card/95 backdrop-blur border-t border-light-border dark:border-dark-border md:hidden z-50 pb-safe">
-      <div className="flex justify-around py-1.5">
-        {links.map(l => {
-          const isActive = pathname === l.to || (l.to !== '/' && pathname?.startsWith(l.to + '/'));
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-light-border bg-light-card/95 backdrop-blur-md dark:border-dark-border dark:bg-dark-card/95 md:hidden pb-safe"
+      aria-label="Mobile navigation"
+    >
+      <div className="flex justify-around py-2">
+        {LINKS.map((l) => {
+          const active = isActive(l.to);
           return (
             <Link
               key={l.to}
               to={l.to}
-              className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${
-                isActive
-                  ? 'text-accent'
-                  : 'text-slate-400 dark:text-slate-500 hover:text-accent'
-              }`}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex min-w-[56px] flex-col items-center gap-1 rounded-md px-2 py-1.5 transition-colors',
+                active ? 'text-primary' : 'text-light-muted hover:text-primary'
+              )}
             >
-              <div className={`relative flex items-center justify-center w-8 h-8 rounded-xl transition-all ${
-                isActive ? 'bg-accent/10 scale-110' : ''
-              }`}>
-                <l.icon className="w-5 h-5" />
-              </div>
-              <span className={`text-[9px] font-black uppercase tracking-wide ${isActive ? 'text-accent' : ''}`}>
-                {l.label}
-              </span>
+              <l.icon className="h-5 w-5" aria-hidden="true" />
+              <span className="text-caption font-semibold">{l.label}</span>
             </Link>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

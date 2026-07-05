@@ -14,6 +14,7 @@ import { useAiChat } from '../context/AiChatContext';
 import UniversityLogo from '../components/common/UniversityLogo';
 import LeadCaptureModal from '../components/university/LeadCaptureModal';
 import HeroBannerSlider from '../components/ads/HeroBannerSlider';
+import HomeHero from '../components/home/HomeHero';
 import SponsoredUniversities from '../components/ads/SponsoredUniversities';
 import SidebarAds from '../components/ads/SidebarAds';
 import { toast } from 'react-hot-toast';
@@ -45,10 +46,10 @@ const mockQuestions = [
 ];
 
 const stats = [
-  { icon: MapPin, value: '29+', label: 'States' },
-  { icon: GraduationCap, value: '1000+', label: 'Universities' },
+  { icon: MapPin, value: '29+', label: 'States covered' },
+  { icon: GraduationCap, value: '700+', label: 'Universities' },
   { icon: BookOpen, value: '200+', label: 'Courses' },
-  { icon: Users, value: '50L+', label: 'Students' },
+  { icon: Users, value: 'Free', label: 'For students' },
 ];
 
 const mainStreams = [
@@ -183,7 +184,6 @@ export default function Home() {
   const [questions, setQuestions] = useState(() => cachedHomeData?.questions || mockQuestions);
   const [news, setNews] = useState(() => cachedHomeData?.news || []);
   const [testimonials, setTestimonials] = useState(() => cachedHomeData?.testimonials || []);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAllStatesModal, setShowAllStatesModal] = useState(false);
@@ -201,7 +201,6 @@ export default function Home() {
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [selectedUni, setSelectedUni] = useState(null);
   const [leadType, setLeadType] = useState('apply');
-  const featuredUniversity = featuredUniversities[currentSlide % featuredUniversities.length];
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
   const getUniversityPath = (university) => {
@@ -273,17 +272,12 @@ export default function Home() {
     fetchData();
 
     const slideInterval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % featuredUniversities.length);
-    }, 5000);
-
-    const testimonialInterval = setInterval(() => {
       setCurrentTestimonialIndex((prev) => prev + 1);
     }, 8000);
 
     return () => {
       isMounted = false;
       clearInterval(slideInterval);
-      clearInterval(testimonialInterval);
     };
   }, []);
 
@@ -348,137 +342,30 @@ export default function Home() {
   }, [deferredSearchTerm, navigate, universities]);
 
   return (
-    <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 overflow-x-hidden">
-      {/* Hero Section - Shiksha-style rotating campus background */}
-      <section className="relative h-[600px] md:h-[85vh] flex items-center justify-center overflow-hidden">
-        {/* Rotating Campus Background */}
-        <AnimatePresence mode="sync">
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.2 }}
-            className={`absolute inset-0 bg-gradient-to-br ${featuredUniversity.accent}`}
-          >
-            <img
-              src={featuredUniversity.image}
-              alt={featuredUniversity.name}
-              className="absolute inset-0 h-full w-full object-cover cursor-pointer"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-              onClick={() => navigate(getUniversityPath(featuredUniversity))}
-              onError={(event) => {
-                event.currentTarget.style.opacity = '0';
-              }}
-            />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.14),transparent_30%)]" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/75"></div>
-          </motion.div>
-        </AnimatePresence>
+    <div className="bg-light-bg dark:bg-dark-bg min-h-screen pb-20 overflow-x-hidden">
+      <HomeHero
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+        onSearch={handleSearch}
+        suggestions={quickSearchSuggestions}
+      />
 
-        {/* Slide indicators */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-30">
-          {featuredUniversities.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentSlide(i)}
-              className={`h-1.5 rounded-full transition-all duration-500 ${i === currentSlide % featuredUniversities.length ? 'w-8 bg-primary' : 'w-2 bg-white/40'
-                }`}
-            />
-          ))}
-        </div>
-
-        {/* Currently featured university tag - clickable */}
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30">
-          <motion.button
-            key={`tag-${currentSlide}`}
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            onClick={() => navigate(getUniversityPath(featuredUniversity))}
-            className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/20 hover:bg-primary/80 hover:border-primary transition-all cursor-pointer group"
-          >
-            <GraduationCap className="w-4 h-4 text-primary group-hover:text-white" />
-            <span className="text-white font-bold text-sm">{featuredUniversity.name}</span>
-            <span className="text-white/50 text-xs">- {featuredUniversity.location}</span>
-            <span className="text-primary group-hover:text-white text-xs font-bold ml-1">View -&gt;</span>
-          </motion.button>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 text-center relative z-20 -mt-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 tracking-tight text-white drop-shadow-lg leading-tight">
-              Discover Top <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent-light to-accent">Universities</span> in India
-            </h1>
-            <p className="text-white/90 drop-shadow-md mb-10 text-lg md:text-xl max-w-2xl mx-auto font-medium">
-              Explore simplified admissions, authentic campus details, and directly connect with institutions.
-            </p>
-
-            <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto group">
-              <div className="relative flex shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-2xl overflow-hidden bg-white p-1">
-                <div className="flex items-center pl-5 pr-3">
-                  <Search className="w-6 h-6 text-primary" />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search for a university..."
-                  className="w-full py-4 bg-transparent text-slate-900 text-lg font-bold placeholder:text-slate-400 focus:outline-none"
-                />
-                <button type="submit" className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-white px-8 md:px-12 font-black text-base transition-all whitespace-nowrap rounded-xl shadow-lg shadow-primary/25 active:scale-95 border border-accent/30">
-                  Search
-                </button>
-              </div>
-
-              {quickSearchSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-[calc(100%+12px)] z-30 overflow-hidden rounded-3xl border border-white/20 bg-white/95 p-2 text-left shadow-[0_24px_60px_rgba(15,23,42,0.28)] backdrop-blur">
-                  {quickSearchSuggestions.map((suggestion) => (
-                    <button
-                      key={`${suggestion.label}-${suggestion.sublabel}`}
-                      type="button"
-                      onClick={suggestion.action}
-                      className="flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-3 transition-colors hover:bg-slate-100"
-                    >
-                      <div>
-                        <p className="text-sm font-black text-slate-900">{suggestion.label}</p>
-                        <p className="text-xs font-bold text-slate-400">{suggestion.sublabel}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </form>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Quick Stats */}
-      <section className="max-w-7xl mx-auto px-4 -mt-16 relative z-30">
-        <div className="bg-white dark:bg-dark-card shadow-2xl rounded-[2.5rem] p-8 md:p-10 flex flex-wrap justify-between gap-8 border border-slate-100 dark:border-white/5">
-          {stats.map((s, i) => (
-            <div key={i} className="relative flex items-center gap-4 flex-1 min-w-[150px] justify-center md:justify-start p-4 rounded-2xl group overflow-hidden cursor-default">
-              {/* Left-to-right animated background (Gradient matching SS1) */}
-              <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
-
-              <div className="relative z-10 flex items-center gap-4 w-full justify-center md:justify-start">
-                <div className="p-3 bg-primary-50 dark:bg-primary-900/20 group-hover:bg-white/20 rounded-2xl transition-colors duration-500">
-                  <s.icon className="w-6 h-6 text-primary group-hover:text-white transition-colors duration-500" />
+      {/* Platform stats — factual, no inflated marketing numbers */}
+      <section className="border-b border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+        <div className="mx-auto max-w-container px-4 py-8">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+            {stats.map((s, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <s.icon className="h-6 w-6" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-white transition-colors duration-500 leading-none">{s.value}</p>
-                  <p className="text-[10px] font-bold text-slate-400 group-hover:text-orange-100 uppercase tracking-widest mt-1 transition-colors duration-500">{s.label}</p>
+                  <p className="text-h3 text-light-text dark:text-dark-text">{s.value}</p>
+                  <p className="text-caption text-light-muted uppercase tracking-wide">{s.label}</p>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
