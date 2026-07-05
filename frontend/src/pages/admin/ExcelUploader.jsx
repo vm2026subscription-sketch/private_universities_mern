@@ -60,6 +60,10 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
     try {
       const response = await api.post('/admin/upload/preview', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        // Excel imports do heavy DB work (dedup + upserts + course linking) and
+        // run on a slow/cold free-tier backend — allow up to 5 min, not the
+        // global 30s default, so large sheets don't get cancelled mid-import.
+        timeout: 300000,
         onUploadProgress: (progressEvent) => {
           setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
         }
@@ -87,6 +91,10 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
     try {
       const response = await api.post('/admin/upload/confirm', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        // Excel imports do heavy DB work (dedup + upserts + course linking) and
+        // run on a slow/cold free-tier backend — allow up to 5 min, not the
+        // global 30s default, so large sheets don't get cancelled mid-import.
+        timeout: 300000,
         onUploadProgress: (progressEvent) => {
           setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
         }
@@ -112,6 +120,10 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
     try {
       const response = await api.post('/admin/upload/bulk', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        // Excel imports do heavy DB work (dedup + upserts + course linking) and
+        // run on a slow/cold free-tier backend — allow up to 5 min, not the
+        // global 30s default, so large sheets don't get cancelled mid-import.
+        timeout: 300000,
         onUploadProgress: (progressEvent) => {
           setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
         }
