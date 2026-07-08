@@ -11,7 +11,6 @@
   import MobileNav from './components/layout/MobileNav';
   import StickyBottomBanner from './components/ads/StickyBottomBanner';
   import SocialFloatButtons from './components/layout/SocialFloatButtons';
-  import ExcelUploader from "./pages/admin/ExcelUploader";
 
   const Home = lazy(() => import('./pages/Home'));
   const Universities = lazy(() => import('./pages/Universities'));
@@ -54,6 +53,7 @@
   const SiteSettingsManager = lazy(() => import('./pages/admin/SiteSettingsManager'));
   const AuditLogViewer = lazy(() => import('./pages/admin/AuditLogViewer'));
   const PartnerDashboard = lazy(() => import('./pages/admin/PartnerDashboard'));
+  const ExcelUploader = lazy(() => import('./pages/admin/ExcelUploader'));
   const AiChatWidget = lazy(() => import('./components/common/AiChatWidget'));
 
   function PageLoader() {

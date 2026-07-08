@@ -22,6 +22,19 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // Keep the React runtime in its own long-cached chunk. It rarely
+            // changes, so app-code deploys don't force users to re-download it.
+            // Matched precisely so react-router/react-dom don't accidentally
+            // pull in react-hook-form, react-hot-toast, @radix-ui/react-*, etc.
+            if (
+              id.includes('/node_modules/react/') ||
+              id.includes('/node_modules/react-dom/') ||
+              id.includes('/node_modules/react-router/') ||
+              id.includes('/node_modules/react-router-dom/') ||
+              id.includes('/node_modules/scheduler/')
+            ) {
+              return 'vendor-react';
+            }
             if (id.includes('leaflet') || id.includes('react-leaflet')) {
               return 'vendor-maps';
             }

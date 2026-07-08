@@ -379,9 +379,13 @@ exports.getUniversity = async (req, res) => {
       }
     }
     
-    // Increment views for trend analysis
+    // Increment views for trend analysis. Use an atomic, non-blocking $inc so a
+    // read no longer triggers a full-document save() (which ran schema
+    // validation + pre-save hooks, risked lost-update races under concurrency,
+    // and added write latency to the hottest endpoint). The in-memory bump keeps
+    // the response payload byte-for-byte identical to the previous behaviour.
     university.views = (university.views || 0) + 1;
-    if (university.save) await university.save();
+    University.updateOne({ _id: university._id }, { $inc: { views: 1 } }).catch(() => {});
 
     res.json({ success: true, data: university });
   } catch (error) {
@@ -568,6 +572,10 @@ const recommender = require('../utils/recommender');
 exports.getSimilarUniversities = async (req, res) => {
   try {
     const { id } = req.params;
+    // Guard against a non-ObjectId id (otherwise a CastError leaks as a 500).
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ success: false, message: 'University not found' });
+    }
     const university = await University.findOne({ _id: id, ...PUBLISHED_UNIVERSITY_FILTER });
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
     const classification = normalizeUniversityClassification(university);

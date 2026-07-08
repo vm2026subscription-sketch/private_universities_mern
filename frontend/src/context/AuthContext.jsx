@@ -24,7 +24,6 @@ const getGoogleAuthUrl = () => {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser);
-  const [loading] = useState(false);
 
   const setAuthSession = (token, userData) => {
     localStorage.setItem('vm_token', token);
@@ -145,7 +144,6 @@ export function AuthProvider({ children }) {
       completeGoogleAuth,
       logout,
       updateUser,
-      loading,
     }}>
       {children}
     </AuthContext.Provider>

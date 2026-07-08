@@ -18,4 +18,11 @@ const questionSchema = new mongoose.Schema({
   answers: [answerSchema]
 }, { timestamps: true });
 
+// Indexes matching the community feed's access patterns (filter by category /
+// university, newest-first). Without these, question listing did a collection
+// scan on every request.
+questionSchema.index({ category: 1, createdAt: -1 });
+questionSchema.index({ universityId: 1, createdAt: -1 });
+questionSchema.index({ userId: 1 });
+
 module.exports = mongoose.model('Question', questionSchema);

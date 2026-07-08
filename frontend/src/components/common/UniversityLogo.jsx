@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 
 const getGradient = (name) => {
   const colors = [
@@ -35,7 +35,11 @@ const getInitials = (name) => {
   return name.slice(0, 2).toUpperCase();
 };
 
-export default function UniversityLogo({ logoUrl, name, className = "w-full h-full object-contain" }) {
+// Rendered once per university card across the listing, home, comparison,
+// rank-predictor and detail pages. Memoized so re-renders of a parent list
+// (e.g. typing in a search box) don't re-render every logo when its props
+// (logoUrl/name/className — all primitives) are unchanged.
+function UniversityLogo({ logoUrl, name, className = "w-full h-full object-contain" }) {
   const [error, setError] = useState(false);
 
   // If logo is absent, broken, or matches a known fallback placeholder URL
@@ -62,7 +66,9 @@ export default function UniversityLogo({ logoUrl, name, className = "w-full h-fu
       className={className} 
       loading="lazy"
       decoding="async"
-      onError={() => setError(true)} 
+      onError={() => setError(true)}
     />
   );
 }
+
+export default memo(UniversityLogo);

@@ -981,7 +981,7 @@ export default function Courses() {
                           <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 dark:bg-dark-border/20 flex items-center justify-center p-3 shrink-0 group-hover:rotate-6 group-hover:scale-110 transition-all duration-500 shadow-inner">
                             {selectedCourse ? (
                               item.universityId?.logoUrl
-                                ? <img src={item.universityId.logoUrl} alt="" className="w-full h-full object-contain" />
+                                ? <img src={item.universityId.logoUrl} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" />
                                 : <div className="text-2xl font-bold text-link">{item.universityId?.name?.[0]}</div>
                             ) : (
                               <div className="text-link"><GraduationCap className="w-10 h-10" /></div>

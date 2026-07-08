@@ -45,6 +45,12 @@ exports.remove = async (req, res) => {
 // Public submission
 exports.submitPublic = async (req, res) => {
   try {
+    // Validate required fields up-front so an empty/invalid body returns a clean
+    // 400 instead of a raw Mongoose ValidationError surfaced as a 500.
+    const { name, content } = req.body;
+    if (!name || !content) {
+      return res.status(400).json({ success: false, message: 'Name and feedback are required' });
+    }
     const testimonial = await Testimonial.create({
       ...req.body,
       isApproved: false // Requires admin approval

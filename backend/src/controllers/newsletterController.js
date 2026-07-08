@@ -45,6 +45,9 @@ exports.subscribe = async (req, res) => {
 exports.unsubscribe = async (req, res) => {
   try {
     const { email } = req.body;
+    // Guard: a missing email previously threw a TypeError (.toLowerCase on
+    // undefined) surfaced as a 500. Mirror subscribe()'s presence check.
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
     const subscriber = await Newsletter.findOne({ email: email.toLowerCase() });
     if (!subscriber) return res.status(404).json({ success: false, message: 'Not found' });
     subscriber.isSubscribed = false;

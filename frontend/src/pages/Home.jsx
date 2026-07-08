@@ -411,7 +411,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-4xl mx-auto"
           >
-            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 tracking-tight text-white drop-shadow-lg leading-tight">
+            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-6 tracking-tight text-white drop-shadow-lg leading-tight break-words">
               Discover Top <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent-light to-accent">Universities</span> in India
             </h1>
@@ -429,7 +429,7 @@ export default function Home() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search for a university..."
-                  className="w-full py-4 bg-transparent text-slate-900 text-lg font-bold placeholder:text-slate-400 focus:outline-none"
+                  className="w-full min-w-0 py-4 bg-transparent text-slate-900 text-lg font-bold placeholder:text-slate-400 focus:outline-none"
                 />
                 <button type="submit" className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-white px-8 md:px-12 font-bold text-base transition-all whitespace-nowrap rounded-xl shadow-lg shadow-primary/25 active:scale-95 border border-accent/30">
                   Search

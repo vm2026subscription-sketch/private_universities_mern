@@ -57,6 +57,9 @@ const corsOptions = {
   },
   credentials: true,
   optionsSuccessStatus: 200,
+  // Cache CORS preflight (OPTIONS) responses in the browser for 24h so repeat
+  // cross-origin requests skip the extra preflight round-trip.
+  maxAge: 86400,
 };
 
 const googleAuthConfigured = Boolean(

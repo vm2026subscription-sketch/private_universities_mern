@@ -21,11 +21,6 @@ const userSchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'suspended', 'banned'], default: 'active' },
   lastLogin: Date,
   loginCount: { type: Number, default: 0 },
-  refreshTokens: [{
-    token: String,
-    device: String,
-    createdAt: { type: Date, default: Date.now }
-  }],
 
   // Expanded profile
   profile: {

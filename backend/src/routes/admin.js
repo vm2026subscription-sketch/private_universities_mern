@@ -36,15 +36,6 @@ router.delete('/universities/:id', superadmin, adminCtrl.deleteUniversity);
 router.post('/courses', adminCtrl.createCourse);
 router.put('/courses/:id', adminCtrl.updateCourse);
 router.delete('/courses/:id', adminCtrl.deleteCourse);
-// const router = require('express').Router();
-// const { protect, admin } = require('../middleware/auth');
-const { updateCourse, deleteCourse } = require('../controllers/courseController');
-
-
-
-// router.put('/courses/:id', protect, admin, updateCourse);
-// router.delete('/courses/:id', protect, admin, deleteCourse);
-
 
 // Exams
 router.post('/exams', adminCtrl.createExam);

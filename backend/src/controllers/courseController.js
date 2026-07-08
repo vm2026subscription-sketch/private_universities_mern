@@ -357,6 +357,11 @@ exports.getStreamStats = async (req, res) => {
 
 exports.getCourse = async (req, res) => {
   try {
+    // Guard against a non-ObjectId id, which otherwise throws a Mongoose
+    // CastError surfaced as a raw 500. A malformed id is simply "not found".
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
     const course = await Course.findById(req.params.id).populate('universityId');
     if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
     res.json({ success: true, data: course });

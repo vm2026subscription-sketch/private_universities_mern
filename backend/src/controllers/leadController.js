@@ -103,7 +103,12 @@ exports.exportLeadsCSV = async (req, res) => {
       .limit(5000);
 
     const esc = (val) => {
-      const s = String(val == null ? '' : val).replace(/"/g, '""');
+      let s = String(val == null ? '' : val);
+      // Neutralize CSV/formula injection: lead fields come from a public,
+      // unauthenticated endpoint, so a value like "=HYPERLINK(...)" could execute
+      // when an admin opens the export. Prefix formula triggers with an apostrophe.
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      s = s.replace(/"/g, '""');
       return `"${s}"`;
     };
 
