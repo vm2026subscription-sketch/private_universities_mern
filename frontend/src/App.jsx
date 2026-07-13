@@ -132,7 +132,7 @@
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/refund-cancellation" element={<RefundPolicy />} />
-          <Route path="/uploadxl" element={<ExcelUploader />} />
+          <Route path="/uploadxl" element={<ProtectedRoute adminOnly><ExcelUploader /></ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
