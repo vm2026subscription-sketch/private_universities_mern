@@ -521,7 +521,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-10">
           <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Explore by State</h2>
-          <button onClick={() => setShowAllStatesModal(true)} className="text-link font-bold text-sm hover:underline transition-all">View All States →</button>
+          <button onClick={() => setShowAllStatesModal(true)} className="text-link font-bold text-sm hover:underline transition-all inline-flex items-center gap-1">View All States <ArrowRight className="w-4 h-4" /></button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {[

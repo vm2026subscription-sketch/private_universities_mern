@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Trophy, Target, Search, ArrowRight, Building2, 
-  ChevronRight, MapPin, Award, Sparkles 
+  Trophy, Target, Search, ArrowRight, ArrowLeft, Building2,
+  ChevronRight, MapPin, Award, Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
@@ -128,7 +128,7 @@ export default function RankPredictor() {
                 className="p-10 max-w-2xl mx-auto"
               >
                 <button onClick={() => setStep(1)} className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-8 hover:text-link transition-colors flex items-center gap-2">
-                  ← Back to Exam Selection
+                  <ArrowLeft className="w-4 h-4" /> Back to Exam Selection
                 </button>
                 <h2 className="text-2xl font-bold mb-8">Score & Category Details</h2>
                 <div className="space-y-8">
