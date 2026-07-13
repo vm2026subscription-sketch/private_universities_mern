@@ -27,33 +27,57 @@ When recommending a university or course:
 Always guide the student toward the most suitable option based on their profile. Be specific, data-driven, and empathetic.`
 };
 
+// Transient statuses that are worth retrying / falling back on: 503 (model
+// overloaded), 429 (rate/quota spike), 500 (server error). A 404 (model not
+// available to this key) is NOT retryable — we skip straight to the next model.
+const RETRYABLE = new Set([429, 500, 503]);
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const statusOf = (error) => {
+  if (error && typeof error.status === 'number') return error.status;
+  const m = error && error.message && error.message.match(/\[(\d{3})/);
+  return m ? Number(m[1]) : 0;
+};
+
 exports.generateGeminiReply = async ({ prompt, category, context, mode = 'general' }) => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
   const systemInstruction = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.general;
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
-      systemInstruction
-    });
+  const fullPrompt = `Category: ${category}\nContext: ${context}\nInstruction: Answer the student directly and do not add unrelated information.\nStudent Question: ${prompt}`;
 
-    const fullPrompt = `Category: ${category}\nContext: ${context}\nInstruction: Answer the student directly and do not add unrelated information.\nStudent Question: ${prompt}`;
-    
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    const text = response.text();
+  // Free-tier flash aliases get deprioritized (503) or rate-limited (429) under
+  // load. Try the configured model first, then a lighter alias, retrying the
+  // transient errors briefly. Only if EVERY attempt fails do we surface an error
+  // (the caller then serves its keyword fallback). Kept fast to stay within the
+  // caller's ~12s AI timeout.
+  const primary = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const candidates = [...new Set([primary, 'gemini-flash-lite-latest'])];
 
-    if (!text) {
-      throw new Error('Empty response from AI');
+  let lastError;
+  for (const modelName of candidates) {
+    const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const result = await model.generateContent(fullPrompt);
+        const text = (await result.response).text();
+        if (!text) throw new Error('Empty response from AI');
+        return text;
+      } catch (error) {
+        lastError = error;
+        const status = statusOf(error);
+        console.error(`Gemini error (model=${modelName}, attempt=${attempt + 1}, status=${status}):`, error.message);
+        // Non-retryable (e.g. 404 model missing, 400 bad key) → try next model now.
+        if (!RETRYABLE.has(status)) break;
+        // Retryable → short backoff before the next attempt.
+        if (attempt === 0) await sleep(600);
+      }
     }
-
-    return text;
-  } catch (error) {
-    console.error('Gemini SDK Error:', error);
-    throw new Error(error.message || 'AI Assistant is currently unavailable');
   }
+
+  throw new Error(lastError?.message || 'AI Assistant is currently unavailable');
 };
