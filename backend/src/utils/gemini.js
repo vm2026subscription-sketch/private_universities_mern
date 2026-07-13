@@ -40,30 +40,30 @@ const statusOf = (error) => {
   return m ? Number(m[1]) : 0;
 };
 
-exports.generateGeminiReply = async ({ prompt, category, context, mode = 'general' }) => {
+// Core Gemini call with the free-tier resilience: try the configured model
+// first, then a lighter alias, retrying transient 503/429/500 errors briefly.
+// Only if EVERY attempt fails does it throw (callers then serve their fallback).
+// Kept fast to stay within callers' ~12s timeout.
+async function runGemini(systemInstruction, userPrompt) {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  const systemInstruction = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.general;
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-  const fullPrompt = `Category: ${category}\nContext: ${context}\nInstruction: Answer the student directly and do not add unrelated information.\nStudent Question: ${prompt}`;
-
-  // Free-tier flash aliases get deprioritized (503) or rate-limited (429) under
-  // load. Try the configured model first, then a lighter alias, retrying the
-  // transient errors briefly. Only if EVERY attempt fails do we surface an error
-  // (the caller then serves its keyword fallback). Kept fast to stay within the
-  // caller's ~12s AI timeout.
-  const primary = process.env.GEMINI_MODEL || 'gemini-flash-latest';
-  const candidates = [...new Set([primary, 'gemini-flash-lite-latest'])];
+  // On the free tier gemini-flash-latest (currently -> gemini-3.5-flash) is
+  // capped at ~20 requests/day and returns 503/429 almost immediately, whereas
+  // gemini-flash-lite-latest has a much higher free quota. So default to the
+  // lite alias, and always keep both in the fallback chain regardless of which
+  // one GEMINI_MODEL selects.
+  const primary = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
+  const candidates = [...new Set([primary, 'gemini-flash-lite-latest', 'gemini-flash-latest'])];
 
   let lastError;
   for (const modelName of candidates) {
     const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const result = await model.generateContent(fullPrompt);
+        const result = await model.generateContent(userPrompt);
         const text = (await result.response).text();
         if (!text) throw new Error('Empty response from AI');
         return text;
@@ -80,4 +80,46 @@ exports.generateGeminiReply = async ({ prompt, category, context, mode = 'genera
   }
 
   throw new Error(lastError?.message || 'AI Assistant is currently unavailable');
+}
+
+exports.generateGeminiReply = async ({ prompt, category, context, mode = 'general' }) => {
+  const systemInstruction = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.general;
+  const fullPrompt = `Category: ${category}\nContext: ${context}\nInstruction: Answer the student directly and do not add unrelated information.\nStudent Question: ${prompt}`;
+  return runGemini(systemInstruction, fullPrompt);
+};
+
+// Human-readable names for the language codes the chat UI sends. Extend this map
+// to offer more languages in the widget's language switcher.
+const LANGUAGE_NAMES = {
+  en: 'English',
+  hi: 'Hindi',
+  mr: 'Marathi',
+  gu: 'Gujarati',
+  ta: 'Tamil',
+  te: 'Telugu',
+  kn: 'Kannada',
+  bn: 'Bengali',
+  pa: 'Punjabi',
+};
+
+exports.getSupportedLanguages = () => ({ ...LANGUAGE_NAMES });
+
+// Translate text into the target language using Gemini. Returns the input
+// unchanged when the target is English or unknown. Preserves formatting and
+// leaves proper nouns / URLs / numbers intact.
+exports.translateText = async ({ text, targetLanguage }) => {
+  const clean = String(text || '').trim();
+  if (!clean) return '';
+
+  const langName = LANGUAGE_NAMES[targetLanguage];
+  if (!langName || targetLanguage === 'en') return clean;
+
+  const systemInstruction =
+    `You are a professional translator. Translate the user's text into ${langName}. ` +
+    'Output ONLY the translated text with no preamble, quotes, or notes. ' +
+    'Preserve line breaks and formatting. Keep proper nouns, university names, ' +
+    'URLs, email addresses, and numbers unchanged.';
+
+  const translated = await runGemini(systemInstruction, clean);
+  return translated.trim();
 };
