@@ -1,7 +1,7 @@
 const router = require('express').Router();
-const { translateText } = require('../controllers/bhashiniController');
-const { protect } = require('../middleware/auth');
+const { translateText, translateBatch } = require('../controllers/bhashiniController');
 
 router.post('/translate', translateText);
+router.post('/translate-batch', translateBatch);
 
 module.exports = router;

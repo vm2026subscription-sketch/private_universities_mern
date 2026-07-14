@@ -445,15 +445,43 @@ exports.deleteUniversity = async (req, res) => {
 
 exports.searchUniversities = async (req, res) => {
   try {
-    const { q } = req.query;
+    const q = (req.query.q || '').trim();
     if (!q) return res.json({ success: true, data: [] });
-    const universities = await University.find(
-      { $and: [{ $text: { $search: q } }, PUBLISHED_UNIVERSITY_FILTER] },
-      { score: { $meta: 'textScore' } }
-    )
-      .sort({ isSponsored: -1, sponsorPriority: -1, score: { $meta: 'textScore' } })
-      .limit(10)
-      .select('name city state type slug logoUrl isSponsored sponsorTier sponsorPriority sponsorExpiry');
+
+    // $text (word-token) search only matches complete words, so a single letter
+    // or a partial prefix returned nothing. Use a case-insensitive regex so
+    // typing "b" surfaces universities/cities/states containing "b", and rank
+    // name-prefix matches first ("starts with the typed letters").
+    const safe = escapeRegExp(q);
+    const contains = { $regex: safe, $options: 'i' };
+
+    const universities = await University.aggregate([
+      {
+        $match: {
+          $and: [
+            PUBLISHED_UNIVERSITY_FILTER,
+            { $or: [{ name: contains }, { city: contains }, { state: contains }] },
+          ],
+        },
+      },
+      {
+        // 0 for names that START with the query (shown first), 1 otherwise.
+        $addFields: {
+          _prefixRank: {
+            $cond: [{ $regexMatch: { input: '$name', regex: `^${safe}`, options: 'i' } }, 0, 1],
+          },
+        },
+      },
+      { $sort: { isSponsored: -1, sponsorPriority: -1, _prefixRank: 1, name: 1 } },
+      { $limit: 10 },
+      {
+        $project: {
+          name: 1, city: 1, state: 1, type: 1, slug: 1, logoUrl: 1,
+          isSponsored: 1, sponsorTier: 1, sponsorPriority: 1, sponsorExpiry: 1,
+        },
+      },
+    ]);
+
     res.json({ success: true, data: universities });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -256,6 +256,19 @@ const UNI_ALIASES = {
   approvalBCI: ['approval: bci', 'bci approval', 'bci'],
   approvalCOA: ['approval: coa', 'coa approval', 'coa'],
   approvalPCI: ['approval: pci', 'approval: ici', 'pci approval', 'pci'],
+  // Admissions tab
+  admissionOverview: ['admission overview', 'admissions overview', 'admission details', 'admission summary'],
+  admissionProcess: ['admission process', 'admissions process', 'admission steps', 'admission procedure'],
+  counsellingInfo: ['counselling info', 'counseling info', 'counselling information', 'counselling', 'counseling'],
+  documentsRequired: ['documents required', 'required documents', 'documents', 'documents needed'],
+  // Campus tab
+  campusOverview: ['campus overview', 'campus life', 'campus life & facilities', 'about campus', 'campus description'],
+  hostelDetails: ['hostel details', 'hostel', 'hostel accommodation', 'hostel info'],
+  libraryDetails: ['library details', 'library', 'central library'],
+  labDetails: ['lab details', 'laboratories', 'labs', 'laboratory details'],
+  sportsDetails: ['sports details', 'sports', 'sports & recreation', 'sports facilities'],
+  transportDetails: ['transport details', 'transport', 'transportation', 'transport facilities'],
+  medicalSupport: ['medical support', 'medical facilities', 'medical', 'health support'],
 };
 
 const COURSE_ALIASES = {
@@ -431,6 +444,35 @@ function parseUniversityRow(row, idx) {
 
   const code = clean(cellAt(row, idx.universityCode));
 
+  // Admissions tab data — only include fields that carry a value so re-imports
+  // never blank existing curated content (buildSafeUpdate also guards this).
+  const admissions = {};
+  const admOverview = clean(cellAt(row, idx.admissionOverview));
+  if (admOverview) admissions.overview = admOverview;
+  const admProcess = toList(cellAt(row, idx.admissionProcess), ['/']);
+  if (admProcess.length) admissions.process = admProcess;
+  const counselling = clean(cellAt(row, idx.counsellingInfo));
+  if (counselling) admissions.counsellingInfo = counselling;
+  const docsRequired = toList(cellAt(row, idx.documentsRequired), ['/']);
+  if (docsRequired.length) admissions.documentsRequired = docsRequired;
+
+  // Campus tab data.
+  const campus = {};
+  const campusOverview = clean(cellAt(row, idx.campusOverview));
+  if (campusOverview) campus.overview = campusOverview;
+  const hostel = clean(cellAt(row, idx.hostelDetails));
+  if (hostel) campus.hostelDetails = hostel;
+  const library = clean(cellAt(row, idx.libraryDetails));
+  if (library) campus.libraryDetails = library;
+  const lab = clean(cellAt(row, idx.labDetails));
+  if (lab) campus.labDetails = lab;
+  const sports = clean(cellAt(row, idx.sportsDetails));
+  if (sports) campus.sportsDetails = sports;
+  const transport = clean(cellAt(row, idx.transportDetails));
+  if (transport) campus.transportDetails = transport;
+  const medical = clean(cellAt(row, idx.medicalSupport));
+  if (medical) campus.medicalSupport = medical;
+
   const university = {
     name,
     slug: slugify(name),
@@ -478,8 +520,8 @@ function parseUniversityRow(row, idx) {
       hostelLink: clean(cellAt(row, idx.hostelLink)),
       mapLink: clean(cellAt(row, idx.mapLink)),
     },
-    admissions: {},
-    campus: {},
+    admissions,
+    campus,
     scholarships: [],
     newsLinks: [],
     views: 0,

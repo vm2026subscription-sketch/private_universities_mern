@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Navigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -22,6 +22,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getUniversityDisplayType } from '../utils/universityType';
+import useClickOutside from '../hooks/useClickOutside';
 
 const DashboardOverview = lazy(() => import('../components/profile/DashboardOverview'));
 const SavedColleges = lazy(() => import('../components/profile/SavedColleges'));
@@ -53,6 +54,8 @@ export default function Profile() {
   const [fullUser, setFullUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef(null);
+  useClickOutside(notifRef, () => setShowNotifications(false), showNotifications);
   const [allCourses, setAllCourses] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -385,7 +388,7 @@ export default function Profile() {
       </AnimatePresence>
 
       <aside className={`
-        fixed md:sticky top-0 left-0 h-screen w-72 bg-white dark:bg-dark-card border-r border-light-border dark:border-dark-border z-[70] transition-all duration-500 ease-in-out
+        fixed md:sticky top-0 md:top-16 left-0 h-screen md:h-[calc(100vh-4rem)] w-72 bg-white dark:bg-dark-card border-r border-light-border dark:border-dark-border z-[70] transition-all duration-500 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="h-full flex flex-col p-6">
@@ -445,7 +448,7 @@ export default function Profile() {
         </div>
       </aside>
 
-      <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full overflow-y-auto h-screen">
+      <main className="flex-1 p-6 md:p-10 max-w-7xl w-full md:h-[calc(100vh-4rem)] md:overflow-y-auto">
         <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8">
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
             <div className="flex items-center gap-2 text-[10px] font-bold text-link uppercase tracking-[0.2em] mb-3">
@@ -461,7 +464,7 @@ export default function Profile() {
           </motion.div>
 
           <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex items-center gap-4">
-            <div className="relative">
+            <div ref={notifRef} className="relative">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}

@@ -123,3 +123,35 @@ exports.translateText = async ({ text, targetLanguage }) => {
   const translated = await runGemini(systemInstruction, clean);
   return translated.trim();
 };
+
+// Translate MANY strings in a SINGLE Gemini call. The chat UI used to fire one
+// request per message, which on the free tier hit rate limits and translated
+// message-by-message (slow). One JSON round-trip is far faster. Falls back to
+// the original strings if the model's JSON can't be parsed, so the UI never
+// breaks. Returns an array aligned 1:1 with `texts`.
+exports.translateBatch = async ({ texts, targetLanguage }) => {
+  const list = (Array.isArray(texts) ? texts : []).map((t) => String(t ?? ''));
+  if (!list.length) return [];
+
+  const langName = LANGUAGE_NAMES[targetLanguage];
+  if (!langName || targetLanguage === 'en') return list.map((t) => t.trim());
+
+  const systemInstruction =
+    `You are a professional translator. You will receive a JSON array of strings. ` +
+    `Translate EACH element into ${langName}. Return ONLY a JSON array of the same ` +
+    `length and order with the translated strings — no preamble, no markdown, no code fences. ` +
+    `Preserve line breaks, proper nouns, university names, URLs, email addresses, and numbers.`;
+
+  const raw = await runGemini(systemInstruction, JSON.stringify(list));
+  const cleaned = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+
+  try {
+    const arr = JSON.parse(cleaned);
+    if (Array.isArray(arr) && arr.length === list.length) {
+      return arr.map((x) => String(x ?? '').trim());
+    }
+  } catch (e) {
+    console.error('translateBatch: could not parse model JSON, returning originals:', e.message);
+  }
+  return list.map((t) => t.trim());
+};

@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import api from '../utils/api';
 import Seo from '../components/common/Seo';
+import useClickOutside from '../hooks/useClickOutside';
 
 const EXAMPLE_UNIVERSITIES = ['BITS Pilani', 'MAHE Manipal', 'Symbiosis International', 'Amity University'];
 
@@ -51,7 +52,10 @@ export default function UniversityComparison() {
   const [loadingResults, setLoadingResults] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef(null);
+  const searchWrapRef = useRef(null);
+  useClickOutside(searchWrapRef, () => setShowSuggestions(false), showSuggestions);
 
   useEffect(() => {
     const saved = localStorage.getItem('compareRecentSearches');
@@ -66,7 +70,7 @@ export default function UniversityComparison() {
 
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (query.trim().length < 2) {
+      if (query.trim().length < 1) {
         setResults([]);
         return;
       }
@@ -121,6 +125,7 @@ export default function UniversityComparison() {
     saveRecentSearch(university);
     setQuery('');
     setResults([]);
+    setShowSuggestions(false);
   };
 
   const removeUniversity = (universityId) => {
@@ -196,14 +201,15 @@ export default function UniversityComparison() {
           {/* Left Column: Search & Selected */}
           <div className="space-y-6">
             {/* Search Bar */}
-            <div className="relative group z-40">
+            <div ref={searchWrapRef} className="relative group z-40">
               <div className="relative flex items-center bg-white dark:bg-dark-card border-2 border-light-border dark:border-dark-border group-focus-within:border-primary/40 rounded-[2rem] shadow-xl overflow-hidden transition-all duration-300">
                 <Search className="w-6 h-6 ml-6 text-slate-400 group-focus-within:text-link transition-colors" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => { setQuery(event.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
                   placeholder="Search university to add to comparison..."
                   className="w-full pl-4 pr-6 py-5 bg-transparent border-none outline-none text-lg text-slate-800 dark:text-white font-semibold placeholder:font-normal placeholder:text-slate-400"
                 />
@@ -216,7 +222,7 @@ export default function UniversityComparison() {
 
               {/* Suggestions Dropdown */}
               <AnimatePresence>
-                {(query?.trim()?.length > 0 || (query === '' && recentSearches?.length > 0)) && (
+                {showSuggestions && (query?.trim()?.length > 0 || (query === '' && recentSearches?.length > 0)) && (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}

@@ -222,25 +222,29 @@ export default function AiChatWidget() {
 
     try {
       toast.loading(`Translating to ${targetLang.toUpperCase()}...`, { id: 'chat-translate' });
-      
-      const translatedMessages = await Promise.all(
-        messages.map(async (msg) => {
-          if (!msg.content || msg.content.trim() === '') return msg;
-          try {
-            const { data } = await api.post('/bhashini/translate', {
-              text: msg.content,
-              targetLanguage: targetLang,
-            });
-            return { 
-              ...msg, 
-              content: data.isMock ? `[${targetLang.toUpperCase()}] ${msg.content}` : data.translatedText 
-            };
-          } catch (e) {
-             return msg;
-          }
-        })
-      );
-      
+
+      // Translate the whole conversation in ONE request instead of one call per
+      // message — far faster and avoids per-message rate-limit stalls.
+      const indices = [];
+      const texts = [];
+      messages.forEach((msg, i) => {
+        if (msg.content && msg.content.trim() !== '') {
+          indices.push(i);
+          texts.push(msg.content);
+        }
+      });
+
+      const { data } = await api.post('/bhashini/translate-batch', {
+        texts,
+        targetLanguage: targetLang,
+      });
+
+      const translations = data.translations || [];
+      const translatedMessages = messages.map((msg) => ({ ...msg }));
+      indices.forEach((msgIdx, k) => {
+        if (translations[k]) translatedMessages[msgIdx].content = translations[k];
+      });
+
       setMessages(translatedMessages);
       toast.success('Translation complete', { id: 'chat-translate' });
     } catch (e) {
