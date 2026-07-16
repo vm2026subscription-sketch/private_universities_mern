@@ -15,7 +15,6 @@ import {
   LogOut,
   Briefcase,
   Bell,
-  MapPin,
   Share2,
 } from 'lucide-react';
 import api from '../utils/api';
@@ -31,10 +30,8 @@ const Preferences = lazy(() => import('../components/profile/Preferences'));
 const Recommendations = lazy(() => import('../components/profile/Recommendations'));
 const CompareView = lazy(() => import('../components/profile/CompareView'));
 const ProfileSettings = lazy(() => import('../components/profile/ProfileSettings'));
-const RecentlyViewed = lazy(() => import('../components/profile/RecentlyViewed'));
 const ApplicationTracker = lazy(() => import('../components/profile/ApplicationTracker'));
 const DeadlineTracker = lazy(() => import('../components/profile/DeadlineTracker'));
-const GeographicView = lazy(() => import('../components/profile/GeographicView'));
 
 function ProfileSectionLoader() {
   return (
@@ -47,7 +44,10 @@ function ProfileSectionLoader() {
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'overview';
+  // 'map' (Geographic View) and 'history' tabs were removed — old bookmarked
+  // URLs fall back to the Overview tab instead of rendering an empty panel.
+  const requestedTab = searchParams.get('tab') || 'overview';
+  const activeTab = ['map', 'history'].includes(requestedTab) ? 'overview' : requestedTab;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [trends, setTrends] = useState({ popularUniversities: [], trendingCourses: [] });
@@ -112,8 +112,6 @@ export default function Profile() {
     { id: 'preferences', label: 'Preferences', icon: Settings },
     { id: 'recommendations', label: 'Suggest', icon: Lightbulb },
     { id: 'compare', label: 'Compare', icon: GitCompare },
-    { id: 'map', label: 'Geographic View', icon: MapPin },
-    { id: 'history', label: 'History', icon: Clock },
     { id: 'settings', label: 'Settings', icon: UserIcon },
   ];
 
@@ -256,12 +254,6 @@ export default function Profile() {
       `https://wa.me/?text=${encodeURIComponent(`Check out ${university.name} on Vidyarthi Mitra: ${url}`)}`,
       '_blank'
     );
-  };
-
-  const handleClearHistory = () => {
-    localStorage.removeItem('vm_recent');
-    setRecentlyViewed([]);
-    toast.success('History cleared');
   };
 
   const handleNotificationClick = async (notification) => {
@@ -586,13 +578,6 @@ export default function Profile() {
               />
             )}
 
-            {activeTab === 'map' && (
-              <GeographicView
-                universities={allUniversities}
-                savedUniversities={fullUser.savedUniversities || []}
-              />
-            )}
-
             {activeTab === 'compare' && (
               <CompareView
                 compareList={compareList}
@@ -607,10 +592,6 @@ export default function Profile() {
                 onChangePassword={handleChangePassword}
                 onLogout={logout}
               />
-            )}
-
-            {activeTab === 'history' && (
-              <RecentlyViewed items={recentlyViewed} onClear={handleClearHistory} />
             )}
           </motion.div>
         </Suspense>
