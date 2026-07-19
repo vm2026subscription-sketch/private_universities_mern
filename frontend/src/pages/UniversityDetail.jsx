@@ -67,7 +67,8 @@ export default function UniversityDetail() {
 
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
-  const isAdmin = user?.role === 'admin';
+  // superadmin inherits every admin capability — matches the backend role hierarchy.
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
   // Application tracking states
   const [isTracked, setIsTracked] = useState(false);

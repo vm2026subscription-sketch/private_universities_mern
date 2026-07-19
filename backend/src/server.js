@@ -4,6 +4,19 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+// Validate security-critical configuration BEFORE anything else loads. A weak,
+// placeholder or missing JWT secret must abort startup rather than silently
+// produce forgeable tokens.
+const { validateEnvironment } = require('./config/env');
+
+try {
+  validateEnvironment();
+} catch (error) {
+  console.error('[startup] Configuration error — refusing to start.');
+  console.error(error.message);
+  process.exit(1);
+}
+
 const app = require('./app');
 const connectDB = require('./config/db');
 

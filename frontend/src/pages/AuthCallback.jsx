@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext';
 const ERROR_MESSAGES = {
   google_auth_failed: 'Google sign-in failed. Please try again.',
   google_auth_unavailable: 'Google sign-in is not configured on this server yet.',
-  missing_token: 'Google sign-in did not return a login token.',
+  account_unavailable: 'This account is not able to sign in. Please contact support.',
+  missing_token: 'Google sign-in did not return a login code.',
 };
 
 export default function AuthCallback() {
@@ -20,7 +21,12 @@ export default function AuthCallback() {
     hasHandledCallback.current = true;
 
     const error = searchParams.get('error');
-    const token = searchParams.get('token');
+
+    // The backend now returns a single-use, 60-second exchange code instead of
+    // the JWT itself, keeping the credential out of browser history, Referer
+    // headers and proxy logs. `token` is still read as a fallback so a callback
+    // issued by a not-yet-redeployed backend still completes.
+    const code = searchParams.get('code') || searchParams.get('token');
 
     if (error) {
       toast.error(ERROR_MESSAGES[error] || 'Google sign-in could not be completed.');
@@ -28,13 +34,13 @@ export default function AuthCallback() {
       return;
     }
 
-    if (!token) {
+    if (!code) {
       toast.error(ERROR_MESSAGES.missing_token);
       navigate('/login', { replace: true });
       return;
     }
 
-    completeGoogleAuth(token)
+    completeGoogleAuth(code)
       .then(() => {
         toast.success('Signed in with Google');
         navigate('/', { replace: true });

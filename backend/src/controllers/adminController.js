@@ -6,6 +6,8 @@ const News = require('../models/News');
 const Question = require('../models/Question');
 const { buildUniqueSlug } = require('../utils/slug');
 const { normalizeUniversityClassification } = require('../utils/universityClassification');
+const { logAction } = require('../services/auditService');
+const { revokeAllForUser } = require('../services/refreshTokenService');
 
 const splitPipe = (value) => String(value || '').split('|').map((item) => item.trim()).filter(Boolean);
 const parseNumber = (value) => {
@@ -261,16 +263,118 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+/**
+ * Grants or revokes privileges. Superadmin-only (enforced at the route).
+ *
+ * Previous issues fixed here:
+ *  - `findByIdAndUpdate` does not run schema validators by default, so the
+ *    `role` enum was NOT enforced and any arbitrary string could be written.
+ *    Roles are now checked against an explicit allowlist before the write.
+ *  - There was no self-demotion guard, so the last superadmin could lock
+ *    everyone out of the admin panel.
+ *  - Privilege changes were not audited despite `role_change` / `status_change`
+ *    already existing in the AuditLog schema.
+ *  - Outstanding tokens kept their old privileges until natural expiry; the
+ *    tokenVersion bump now revokes them immediately.
+ */
 exports.updateUserAccess = async (req, res) => {
   try {
+    const target = await User.findById(req.params.id);
+    if (!target) return res.status(404).json({ success: false, message: 'User not found' });
+
     const updates = {};
-    if (typeof req.body.role === 'string') updates.role = req.body.role;
-    if (typeof req.body.isEmailVerified === 'boolean') updates.isEmailVerified = req.body.isEmailVerified;
-    const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('name email role isEmailVerified createdAt');
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    res.json({ success: true, data: user });
+    let privilegeChanged = false;
+
+    if (typeof req.body.role === 'string') {
+      const nextRole = req.body.role.trim();
+
+      if (!User.ROLES.includes(nextRole)) {
+        return res.status(400).json({
+          success: false,
+          message: `Role must be one of: ${User.ROLES.join(', ')}`,
+        });
+      }
+
+      // An actor may not change their own role — neither to escalate nor to
+      // accidentally strip the last superadmin.
+      if (String(target._id) === String(req.user._id) && nextRole !== target.role) {
+        return res.status(400).json({
+          success: false,
+          message: 'You cannot change your own role',
+        });
+      }
+
+      if (nextRole !== target.role) {
+        // Never allow the final superadmin to be demoted.
+        if (target.role === 'superadmin') {
+          const remaining = await User.countDocuments({ role: 'superadmin', _id: { $ne: target._id } });
+          if (remaining === 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'Cannot demote the last remaining superadmin',
+            });
+          }
+        }
+
+        updates.role = nextRole;
+        privilegeChanged = true;
+      }
+    }
+
+    if (typeof req.body.isEmailVerified === 'boolean' && req.body.isEmailVerified !== target.isEmailVerified) {
+      updates.isEmailVerified = req.body.isEmailVerified;
+    }
+
+    if (typeof req.body.status === 'string') {
+      const nextStatus = req.body.status.trim();
+      if (!['active', 'suspended', 'banned'].includes(nextStatus)) {
+        return res.status(400).json({ success: false, message: 'Invalid account status' });
+      }
+      if (String(target._id) === String(req.user._id) && nextStatus !== 'active') {
+        return res.status(400).json({ success: false, message: 'You cannot suspend or ban your own account' });
+      }
+      if (nextStatus !== target.status) {
+        updates.status = nextStatus;
+        privilegeChanged = true;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.json({ success: true, data: await User.findById(target._id).select('name email role status isEmailVerified createdAt') });
+    }
+
+    const before = { role: target.role, status: target.status, isEmailVerified: target.isEmailVerified };
+
+    Object.assign(target, updates);
+
+    // Revoke every outstanding access/refresh token so the new privilege level
+    // (or the ban) applies on the target's very next request.
+    if (privilegeChanged) {
+      target.tokenVersion = (target.tokenVersion || 0) + 1;
+    }
+
+    // Full document save -> schema validators DO run.
+    await target.save();
+
+    if (privilegeChanged) {
+      await revokeAllForUser(target._id, 'privilege_change');
+    }
+
+    await logAction({
+      userId: req.user._id,
+      action: updates.role ? 'role_change' : updates.status ? 'status_change' : 'update',
+      resource: 'user',
+      resourceId: target._id,
+      description: `Updated access for ${target.email}`,
+      changes: { before, after: { role: target.role, status: target.status, isEmailVerified: target.isEmailVerified } },
+      req,
+    });
+
+    const data = await User.findById(target._id).select('name email role status isEmailVerified createdAt');
+    res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[admin] updateUserAccess failed:', error);
+    res.status(500).json({ success: false, message: 'Could not update user access' });
   }
 };
 
@@ -280,12 +384,36 @@ exports.deleteUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'You cannot delete your own account' });
     }
 
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const target = await User.findById(req.params.id);
+    if (!target) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Deleting the last superadmin would permanently orphan the admin panel.
+    if (target.role === 'superadmin') {
+      const remaining = await User.countDocuments({ role: 'superadmin', _id: { $ne: target._id } });
+      if (remaining === 0) {
+        return res.status(400).json({ success: false, message: 'Cannot delete the last remaining superadmin' });
+      }
+    }
+
+    await User.deleteOne({ _id: target._id });
+
+    // Tear down any sessions the deleted account still held, so an outstanding
+    // access token cannot continue to be used until it expires.
+    await revokeAllForUser(target._id, 'user_deleted');
+
+    await logAction({
+      userId: req.user._id,
+      action: 'delete',
+      resource: 'user',
+      resourceId: target._id,
+      description: `Deleted user ${target.email}`,
+      req,
+    });
 
     res.json({ success: true, message: 'User deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[admin] deleteUser failed:', error);
+    res.status(500).json({ success: false, message: 'Could not delete user' });
   }
 };
 

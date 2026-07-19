@@ -10,7 +10,15 @@ const otpLogSchema = new mongoose.Schema({
   ipAddress: String,
   userAgent: String,
   expiresAt: { type: Date, required: true, index: { expireAfterSeconds: 0 } },
-  verifiedAt: Date
+  verifiedAt: Date,
+
+  /**
+   * Per-code guess counter. Previously absent: a 6-digit code (10^6 space) with
+   * a 10-minute lifetime could be attacked by distributed guessing because only
+   * OTP *sending* was rate limited, never verification. The code is burned once
+   * this reaches MAX_VERIFY_ATTEMPTS.
+   */
+  attempts: { type: Number, default: 0 }
 }, { timestamps: true });
 
 otpLogSchema.index({ identifier: 1, createdAt: -1 });

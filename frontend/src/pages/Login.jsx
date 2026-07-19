@@ -10,26 +10,28 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  // Proof that the password step succeeded. The OTP step is rejected without it,
+  // which is what makes the OTP a true second factor rather than an alternative
+  // way to sign in.
+  const [mfaToken, setMfaToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login, verifyLoginOtp, continueWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  const landingPathFor = (role) =>
+    role === 'admin' || role === 'superadmin' ? '/admin' : '/';
 
   const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
 
     try {
+      // Every role now completes the OTP step — there is no direct-token path.
       const data = await login(email, password);
-      if (data.token) {
-        // Admin / superadmin direct login — redirect to admin panel
-        const role = data.user?.role;
-        toast.success('Login successful');
-        navigate(role === 'admin' || role === 'superadmin' ? '/admin' : '/');
-      } else {
-        setOtpSent(true);
-        toast.success('OTP sent to your email');
-      }
+      setMfaToken(data.mfaToken || '');
+      setOtpSent(true);
+      toast.success('OTP sent to your email');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {
@@ -41,12 +43,16 @@ export default function Login() {
     event.preventDefault();
     if (otp.length !== 6) return toast.error('Enter a valid 6-digit OTP');
 
+    if (!mfaToken) {
+      toast.error('Your sign-in session expired. Please enter your password again.');
+      return resetStep();
+    }
+
     setLoading(true);
     try {
-      const otpData = await verifyLoginOtp(email, otp);
+      const otpData = await verifyLoginOtp(otp, mfaToken);
       toast.success('Login successful');
-      const role = otpData?.user?.role;
-      navigate(role === 'admin' || role === 'superadmin' ? '/admin' : '/');
+      navigate(landingPathFor(otpData?.user?.role));
     } catch (error) {
       toast.error(error.response?.data?.message || 'OTP verification failed');
     } finally {
@@ -57,6 +63,7 @@ export default function Login() {
   const resetStep = () => {
     setOtpSent(false);
     setOtp('');
+    setMfaToken('');
   };
 
   return (

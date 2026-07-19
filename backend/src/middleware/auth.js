@@ -1,43 +1,159 @@
-const jwt = require('jsonwebtoken');
+/**
+ * Authentication and authorization middleware.
+ *
+ * Authorization decisions read the role from the freshly loaded database record,
+ * never from the JWT claim. This means a demotion or a ban takes effect on the
+ * user's very next request instead of waiting for the token to expire.
+ */
+
 const User = require('../models/User');
+const { verifyAccessToken, verifyLegacyToken } = require('../utils/tokenService');
 
+/** Ordered least- to most-privileged. Used to derive "at least this role" checks. */
+const ROLE_HIERARCHY = ['user', 'admin', 'superadmin'];
+
+const roleRank = (role) => {
+  const index = ROLE_HIERARCHY.indexOf(role);
+  return index === -1 ? -1 : index;
+};
+
+const deny = (res, status, message) => res.status(status).json({ success: false, message });
+
+const extractBearerToken = (req) => {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return null;
+  const token = header.slice(7).trim();
+  return token || null;
+};
+
+/**
+ * Verifies the access token and loads the caller.
+ *
+ * Hardening over the previous version:
+ *  - Signature, algorithm (HS256 pinned), issuer, audience, expiry and token
+ *    type are all asserted by verifyAccessToken. The old code called
+ *    `jwt.verify(token, secret)` with no constraints beyond the signature.
+ *  - tokenVersion is compared, so password changes/resets, role changes and
+ *    "log out everywhere" revoke outstanding tokens immediately.
+ *  - Expired tokens are reported distinctly (401 + code) so the client can
+ *    transparently refresh instead of dumping the user at the login screen.
+ */
 exports.protect = async (req, res, next) => {
+  const token = extractBearerToken(req);
+  if (!token) return deny(res, 401, 'Not authorized');
+
+  let payload = null;
+
   try {
-    let token;
-    if (req.headers.authorization?.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    }
-    if (!token) return res.status(401).json({ success: false, message: 'Not authorized' });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id);
-    if (!req.user) return res.status(401).json({ success: false, message: 'User not found' });
-    if (req.user.status === 'banned') {
-      return res.status(403).json({ success: false, message: 'Account has been banned' });
-    }
-    if (req.user.status === 'suspended') {
-      return res.status(403).json({ success: false, message: 'Account is suspended' });
-    }
-    next();
+    payload = verifyAccessToken(token);
   } catch (error) {
-    res.status(401).json({ success: false, message: 'Not authorized' });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        code: 'TOKEN_EXPIRED',
+        message: 'Session expired',
+      });
+    }
+
+    // Backward compatibility: tokens minted before the auth refactor carry
+    // `{ id }` and no iss/aud/typ claims. Accepted only while
+    // ALLOW_LEGACY_TOKENS is enabled, so existing sessions survive the deploy.
+    try {
+      payload = verifyLegacyToken(token);
+    } catch {
+      payload = null;
+    }
+
+    if (!payload) return deny(res, 401, 'Not authorized');
+  }
+
+  try {
+    const user = await User.findById(payload.sub);
+    if (!user) return deny(res, 401, 'Not authorized');
+
+    if (user.status === 'banned') {
+      return deny(res, 403, 'Account has been banned');
+    }
+    if (user.status === 'suspended') {
+      return deny(res, 403, 'Account is suspended');
+    }
+
+    const revoked = () =>
+      res.status(401).json({ success: false, code: 'TOKEN_REVOKED', message: 'Session expired' });
+
+    if (payload.legacy) {
+      /**
+       * Legacy tokens predate tokenVersion, so they cannot be matched against
+       * it. Without a substitute they would be entirely unrevocable — password
+       * change, password reset and "log out everywhere" could not invalidate a
+       * pre-refactor token for its full 30-day life. Comparing the token's
+       * issue time against passwordChangedAt restores revocation for exactly
+       * the case that matters: a credential rotated in response to compromise.
+       */
+      if (user.passwordChangedAt && payload.iat) {
+        const changedAtSeconds = Math.floor(user.passwordChangedAt.getTime() / 1000);
+        if (payload.iat < changedAtSeconds) return revoked();
+      }
+    } else if ((payload.tv || 0) !== (user.tokenVersion || 0)) {
+      return revoked();
+    }
+
+    req.user = user;
+    req.tokenPayload = payload;
+    return next();
+  } catch (error) {
+    console.error('[auth] protect failed:', error);
+    return deny(res, 401, 'Not authorized');
   }
 };
 
-exports.admin = (req, res, next) => {
-  const role = req.user?.role;
-  if (role !== 'admin' && role !== 'superadmin') {
-    return res.status(403).json({ success: false, message: 'Admin access required' });
+/**
+ * Role-based access control.
+ *
+ * `requireRole('admin')` grants admin and everything above it (superadmin);
+ * pass `{ exact: true }` when a privilege must not be inherited.
+ */
+exports.requireRole = (...roles) => {
+  // An options object is a non-array object. Testing only `typeof === 'object'`
+  // also matched an array, so requireRole(['admin']) popped the roles themselves
+  // as options and denied everyone.
+  const last = roles[roles.length - 1];
+  const options = last && typeof last === 'object' && !Array.isArray(last) ? roles.pop() : {};
+
+  const allowed = roles.flat().filter(Boolean);
+  if (allowed.length === 0) {
+    throw new Error('requireRole() needs at least one role');
   }
-  next();
+  const minimumRank = Math.min(...allowed.map(roleRank));
+
+  return (req, res, next) => {
+    const role = req.user?.role;
+    if (!role) return deny(res, 401, 'Not authorized');
+
+    const permitted = options.exact
+      ? allowed.includes(role)
+      : roleRank(role) >= minimumRank;
+
+    if (!permitted) {
+      return deny(res, 403, 'You do not have permission to perform this action');
+    }
+
+    return next();
+  };
 };
 
-// Only superadmins can perform destructive operations (DELETE)
-exports.superadmin = (req, res, next) => {
-  if (req.user?.role !== 'superadmin') {
-    return res.status(403).json({
-      success: false,
-      message: 'Super Admin access required. Deletion is restricted to superadmins only.',
-    });
+/** Requires a verified email. Useful for gating sensitive self-service actions. */
+exports.requireVerified = (req, res, next) => {
+  if (!req.user?.isEmailVerified && !req.user?.isPhoneVerified) {
+    return deny(res, 403, 'Please verify your account to continue');
   }
-  next();
+  return next();
 };
+
+// Backward-compatible aliases. Existing routes import { protect, admin, superadmin }
+// and continue to work unchanged.
+exports.admin = exports.requireRole('admin');
+exports.superadmin = exports.requireRole('superadmin');
+
+exports.ROLE_HIERARCHY = ROLE_HIERARCHY;
+exports.roleRank = roleRank;
