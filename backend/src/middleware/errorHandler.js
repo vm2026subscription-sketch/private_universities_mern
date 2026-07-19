@@ -19,10 +19,17 @@ const errorHandler = (err, req, res, next) => {
   console.error(`[error] ${req.method} ${req.originalUrl} -> ${statusCode}`);
   console.error(err.stack || err);
 
+  // Never surface an internal error message to the client. Raw driver/runtime
+  // messages disclose schema names, file paths and library versions. Errors we
+  // classified above (duplicate key, validation, cast) carry safe, intentional
+  // messages; anything else falls back to a generic string.
+  const isClassified = statusCode < 500;
+  const safeMessage = isClassified ? message : 'Something went wrong. Please try again.';
+
   res.status(statusCode).json({
     success: false,
-    message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: safeMessage,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack, detail: message })
   });
 };
 

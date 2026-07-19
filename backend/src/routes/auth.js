@@ -1,21 +1,33 @@
 const router = require('express').Router();
 const passport = require('passport');
-const rateLimit = require('express-rate-limit');
-const { register, login, verifyLoginOtp, getMe, forgotPassword, resetPassword, googleCallback, logout, verifyEmail, resendVerificationEmail, sendOtp, verifyPhoneOtp } = require('../controllers/authController');
+const {
+  register,
+  login,
+  verifyLoginOtp,
+  getMe,
+  forgotPassword,
+  resetPassword,
+  googleCallback,
+  googleExchange,
+  logout,
+  logoutAll,
+  verifyEmail,
+  resendVerificationEmail,
+  sendOtp,
+  verifyPhoneOtp,
+  refresh,
+} = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const {
+  loginLimiter,
+  otpVerifyLimiter,
+  otpSendLimiter,
+  registerLimiter,
+  passwordResetLimiter,
+  refreshLimiter,
+} = require('../middleware/rateLimiters');
 
-// Dedicated limiter for brute-forceable credential/OTP endpoints. The global
-// /api limiter (1000/15m) is far too loose to stop credential-stuffing or
-// 6-digit-OTP brute force; this caps sensitive auth attempts per IP.
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many attempts. Please wait a few minutes and try again.' },
-});
-
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
 const getGoogleErrorRedirect = (error) => `${clientUrl}/auth/callback?error=${encodeURIComponent(error)}`;
 
 const ensureGoogleAuthConfigured = (req, res, next) => {
@@ -32,22 +44,41 @@ const ensureGoogleAuthConfigured = (req, res, next) => {
   return next();
 };
 
-// Email/Password auth (sensitive endpoints throttled by authLimiter)
-router.post('/register', authLimiter, register);
-router.post('/login', authLimiter, login);
-router.post('/login/verify-otp', authLimiter, verifyLoginOtp);
-router.post('/verify-email', authLimiter, verifyEmail);
-router.post('/resend-verification', authLimiter, resendVerificationEmail);
+/* ── Email / password ─────────────────────────────────────────────────────
+ * Login is a two-step flow for EVERY role:
+ *   1. POST /login            -> password check, returns { requiresOtp, mfaToken }
+ *   2. POST /login/verify-otp -> requires that mfaToken + the emailed code
+ * There is no role that skips step 2.
+ */
+router.post('/register', registerLimiter, register);
+router.post('/login', loginLimiter, login);
+router.post('/login/verify-otp', otpVerifyLimiter, verifyLoginOtp);
+router.post('/verify-email', otpVerifyLimiter, verifyEmail);
+router.post('/resend-verification', otpSendLimiter, resendVerificationEmail);
 router.get('/me', protect, getMe);
-router.post('/forgot-password', authLimiter, forgotPassword);
-router.post('/reset-password/:token', authLimiter, resetPassword);
+
+/* ── Session lifecycle ────────────────────────────────────────────────── */
+router.post('/refresh', refreshLimiter, refresh);
 router.post('/logout', logout);
+router.post('/logout-all', protect, logoutAll);
 
-// Phone OTP auth
-router.post('/send-otp', authLimiter, sendOtp);
-router.post('/verify-otp', authLimiter, verifyPhoneOtp);
+/* ── Password reset ───────────────────────────────────────────────────── */
+router.post('/forgot-password', passwordResetLimiter, forgotPassword);
+router.post('/reset-password/:token', passwordResetLimiter, resetPassword);
 
-// Google OAuth
+/* ── Phone OTP ────────────────────────────────────────────────────────────
+ * /send-otp can only mint `purpose: 'verify'` codes. Login OTPs are issued
+ * exclusively by the password step, so this endpoint can no longer be used to
+ * authenticate as another user.
+ */
+router.post('/send-otp', otpSendLimiter, sendOtp);
+router.post('/verify-otp', otpVerifyLimiter, verifyPhoneOtp);
+
+/* ── Google OAuth ─────────────────────────────────────────────────────────
+ * The callback redirects with a single-use, 60-second exchange code rather than
+ * the JWT itself, keeping the credential out of browser history, Referer
+ * headers and proxy logs.
+ */
 router.get('/google', ensureGoogleAuthConfigured, passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get(
   '/google/callback',
@@ -55,5 +86,6 @@ router.get(
   passport.authenticate('google', { session: false, failureRedirect: getGoogleErrorRedirect('google_auth_failed') }),
   googleCallback
 );
+router.post('/google/exchange', loginLimiter, googleExchange);
 
 module.exports = router;

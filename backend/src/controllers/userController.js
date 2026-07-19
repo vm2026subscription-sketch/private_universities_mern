@@ -2,6 +2,9 @@ const User = require('../models/User');
 const University = require('../models/University');
 const Course = require('../models/Course');
 const { getSafeUserProfile } = require('../utils/userSerializer');
+const { signAccessToken } = require('../utils/tokenService');
+const { issueRefreshToken, revokeAllForUser } = require('../services/refreshTokenService');
+const { setRefreshCookie } = require('./authController');
 const mongoose = require('mongoose');
 
 const APPLICATION_STATUSES = ['applied', 'pending', 'accepted', 'rejected'];
@@ -177,8 +180,17 @@ exports.changePassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Both fields are required' });
     }
 
-    if (String(newPassword).length < 6) {
-      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long' });
+    const password = String(newPassword);
+
+    // Matches the registration/reset policy (8+, bounded, not trivially weak).
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters long' });
+    }
+    if (password.length > 128) {
+      return res.status(400).json({ success: false, message: 'New password must be at most 128 characters long' });
+    }
+    if (password === String(currentPassword)) {
+      return res.status(400).json({ success: false, message: 'New password must be different from the current one' });
     }
 
     const user = await User.findById(req.user._id).select('+password');
@@ -191,11 +203,35 @@ exports.changePassword = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Current password is incorrect' });
     }
 
-    user.password = newPassword;
+    user.password = password;
+
+    // Invalidate every other session. Changing a password is how a user
+    // responds to a suspected compromise, so previously issued tokens must not
+    // survive it — the old implementation left them valid for up to 30 days.
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
-    res.json({ success: true, message: 'Password changed successfully' });
+    await revokeAllForUser(user._id, 'password_change');
+
+    // The caller's own token was just invalidated too, so hand back a fresh
+    // session rather than silently logging them out.
+    const token = signAccessToken(user);
+    const refreshToken = await issueRefreshToken(user, req);
+
+    // The refresh COOKIE must be replaced as well. /auth/refresh reads the
+    // cookie in preference to the body, so leaving a stale revoked cookie in
+    // place would trip reuse detection on the next refresh and force a logout
+    // roughly one access-token lifetime after a routine password change.
+    setRefreshCookie(res, refreshToken);
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully. Other devices have been signed out.',
+      token,
+      refreshToken,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[user] changePassword failed:', error);
+    res.status(500).json({ success: false, message: 'Could not change password' });
   }
 };
 

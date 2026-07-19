@@ -17,7 +17,7 @@ import {
   Bell,
   Share2,
 } from 'lucide-react';
-import api from '../utils/api';
+import api, { TOKEN_KEY, REFRESH_KEY } from '../utils/api';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getUniversityDisplayType } from '../utils/universityType';
@@ -143,8 +143,19 @@ export default function Profile() {
 
   const handleChangePassword = async (data) => {
     try {
-      await api.put('/users/change-password', data);
-      toast.success('Password changed successfully');
+      const response = await api.put('/users/change-password', data);
+
+      // Changing the password revokes every existing session, including this
+      // one. The server returns a replacement pair — store it, otherwise the
+      // next request 401s and bounces the user to /login.
+      if (response.data?.token) {
+        localStorage.setItem(TOKEN_KEY, response.data.token);
+      }
+      if (response.data?.refreshToken) {
+        localStorage.setItem(REFRESH_KEY, response.data.refreshToken);
+      }
+
+      toast.success(response.data?.message || 'Password changed successfully');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to change password');
     }

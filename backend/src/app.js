@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const passport = require('passport');
 const mongoose = require('mongoose');
 
@@ -23,6 +24,7 @@ const bhashiniRoutes = require('./routes/bhashini');
 const sitemapRoutes = require('./routes/sitemap');
 
 const errorHandler = require('./middleware/errorHandler');
+const { isProduction } = require('./config/env');
 const compression = require('compression');
 
 const app = express();
@@ -68,12 +70,34 @@ const googleAuthConfigured = Boolean(
   process.env.GOOGLE_CALLBACK_URL
 );
 
-app.use(helmet());
+app.use(
+  helmet({
+    // The API serves JSON and redirects only; a restrictive CSP costs nothing
+    // and blunts any reflected-content surface.
+    contentSecurityPolicy: {
+      directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
+    },
+    referrerPolicy: { policy: 'no-referrer' },
+    // isProduction() is true unless a development environment was declared
+    // explicitly, so an unset NODE_ENV keeps HSTS ON rather than silently
+    // disabling it.
+    hsts: isProduction()
+      ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+      : false,
+    crossOriginResourcePolicy: { policy: 'same-site' },
+  })
+);
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+app.use(cookieParser());
+
+// Auth endpoints accept only small JSON payloads. Applying the 10mb limit to
+// them (as the single global parser previously did) needlessly exposes the
+// unauthenticated surface to memory-exhaustion attempts.
+app.use('/api/v1/auth', express.json({ limit: '32kb' }));
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
