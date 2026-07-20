@@ -83,7 +83,7 @@ export default function QASection({ universityId, user }) {
               </div>
 
               {/* Answers */}
-              <div className="pl-14 space-y-4">
+              <div className="pl-4 sm:pl-14 space-y-4">
                  {(q.answers || []).map((ans, j) => (
                    <div key={j} className="p-4 bg-light-bg dark:bg-dark-border/50 rounded-2xl relative">
                       <p className="text-sm">{ans.content}</p>

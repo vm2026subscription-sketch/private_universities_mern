@@ -42,7 +42,7 @@ export default function SocialFloatButtons() {
   ];
 
   return (
-    <div className="fixed right-4 bottom-24 md:bottom-10 z-[90] flex flex-col gap-3">
+    <div className="fixed right-4 bottom-20 md:bottom-10 z-[90] flex flex-col gap-3">
       {buttons.map((btn) => (
         <div key={btn.id} className="relative flex items-center justify-end">
           {/* Tooltip label */}

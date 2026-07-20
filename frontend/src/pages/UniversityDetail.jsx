@@ -274,6 +274,8 @@ export default function UniversityDetail() {
     </div>
   );
 
+  const admissionUrl = uni?.links?.admissionLink || uni?.admissions?.admissionLink || uni?.admissionLink || uni?.admissionUrl || uni?.links?.admission_url || uni?.admission_link;
+
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen">
       {(() => {
@@ -302,7 +304,7 @@ export default function UniversityDetail() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 -mt-24 relative z-10">
-        <div className="bg-white dark:bg-dark-card rounded-[2rem] p-8 md:p-10 shadow-lg border border-slate-100 dark:border-white/5 mb-10">
+        <div className="bg-white dark:bg-dark-card rounded-[2rem] p-4 sm:p-6 md:p-10 shadow-lg border border-slate-100 dark:border-white/5 mb-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="flex flex-col md:flex-row gap-8 items-center md:items-end">
               <div className="w-32 h-32 rounded-[2rem] bg-white shadow-lg border-4 border-white flex items-center justify-center overflow-hidden shrink-0 p-4">
@@ -321,7 +323,7 @@ export default function UniversityDetail() {
               </div>
             </div>
 
-            <div className="flex gap-3 justify-center">
+            <div className="flex flex-wrap gap-2.5 sm:gap-3 justify-center md:justify-start">
               {/* Admin Edit & Delete Buttons */}
               {isAdmin && !isEditing && (
                 <>
@@ -370,6 +372,16 @@ export default function UniversityDetail() {
               >
                 Download Brochure
               </button>
+              {admissionUrl && (
+                <a
+                  href={admissionUrl.startsWith('http') ? admissionUrl : `https://${admissionUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs uppercase tracking-widest px-6 py-4 rounded-2xl shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all flex items-center gap-2"
+                >
+                  Admission Link <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
               <button 
                 onClick={() => {
                   setLeadType('apply');
@@ -410,7 +422,7 @@ export default function UniversityDetail() {
           )}
 
           {/* Stats Grid - unchanged */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-6 mt-12 pt-10 border-t border-slate-50 dark:border-white/5">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-6 mt-8 sm:mt-12 pt-6 sm:pt-10 border-t border-slate-50 dark:border-white/5">
             {[
               { icon: Users, label: 'Students', value: formatMetric(uni.stats?.totalStudents, uni.stats?.totalStudentsLabel) },
               { icon: Award, label: 'Avg Package', value: formatCurrencyMetric(uni.stats?.avgPackageLPA, uni.stats?.avgPackageLPALabel, 'LPA') },
@@ -458,7 +470,7 @@ export default function UniversityDetail() {
         </div>
 
         {/* Tab Content - unchanged */}
-        <div className="bg-white dark:bg-dark-card rounded-[2rem] p-10 border border-slate-100 dark:border-white/5 shadow-sm mb-20 min-h-[500px]">
+        <div className="bg-white dark:bg-dark-card rounded-[2rem] p-4 sm:p-6 md:p-10 border border-slate-100 dark:border-white/5 shadow-sm mb-20 min-h-[400px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -483,6 +495,7 @@ export default function UniversityDetail() {
                          {[
                            { icon: MapPin, value: uni.address || `${uni.city}, ${uni.state}` },
                            { icon: Globe, value: uni.website, link: true },
+                           ...(admissionUrl ? [{ icon: ExternalLink, value: admissionUrl, link: true, isAdmission: true }] : []),
                            { icon: Mail, value: uni.email || `admissions@${uni.slug}.edu.in` },
                            { icon: Phone, value: uni.phone || '+91 000 000 0000' }
                          ].map((item, i) => (
@@ -551,11 +564,34 @@ export default function UniversityDetail() {
               )}
 
               {activeTab === 2 && (
-                <div className="space-y-12">
+                <div className="space-y-8 md:space-y-12">
                   <div>
-                    <h2 className="text-2xl font-serif font-bold mb-6">Admission Overview</h2>
+                    <h2 className="text-2xl font-serif font-bold mb-4">Admission Overview</h2>
                     <p className="text-slate-500 font-medium leading-relaxed">{uni.admissions?.overview || 'Admission details for the upcoming academic session will be updated soon.'}</p>
                   </div>
+
+                  {/* Official Admission Link Banner */}
+                  {admissionUrl && (
+                    <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-primary/10 via-orange-500/10 to-amber-500/10 border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <h3 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-link flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4" /> Official Admission Portal
+                        </h3>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                          Direct link to fill application form and register for official admissions.
+                        </p>
+                      </div>
+                      <a
+                        href={admissionUrl.startsWith('http') ? admissionUrl : `https://${admissionUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-gradient-to-br from-primary to-primary-light text-white font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-2xl shadow-lg shadow-primary/25 hover:scale-105 transition-all shrink-0 w-full sm:w-auto justify-center"
+                      >
+                        Apply via Official Portal <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {uni.admissions?.process?.length > 0 && (
                       <div className="space-y-4">
@@ -571,7 +607,7 @@ export default function UniversityDetail() {
                     <div className="space-y-6">
                        <div className="p-6 rounded-3xl bg-orange-50 dark:bg-orange-500/5 border border-orange-100 dark:border-orange-500/10">
                          <h4 className="text-orange-600 font-bold text-[10px] uppercase tracking-widest mb-2">Counselling & Deadline</h4>
-                         <p className="text-slate-700 dark:text-slate-200 font-bold">{uni.admissions?.counsellingInfo || 'Admissions are currently open. Apply via the link above.'}</p>
+                         <p className="text-slate-700 dark:text-slate-200 font-bold">{uni.admissions?.counsellingInfo || (uni.links?.admissionLink || uni.admissions?.admissionLink || uni.admissionLink ? 'Admissions are currently open. Apply via the official portal link above.' : 'Admissions are currently open.')}</p>
                        </div>
                        {uni.admissions?.documentsRequired?.length > 0 && (
                          <div className="space-y-3">

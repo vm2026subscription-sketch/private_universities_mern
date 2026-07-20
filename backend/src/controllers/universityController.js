@@ -265,7 +265,7 @@ exports.getUniversities = async (req, res) => {
       sortObj.nirfRank = 1;
     }
 
-    const LIST_FIELDS = 'name slug state city type segment institutionKind establishedYear naacGrade nirfRank logoUrl links.brochureLink description stats views approvals isSponsored sponsorTier sponsorPriority sponsorExpiry';
+    const LIST_FIELDS = 'name slug state city type segment institutionKind establishedYear naacGrade nirfRank logoUrl links.admissionLink links.brochureLink description stats views approvals isSponsored sponsorTier sponsorPriority sponsorExpiry';
 
     // "By Ranking" is the default sort. A plain ascending sort on nirfRank puts
     // universities WITHOUT a NIRF rank first (null sorts before numbers in

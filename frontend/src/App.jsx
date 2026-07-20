@@ -109,7 +109,7 @@
         </a>
 
         <Navbar />
-        <main id="main-content">
+        <main id="main-content" className="pb-16 md:pb-0">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/universities" element={<Universities />} />
