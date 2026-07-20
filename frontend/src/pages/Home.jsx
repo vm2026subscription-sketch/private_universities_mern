@@ -431,7 +431,7 @@ export default function Home() {
                   placeholder="Search for a university..."
                   className="w-full min-w-0 py-4 bg-transparent text-slate-900 text-lg font-bold placeholder:text-slate-400 focus:outline-none"
                 />
-                <button type="submit" className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-white px-8 md:px-12 font-bold text-base transition-all whitespace-nowrap rounded-xl shadow-lg shadow-primary/25 active:scale-95 border border-accent/30">
+                <button type="submit" className="bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-white px-5 sm:px-8 md:px-12 font-bold text-base transition-all whitespace-nowrap rounded-xl shadow-lg shadow-primary/25 active:scale-95 border border-accent/30">
                   Search
                 </button>
               </div>
@@ -655,12 +655,12 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {universities.map((u, i) => (
                   <motion.div key={i} whileHover={{ y: -5 }}>
-                    <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-transparent hover:shadow-lg hover:shadow-primary/20 transition-all overflow-hidden block">
+                    <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-4 sm:p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-transparent hover:shadow-lg hover:shadow-primary/20 transition-all overflow-hidden block">
                       {/* Left-to-right animated background (Gradient matching SS1) */}
                       <div className="absolute inset-0 bg-gradient-to-br from-orange-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
 
-                      <div className="relative z-10 flex gap-6 items-center">
-                        <div className="w-24 h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-50 group-hover:border-transparent transition-colors p-2 shrink-0">
+                      <div className="relative z-10 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
+                        <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-50 group-hover:border-transparent transition-colors p-2 shrink-0">
                           <UniversityLogo logoUrl={u.logoUrl || u.logo} name={u.name} />
                         </div>
 
