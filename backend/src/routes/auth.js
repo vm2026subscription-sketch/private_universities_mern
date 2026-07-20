@@ -46,6 +46,7 @@ const ensureGoogleAuthConfigured = (req, res, next) => {
 
 // One-time admin setup endpoint (remove after use)
 const User = require('../models/User');
+const bcryptSetup = require('bcryptjs');
 const getAdminEmails = () => (process.env.ADMIN_EMAIL || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 router.get('/setup-admin', async (req, res) => {
   try {
@@ -53,18 +54,14 @@ router.get('/setup-admin', async (req, res) => {
     const password = String(req.query.password || '').trim();
     if (!email || !password) return res.status(400).json({ success: false, message: 'email and password required' });
     if (!getAdminEmails().includes(email)) return res.status(403).json({ success: false, message: 'Not an admin email' });
-    const existing = await User.findOne({ email });
-    if (existing) {
-      existing.password = password;
-      existing.role = 'admin';
-      existing.isEmailVerified = true;
-      existing.status = 'active';
-      await existing.save();
-      return res.json({ success: true, message: `Admin updated: ${email}` });
-    }
-    const user = new User({ name: 'Admin', email, password, role: 'admin', isEmailVerified: true, authProvider: 'local', status: 'active' });
-    await user.save();
-    return res.json({ success: true, message: `Admin created: ${email}` });
+    const hashedPassword = await bcryptSetup.hash(password, 12);
+    const update = { name: 'Admin', password: hashedPassword, role: 'admin', isEmailVerified: true, authProvider: 'local', status: 'active' };
+    const result = await User.findOneAndUpdate(
+      { email },
+      { $set: update },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    return res.json({ success: true, message: `Admin ready: ${result.email}` });
   } catch (e) {
     return res.status(500).json({ success: false, message: e.message });
   }
