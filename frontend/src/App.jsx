@@ -11,6 +11,7 @@
   import MobileNav from './components/layout/MobileNav';
   import StickyBottomBanner from './components/ads/StickyBottomBanner';
   import SocialFloatButtons from './components/layout/SocialFloatButtons';
+  import PreferencesModal from './components/common/PreferencesModal';
 
   const Home = lazy(() => import('./pages/Home'));
   const Universities = lazy(() => import('./pages/Universities'));
@@ -142,6 +143,7 @@
         <StickyBottomBanner page="home" />
         <SocialFloatButtons />
         <DeferredAiChatWidget />
+        <PreferencesModal />
       </div>
     );
   }

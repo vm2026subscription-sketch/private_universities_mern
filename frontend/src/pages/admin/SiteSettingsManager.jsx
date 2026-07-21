@@ -26,9 +26,12 @@ const defaultSettings = [
   { key: 'linkedinUrl', label: 'LinkedIn URL', category: 'social', type: 'text', value: '' },
   { key: 'whatsappNumber', label: 'WhatsApp Number', category: 'social', type: 'text', value: '' },
   { key: 'maintenanceMode', label: 'Maintenance Mode', category: 'general', type: 'boolean', value: false },
+  { key: 'preferencesNoticeEnabled', label: 'Enable Preferences Form Notice / Message', category: 'onboarding', type: 'boolean', value: true },
+  { key: 'preferencesNoticeTitle', label: 'Preferences Notice Title', category: 'onboarding', type: 'text', value: 'Important Notice' },
+  { key: 'preferencesNoticeMessage', label: 'Preferences Notice Content / Message', category: 'onboarding', type: 'textarea', value: 'Admissions for 2026-27 are open across top private & deemed universities. Please select your preferences below to receive tailored guidance.' },
 ];
 
-const categories = ['general', 'appearance', 'contact', 'social', 'seo', 'integration'];
+const categories = ['general', 'onboarding', 'appearance', 'contact', 'social', 'seo', 'integration'];
 
 export default function SiteSettingsManager() {
   const [settings, setSettings] = useState({});

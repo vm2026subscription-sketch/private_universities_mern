@@ -13,6 +13,7 @@ import api from '../utils/api';
 import Seo from '../components/common/Seo';
 import { siteJsonLd } from '../utils/seo';
 import { useAiChat } from '../context/AiChatContext';
+import { useAuth } from '../context/AuthContext';
 import UniversityLogo from '../components/common/UniversityLogo';
 import LeadCaptureModal from '../components/university/LeadCaptureModal';
 import HeroBannerSlider from '../components/ads/HeroBannerSlider';
@@ -152,6 +153,7 @@ const itemVariants = {
 
 export default function Home() {
   const { openChat } = useAiChat();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [cachedHomeData] = useState(() => getCachedHomeData());
   const [searchTerm, setSearchTerm] = useState('');
@@ -209,13 +211,14 @@ export default function Home() {
 
     const fetchData = async () => {
       try {
-        const [uniRes, examRes, testRes, newsRes, testmRes, stateCountRes] = await Promise.all([
+        const [uniRes, examRes, testRes, newsRes, testmRes, stateCountRes, recRes] = await Promise.all([
           api.get('/universities?limit=12').catch(() => ({ data: { data: [] } })),
           api.get('/exams/upcoming?limit=4').catch(() => ({ data: { data: [] } })),
           api.get('/questions?limit=4').catch(() => ({ data: { data: [] } })),
           api.get('/news?limit=4').catch(() => ({ data: { data: [] } })),
           api.get('/testimonials').catch(() => ({ data: { data: [] } })),
-          api.get('/universities/state-counts').catch(() => ({ data: { data: {} } }))
+          api.get('/universities/state-counts').catch(() => ({ data: { data: {} } })),
+          user ? api.get('/users/recommendations').catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } })
         ]);
 
         const fetchedUniversities = Array.isArray(uniRes?.data?.data) ? [...uniRes.data.data] : [];
@@ -223,6 +226,7 @@ export default function Home() {
         const fetchedQuestions = Array.isArray(testRes?.data?.data) ? testRes.data.data : [];
         const fetchedNews = Array.isArray(newsRes?.data?.data) ? newsRes.data.data : Array.isArray(newsRes?.data?.articles) ? newsRes.data.articles : [];
         const fetchedTestimonials = Array.isArray(testmRes?.data?.data) ? testmRes.data.data : [];
+        const fetchedRecs = Array.isArray(recRes?.data?.data) ? recRes.data.data : [];
 
         const priority = ['Thakur', 'Amity', 'SAGE', 'Jindal', 'ITM', 'ISBM', 'AAFT', 'C.V. Raman', 'Dev Sanskriti'];
         const sortedUniversities = fetchedUniversities.sort((a, b) => {
@@ -239,8 +243,13 @@ export default function Home() {
 
         if (!isMounted) return;
 
+        // If user recommendations are available, prioritize them for "Recommended for You"
+        const displayUniversities = fetchedRecs.length > 0
+          ? fetchedRecs.slice(0, 6)
+          : sortedUniversities.slice(0, 6);
+
         const nextHomeData = {
-          universities: sortedUniversities.slice(0, 6),
+          universities: displayUniversities,
           exams: fetchedExams,
           questions: fetchedQuestions,
           news: fetchedNews,
@@ -278,7 +287,7 @@ export default function Home() {
       clearInterval(slideInterval);
       clearInterval(testimonialInterval);
     };
-  }, []);
+  }, [user]);
 
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
