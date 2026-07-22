@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, Accessibility, X, MessageSquarePlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
@@ -24,6 +24,7 @@ const AccessibilityWidget = ({ inline = false }) => {
   });
 
   const supportsSpeech = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const lastScrollY = useRef(0);
 
   const toggleFilter = (type, value) => {
     setActiveFilters((prev) => ({
@@ -73,6 +74,24 @@ const AccessibilityWidget = ({ inline = false }) => {
       document.removeEventListener('click', handleGlobalClick, { capture: true });
     };
   }, [isSpeaking, supportsSpeech]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY > lastScrollY.current && currentY > 50) {
+        setIsOpen(false);
+      }
+      lastScrollY.current = currentY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll, { passive: true });
+    };
+  }, []);
 
   const handleTranslate = async (lang) => {
     if (lang === 'en') {
