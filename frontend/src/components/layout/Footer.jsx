@@ -77,9 +77,9 @@ export default function Footer() {
   };
 
   return (
-    <footer className="mt-20 bg-primary text-white border-t border-primary-dark/60">
-      <div className="max-w-[90rem] mx-auto px-4 pt-16 pb-8">
-        <div className="grid gap-8 lg:grid-cols-[1.5fr_2fr] mb-14">
+    <footer className="mt-6 md:mt-8 bg-primary text-white border-t border-primary-dark/60">
+      <div className="max-w-[90rem] mx-auto px-4 pt-8 pb-6 sm:pt-10 sm:pb-8">
+        <div className="grid gap-8 lg:grid-cols-[1.5fr_2fr] mb-8">
           <div className="rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-sm p-8 shadow-lg">
             <div className="inline-flex items-center rounded-2xl bg-white px-4 py-3 shadow-lg">
               <img src={logo} alt="Vidyarthi Mitra" className="h-9" />
@@ -189,7 +189,7 @@ export default function Footer() {
         </div>
 
         {/* Newsletter Subscribe */}
-        <div className="mb-10 rounded-[2rem] border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+        <div className="mb-6 rounded-[2rem] border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur-sm">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -218,7 +218,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-white/10 pt-6 text-xs font-bold uppercase tracking-[0.18em] text-white/60 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 border-t border-white/10 pt-4 text-xs font-bold uppercase tracking-[0.18em] text-white/60 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link to="/terms-and-conditions" className="hover:text-accent-light transition-colors">
               Terms
