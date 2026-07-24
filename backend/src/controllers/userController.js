@@ -5,6 +5,7 @@ const { getSafeUserProfile } = require('../utils/userSerializer');
 const { signAccessToken } = require('../utils/tokenService');
 const { issueRefreshToken, revokeAllForUser } = require('../services/refreshTokenService');
 const { setRefreshCookie } = require('./authController');
+const { uploadToCloudinary } = require('../utils/imageUpload');
 const mongoose = require('mongoose');
 
 const APPLICATION_STATUSES = ['applied', 'pending', 'accepted', 'rejected'];
@@ -83,6 +84,41 @@ exports.updateProfile = async (req, res) => {
     res.json({ success: true, data: getSafeUserProfile(user) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select an image file to upload' });
+    }
+
+    let imageUrl;
+    try {
+      const result = await uploadToCloudinary(req.file.buffer, { folder: 'vidyarthi-mitra/avatars' });
+      imageUrl = result.url;
+    } catch (err) {
+      const base64 = req.file.buffer.toString('base64');
+      imageUrl = `data:${req.file.mimetype};base64,${base64}`;
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.avatar = imageUrl;
+    user.profileCompleteness = calculateProfileCompleteness(user);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      data: getSafeUserProfile(user),
+      url: imageUrl,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Avatar upload failed' });
   }
 };
 

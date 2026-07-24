@@ -26,6 +26,7 @@ export default function Navbar() {
   const location = useLocation();
   
   const searchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
   const dropdownRef = useRef(null);
   const megaMenuRef = useRef(null);
 
@@ -65,12 +66,18 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleClick = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) setShowSearch(false);
+      const inDesktopSearch = searchRef.current && searchRef.current.contains(e.target);
+      const inMobileSearch = mobileSearchRef.current && mobileSearchRef.current.contains(e.target);
+      if (!inDesktopSearch && !inMobileSearch) setShowSearch(false);
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false);
       if (megaMenuRef.current && !megaMenuRef.current.contains(e.target)) setActiveMegaMenu(null);
     };
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('touchstart', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('touchstart', handleClick);
+    };
   }, []);
 
   return (
@@ -78,7 +85,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <img src={logo} alt="Vidyarthi Mitra" className="h-7 md:h-8" />
+            <img src={logo} alt="Vidyarthi Mitra" className="h-7 md:h-8" decoding="async" fetchPriority="high" />
           </Link>
 
           <div className="hidden lg:flex items-center gap-1">
@@ -129,7 +136,7 @@ export default function Navbar() {
                     className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-lg overflow-hidden z-[110]"
                   >
                     {searchResults.map(r => (
-                      <button key={r._id} onClick={() => { 
+                      <button type="button" key={r._id} onClick={() => { 
                           if (r._type === 'university') navigate(`/universities/${r.slug}`);
                           else if (r.universityId?.slug) navigate(`/universities/${r.universityId.slug}`);
                           setShowSearch(false); 
@@ -152,14 +159,14 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            <button onClick={toggle} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-colors">
+            <button type="button" onClick={toggle} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-colors">
               {dark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
             </button>
             <AccessibilityWidget inline />
 
             {user ? (
               <div className="relative" ref={dropdownRef}>
-                <button onClick={() => setShowDropdown(!showDropdown)} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-all">
+                <button type="button" onClick={() => setShowDropdown(!showDropdown)} aria-label="User account menu" aria-expanded={showDropdown} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-all">
                   <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-primary/20 border border-accent/30">
                     {user.name?.charAt(0)?.toUpperCase()}
                   </div>
@@ -193,7 +200,7 @@ export default function Navbar() {
                           </Link>
                         )}
                         <div className="h-px bg-slate-100 dark:bg-white/5 my-2 mx-2" />
-                        <button onClick={() => { logout(); setShowDropdown(false); navigate('/'); }} className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold w-full text-left text-error hover:bg-red-50 rounded-xl transition-all">
+                        <button type="button" onClick={() => { logout(); setShowDropdown(false); navigate('/'); }} className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold w-full text-left text-error hover:bg-red-50 rounded-xl transition-all">
                           <LogOut className="w-4 h-4" /> Logout Account
                         </button>
                       </div>
@@ -208,7 +215,7 @@ export default function Navbar() {
               </div>
             )}
 
-            <button onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} className="lg:hidden p-2 text-slate-600 dark:text-slate-300">
+            <button type="button" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} className="lg:hidden p-2 text-slate-600 dark:text-slate-300">
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -217,9 +224,75 @@ export default function Navbar() {
 
         {mobileOpen && (
           <div className="lg:hidden py-6 border-t border-light-border dark:border-dark-border space-y-2">
-            <div className="relative mb-6 px-4">
+            <div className="relative mb-6 px-4" ref={mobileSearchRef}>
               <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-light-muted" />
-              <input type="text" placeholder="Search..." className="pl-12 pr-4 py-3 w-full text-sm rounded-xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card outline-none" />
+              <input
+                type="text"
+                placeholder="Search Thakur, Amity, SAGE..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery.length >= 2 && setShowSearch(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setShowSearch(false);
+                  } else if (e.key === 'Enter' && searchQuery.trim()) {
+                    navigate(`/universities?search=${encodeURIComponent(searchQuery.trim())}`);
+                    setShowSearch(false);
+                    setMobileOpen(false);
+                  }
+                }}
+                className="pl-12 pr-10 py-3 w-full text-sm rounded-xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card focus:ring-2 focus:ring-primary outline-none transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear search input"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setShowSearch(false);
+                  }}
+                  className="absolute right-7 top-1/2 -translate-y-1/2 p-1 text-light-muted hover:text-slate-700 dark:hover:text-slate-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+
+              <AnimatePresence>
+                {showSearch && searchResults.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-full left-4 right-4 mt-2 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-lg overflow-hidden z-[110]"
+                  >
+                    {searchResults.map(r => (
+                      <button
+                        type="button"
+                        key={r._id}
+                        onClick={() => { 
+                          if (r._type === 'university') navigate(`/universities/${r.slug}`);
+                          else if (r.universityId?.slug) navigate(`/universities/${r.universityId.slug}`);
+                          else navigate(`/courses?search=${encodeURIComponent(r.name)}`);
+                          setShowSearch(false); 
+                          setSearchQuery(''); 
+                          setMobileOpen(false);
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-dark-border flex items-center gap-3 transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                           {r._type === 'university' ? <Building2 className="w-4 h-4 text-link" /> : <BookOpen className="w-4 h-4 text-slate-500" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold truncate">{r.name}</p>
+                          <p className="text-[10px] text-light-muted uppercase font-bold tracking-widest truncate">
+                            {r._type === 'university' ? `${r.city || ''}, ${r.state || ''}` : (r.universityId?.name || 'Course')}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             {visibleNavLinks.map(l => (
               <div key={l.to}>

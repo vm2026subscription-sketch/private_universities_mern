@@ -15,37 +15,39 @@ import {
   Building2,
   Sparkles,
   X,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import api from '../utils/api';
 import { ListSkeleton } from '../components/common/LoadingSkeleton';
 import UniversityLogo from '../components/common/UniversityLogo';
-import { EmptyState } from '../components/ui';
+import { EmptyState, Button } from '../components/ui';
 import { readSessionCache, writeSessionCache } from '../utils/pageCache';
 
 const typeCopy = {
   foreign: {
-    badge: 'Foreign Universities',
-    heading: 'Foreign Universities in India',
-    description: 'International universities operating in India, ideal for students who want a global degree without leaving the country.',
-    emptyTitle: 'No foreign universities found',
+    badge: 'Study Overseas',
+    title: 'Foreign Universities Operating in India',
+    subtitle: 'Global Higher Education Hubs',
+    description:
+      'Top-tier global universities establishing campuses, study centers, and research centers in India.',
+    searchPlaceholder: 'Search foreign university or program...',
+    emptyTitle: 'No Foreign Universities Found',
   },
   twinning: {
-    badge: 'Twinning Programs',
-    heading: 'Twinning Universities & Pathways',
-    description: 'Programs designed for India-to-abroad pathways such as 2+2, 3+1, or collaborative international models.',
-    emptyTitle: 'No twinning universities found',
+    badge: 'Global Pathways',
+    title: 'Twinning & Joint Degree Programs',
+    subtitle: 'International Dual Degrees',
+    description:
+      'Indian universities offering dual, joint, and 2+2 / 3+1 twinning programs with leading international institutions.',
+    searchPlaceholder: 'Search twinning program or university...',
+    emptyTitle: 'No Twinning Programs Found',
   },
 };
 
-const countryLabel = (description = '') => {
-  const value = String(description || '').toLowerCase();
-  if (value.includes('united kingdom') || value.includes('uk')) return 'UK';
-  if (value.includes('united states') || value.includes('usa') || value.includes('us')) return 'USA';
-  if (value.includes('australia')) return 'AUS';
-  if (value.includes('canada')) return 'CAN';
-  if (value.includes('germany')) return 'DE';
-  if (value.includes('france')) return 'FR';
-  return 'Global';
+const countryLabel = (text = '') => {
+  const match = text.match(/\b(USA|UK|Australia|Canada|Germany|France|Singapore|Italy|UAE|Switzerland|Spain|Ireland|New Zealand|Japan|China|Malaysia)\b/i);
+  return match ? match[0] : 'International';
 };
 
 const accentBySegment = {
@@ -66,6 +68,8 @@ export default function ForeignUniversities() {
   const [activeTab, setActiveTab] = useState('foreign');
   const [universitiesByType, setUniversitiesByType] = useState({ foreign: cachedForeign, twinning: cachedTwinning });
   const [loadingByType, setLoadingByType] = useState({ foreign: cachedForeign.length === 0, twinning: false });
+  const [fetchErrors, setFetchErrors] = useState({ foreign: null, twinning: null });
+  const [reloadTokens, setReloadTokens] = useState({ foreign: 0, twinning: 0 });
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
 
@@ -77,17 +81,19 @@ export default function ForeignUniversities() {
       if (cachedSegmentData.length === 0) {
         setLoadingByType((prev) => ({ ...prev, [segment]: true }));
       }
+      setFetchErrors((prev) => ({ ...prev, [segment]: null }));
       try {
         const { data } = await api.get(`/universities?type=${segment}&limit=100`);
         if (!active) return;
         const nextUniversities = Array.isArray(data.data) ? data.data : [];
         setUniversitiesByType((prev) => ({ ...prev, [segment]: nextUniversities }));
         writeSessionCache(getForeignCacheKey(segment), nextUniversities);
-      } catch {
+      } catch (err) {
         if (!active) return;
-        if (cachedSegmentData.length === 0) {
-          setUniversitiesByType((prev) => ({ ...prev, [segment]: [] }));
-        }
+        setFetchErrors((prev) => ({
+          ...prev,
+          [segment]: err.response?.data?.message || 'Failed to load universities. Please check your connection and try again.',
+        }));
       } finally {
         if (active) {
           setLoadingByType((prev) => ({ ...prev, [segment]: false }));
@@ -99,20 +105,25 @@ export default function ForeignUniversities() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [reloadTokens.foreign]);
 
   useEffect(() => {
-    if (activeTab === 'twinning' && !loadingByType.twinning && !universitiesByType.twinning.length) {
+    if (activeTab === 'twinning' && !loadingByType.twinning && (!universitiesByType.twinning.length || reloadTokens.twinning > 0)) {
       let active = true;
 
       const loadTwinning = async () => {
         setLoadingByType((prev) => ({ ...prev, twinning: true }));
+        setFetchErrors((prev) => ({ ...prev, twinning: null }));
         try {
           const { data } = await api.get('/universities?type=twinning&limit=100');
           if (!active) return;
           setUniversitiesByType((prev) => ({ ...prev, twinning: data.data || [] }));
-        } catch {
+        } catch (err) {
           if (!active) return;
+          setFetchErrors((prev) => ({
+            ...prev,
+            twinning: err.response?.data?.message || 'Failed to load twinning programs. Please check your connection and try again.',
+          }));
           setUniversitiesByType((prev) => ({ ...prev, twinning: [] }));
         } finally {
           if (active) {
@@ -252,6 +263,20 @@ export default function ForeignUniversities() {
           >
             {loading ? (
               <ListSkeleton count={4} />
+            ) : fetchErrors[activeTab] ? (
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to Load Data"
+                description={fetchErrors[activeTab]}
+                action={
+                  <Button
+                    onClick={() => setReloadTokens((prev) => ({ ...prev, [activeTab]: prev[activeTab] + 1 }))}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Retry
+                  </Button>
+                }
+              />
             ) : filteredUniversities.length === 0 ? (
               <EmptyState
                 icon={Globe}

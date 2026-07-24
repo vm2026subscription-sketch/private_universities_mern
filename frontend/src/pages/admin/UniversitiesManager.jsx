@@ -24,6 +24,7 @@ import api from '../../utils/api';
 import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
 import { FormField, TextInput, TextArea, SelectInput, CheckboxField } from './components/FormFields';
+import { isValidEmail, isValidPhone } from '../../utils/contactValidation';
 
 const STATE_OPTIONS = [
   { value: '', label: 'Select State' },
@@ -542,8 +543,8 @@ export default function UniversitiesManager() {
         bannerImageUrl: form.bannerImageUrl || undefined,
         website: form.website || undefined,
         address: form.address || undefined,
-        phone: form.phone || undefined,
-        email: form.email || undefined,
+        phone: isValidPhone(form.phone) ? form.phone.trim() : undefined,
+        email: isValidEmail(form.email) ? form.email.trim() : undefined,
         isSponsored: !!form.isSponsored,
         sponsorTier: form.sponsorTier || 'none',
         sponsorPriority: Number(form.sponsorPriority) || 0,
@@ -659,8 +660,8 @@ export default function UniversitiesManager() {
       bannerImageUrl: university.bannerImageUrl || '',
       website: university.website || '',
       address: university.address || '',
-      phone: university.phone || '',
-      email: university.email || '',
+      phone: isValidPhone(university.phone) ? university.phone : '',
+      email: isValidEmail(university.email) ? university.email : '',
       isSponsored: !!university.isSponsored,
       sponsorTier: university.sponsorTier || 'none',
       sponsorPriority: university.sponsorPriority || 0,

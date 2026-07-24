@@ -79,7 +79,9 @@ export default function CompareView({ compareList, onRemove }) {
           {compareList.map((university) => (
             <div key={university._id} className="space-y-12 relative group">
               <button
+                type="button"
                 onClick={() => onRemove(university)}
+                aria-label={`Remove ${university.name || 'college'} from comparison`}
                 className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg z-10"
               >
                 <X className="w-4 h-4" />

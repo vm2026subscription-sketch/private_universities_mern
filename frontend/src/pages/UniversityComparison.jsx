@@ -52,10 +52,21 @@ export default function UniversityComparison() {
   const [loadingResults, setLoadingResults] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  const [exampleUnis, setExampleUnis] = useState(EXAMPLE_UNIVERSITIES);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef(null);
   const searchWrapRef = useRef(null);
   useClickOutside(searchWrapRef, () => setShowSuggestions(false), showSuggestions);
+
+  useEffect(() => {
+    api.get('/universities?limit=4')
+      .then(({ data }) => {
+        if (Array.isArray(data.data) && data.data.length > 0) {
+          setExampleUnis(data.data.map((u) => u.name));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('compareRecentSearches');
@@ -247,7 +258,7 @@ export default function UniversityComparison() {
                             >
                               <div className="w-11 h-11 rounded-xl bg-slate-50 dark:bg-dark-bg flex items-center justify-center border border-slate-200 dark:border-dark-border shrink-0 p-1.5 overflow-hidden shadow-sm">
                                 {university.logoUrl ? (
-                                  <img src={university.logoUrl} alt="" className="w-full h-full object-contain" />
+                                  <img src={university.logoUrl} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" />
                                 ) : (
                                   <span className="text-base font-bold text-link">{university.name?.[0]}</span>
                                 )}
@@ -375,7 +386,7 @@ export default function UniversityComparison() {
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-dark-bg border border-slate-100 dark:border-dark-border p-1.5 flex items-center justify-center shrink-0">
                            {university.logoUrl ? (
-                             <img src={university.logoUrl} alt="" className="w-full h-full object-contain" />
+                             <img src={university.logoUrl} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" />
                            ) : (
                              <span className="text-lg font-bold text-slate-400">{university.name[0]}</span>
                            )}
@@ -435,7 +446,7 @@ export default function UniversityComparison() {
               <div className="mt-6 pt-6 border-t border-slate-100 dark:border-dark-border">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 text-center">Popular Benchmarks</p>
                 <div className="flex flex-wrap gap-2 justify-center">
-                  {EXAMPLE_UNIVERSITIES.map((name) => (
+                  {exampleUnis.map((name) => (
                     <button
                       key={name}
                       onClick={() => {
@@ -556,7 +567,7 @@ export default function UniversityComparison() {
                         {comparison.universities.map((university) => (
                           <th key={university._id} className="text-left py-5 px-6 font-bold text-slate-900 dark:text-white w-48">
                             <div className="flex items-center gap-3">
-                              {university.logoUrl && <img src={university.logoUrl} className="w-6 h-6 object-contain" alt="" />}
+                              {university.logoUrl && <img src={university.logoUrl} className="w-6 h-6 object-contain" alt="" loading="lazy" decoding="async" />}
                               <span className="truncate">{university.name}</span>
                             </div>
                           </th>
@@ -649,7 +660,7 @@ export default function UniversityComparison() {
                       <div className="flex gap-5">
                         <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-dark-bg border border-slate-100 dark:border-dark-border flex items-center justify-center p-2 shrink-0">
                            {university.logoUrl ? (
-                             <img src={university.logoUrl} alt="" className="w-full h-full object-contain" />
+                             <img src={university.logoUrl} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" />
                            ) : (
                              <GraduationCap className="w-8 h-8 text-link" />
                            )}

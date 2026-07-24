@@ -1,15 +1,16 @@
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   GraduationCap, BookOpen, Users, ArrowRight, MapPin, ChevronRight,
   Bell, Target, Stethoscope, Briefcase, Scale, Palette, Building2,
-  Wheat, Atom, ShoppingCart, Pill, Heart, BookMarked, MessageSquare,
+  Atom, MessageSquare,
   ShieldCheck, FileDown, Sparkles, PhoneCall,
   School, Trophy, Newspaper, Search, ThumbsUp,
-  Calendar, Award, DollarSign, Plus, X, Star
+  Award, Plus, X, Star, Loader2
 } from 'lucide-react';
 import api from '../utils/api';
+import { isValidEmail, isValidPhone } from '../utils/contactValidation';
 import Seo from '../components/common/Seo';
 import { siteJsonLd } from '../utils/seo';
 import { useAiChat } from '../context/AiChatContext';
@@ -157,6 +158,32 @@ export default function Home() {
   const navigate = useNavigate();
   const [cachedHomeData] = useState(() => getCachedHomeData());
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (!isSearchDropdownOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+
+    const handleScroll = () => {
+      setIsSearchDropdownOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isSearchDropdownOpen]);
   const [exams, setExams] = useState(() => cachedHomeData?.exams || []);
   const [universities, setUniversities] = useState(() => cachedHomeData?.universities || []);
   const [questions, setQuestions] = useState(() => cachedHomeData?.questions || []);
@@ -176,6 +203,7 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [showAllStatesModal, setShowAllStatesModal] = useState(false);
 
   const ALL_INDIA_STATES = [
@@ -294,12 +322,38 @@ export default function Home() {
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
 
+    const name = String(data.name || '').trim();
+    const email = String(data.email || '').trim();
+    const mobile = String(data.mobile || '').trim();
+    const role = String(data.role || '').trim();
+    const content = String(data.content || '').trim();
+
+    if (!name) return toast.error('Please enter your name');
+    if (mobile && !isValidPhone(mobile)) return toast.error('Please enter a valid mobile number');
+    if (!email || !isValidEmail(email)) return toast.error('Please enter a valid email address');
+    if (!role) return toast.error('Please enter your designation');
+    if (!content) return toast.error('Please write your feedback/review');
+
+    setIsSubmittingFeedback(true);
     try {
-      await api.post('/testimonials', data);
-      toast.success('Thank you! Your feedback has been submitted for review.');
+      const payload = {
+        name,
+        email,
+        mobile: mobile || undefined,
+        role,
+        content,
+        ...(avatarPreview ? { imageUrl: avatarPreview } : {}),
+      };
+
+      const res = await api.post('/testimonials', payload);
+      toast.success(res.data?.message || 'Thank you! Your feedback has been submitted for review.');
+      setAvatarPreview(null);
       setShowFeedback(false);
     } catch (error) {
-      toast.error('Submission failed. Please try again.');
+      const errorMsg = error.response?.data?.message || 'Submission failed. Please try again.';
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
@@ -391,6 +445,8 @@ export default function Home() {
           {featuredUniversities.map((_, i) => (
             <button
               key={i}
+              type="button"
+              aria-label={`Go to slide ${i + 1}`}
               onClick={() => setCurrentSlide(i)}
               className={`h-1.5 rounded-full transition-all duration-500 ${i === currentSlide % featuredUniversities.length ? 'w-8 bg-primary' : 'w-2 bg-white/40'
                 }`}
@@ -402,6 +458,7 @@ export default function Home() {
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30">
           <motion.button
             key={`tag-${currentSlide}`}
+            type="button"
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             onClick={() => navigate(getUniversityPath(featuredUniversity))}
@@ -428,7 +485,7 @@ export default function Home() {
               Explore simplified admissions, authentic campus details, and directly connect with institutions.
             </p>
 
-            <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto group">
+            <form ref={searchContainerRef} onSubmit={(e) => { setIsSearchDropdownOpen(false); handleSearch(e); }} className="relative max-w-2xl mx-auto group">
               <div className="relative flex shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-2xl overflow-hidden bg-white p-1">
                 <div className="flex items-center pl-5 pr-3">
                   <Search className="w-6 h-6 text-link" />
@@ -436,7 +493,20 @@ export default function Home() {
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setIsSearchDropdownOpen(true);
+                  }}
+                  onFocus={() => {
+                    if (searchTerm.trim().length >= 2) {
+                      setIsSearchDropdownOpen(true);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setIsSearchDropdownOpen(false);
+                    }
+                  }}
                   placeholder="Search for a university..."
                   className="w-full min-w-0 py-4 bg-transparent text-slate-900 text-lg font-bold placeholder:text-slate-400 focus:outline-none"
                 />
@@ -445,13 +515,17 @@ export default function Home() {
                 </button>
               </div>
 
-              {quickSearchSuggestions.length > 0 && (
+              {isSearchDropdownOpen && quickSearchSuggestions.length > 0 && (
                 <div className="absolute left-0 right-0 top-[calc(100%+12px)] z-30 overflow-hidden rounded-3xl border border-white/20 bg-white/95 p-2 text-left shadow-[0_24px_60px_rgba(15,23,42,0.28)] backdrop-blur">
                   {quickSearchSuggestions.map((suggestion) => (
                     <button
                       key={`${suggestion.label}-${suggestion.sublabel}`}
                       type="button"
-                      onClick={suggestion.action}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        suggestion.action();
+                        setIsSearchDropdownOpen(false);
+                      }}
                       className="flex w-full items-center justify-between gap-4 rounded-2xl px-4 py-3 transition-colors hover:bg-slate-100"
                     >
                       <div>
@@ -806,7 +880,7 @@ export default function Home() {
                       >
                         <div className="flex flex-col md:flex-row gap-6 items-start">
                           {activeTestimonial.avatarUrl ? (
-                            <img src={activeTestimonial.avatarUrl} alt={activeTestimonial.name} className="w-16 h-16 rounded-2xl shrink-0 object-cover shadow-sm" />
+                            <img src={activeTestimonial.avatarUrl} alt={activeTestimonial.name} className="w-16 h-16 rounded-2xl shrink-0 object-cover shadow-sm" loading="lazy" decoding="async" />
                           ) : (
                             <div className="w-16 h-16 bg-primary rounded-2xl shrink-0 flex items-center justify-center text-2xl font-bold shadow-sm">
                               {activeTestimonial.name ? activeTestimonial.name[0].toUpperCase() : 'V'}
@@ -971,8 +1045,28 @@ export default function Home() {
                     </div>
 
                     <div className="flex gap-4 pt-4">
-                      <button type="submit" className="px-12 bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition-all uppercase tracking-widest shadow-lg shadow-green-600/20">Submit</button>
-                      <button type="button" onClick={() => setShowFeedback(false)} className="px-12 bg-red-500 text-white font-bold py-4 rounded-lg hover:bg-red-600 transition-all uppercase tracking-widest shadow-lg shadow-red-500/20">Cancel</button>
+                      <button
+                        type="submit"
+                        disabled={isSubmittingFeedback}
+                        className="px-12 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-all uppercase tracking-widest shadow-lg shadow-green-600/20 flex items-center justify-center gap-2"
+                      >
+                        {isSubmittingFeedback ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Submitting...</span>
+                          </>
+                        ) : (
+                          'Submit'
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSubmittingFeedback}
+                        onClick={() => setShowFeedback(false)}
+                        className="px-12 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-all uppercase tracking-widest shadow-lg shadow-red-500/20"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
 

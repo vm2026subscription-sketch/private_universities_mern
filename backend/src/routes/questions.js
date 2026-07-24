@@ -1,10 +1,12 @@
 const router = require('express').Router();
-const { getQuestions, getQuestion, createQuestion, postAnswer, upvoteQuestion, markBestAnswer, generateQuestionHelp } = require('../controllers/questionController');
+const { getQuestions, getQuestion, createQuestion, postAnswer, upvoteQuestion, upvoteAnswer, markBestAnswer, generateQuestionHelp } = require('../controllers/questionController');
 const { protect } = require('../middleware/auth');
 router.route('/').get(getQuestions).post(protect, createQuestion);
 router.post('/assist', generateQuestionHelp);
 router.get('/:id', getQuestion);
 router.post('/:id/answers', protect, postAnswer);
 router.put('/:id/upvote', protect, upvoteQuestion);
+router.put('/:questionId/answers/:answerId/upvote', protect, upvoteAnswer);
+router.post('/:questionId/answers/:answerId/helpful', protect, upvoteAnswer);
 router.put('/:questionId/answers/:answerId/best', protect, markBestAnswer);
 module.exports = router;

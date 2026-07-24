@@ -1,6 +1,8 @@
+import { useState, useEffect, useMemo } from 'react';
 import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import { Rocket, TrendingUp, Award, Users, BookOpen, Globe } from 'lucide-react';
+import api from '../utils/api';
 
 const teamMembers = [
   {
@@ -37,14 +39,25 @@ const milestones = [
   { year: '2021', label: 'Career Assessment Test Portal', desc: 'VidyarthiMitra.org Career Assessment Test designed with the help of well-known senior professional psychologists & Artificial Intelligence.' },
 ];
 
-const stats = [
-  { icon: Users, value: '1L+', label: 'Students Counselled' },
-  { icon: BookOpen, value: '700+', label: 'Universities Listed' },
-  { icon: Globe, value: '35+', label: 'States Covered' },
-  { icon: Award, value: '40+', label: 'Years of Experience' },
-];
-
 export default function About() {
+  const [uniTotal, setUniTotal] = useState(null);
+
+  useEffect(() => {
+    api.get('/universities?limit=1')
+      .then(({ data }) => {
+        if (typeof data.total === 'number') {
+          setUniTotal(data.total);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const stats = useMemo(() => [
+    { icon: Users, value: '1L+', label: 'Students Counselled' },
+    { icon: BookOpen, value: uniTotal ? `${uniTotal.toLocaleString()}+` : '700+', label: 'Universities Listed' },
+    { icon: Globe, value: '35+', label: 'States Covered' },
+    { icon: Award, value: '40+', label: 'Years of Experience' },
+  ], [uniTotal]);
   return (
     <div className="bg-[#f8fafc] dark:bg-dark-bg min-h-screen pb-20 md:pb-0">
       <Seo

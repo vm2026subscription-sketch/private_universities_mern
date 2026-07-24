@@ -187,6 +187,46 @@ exports.markBestAnswer = async (req, res) => {
   }
 };
 
+exports.upvoteAnswer = async (req, res) => {
+  try {
+    const { questionId, answerId } = req.params;
+    const targetQuestionId = questionId || req.params.id;
+    const question = await Question.findById(targetQuestionId);
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
+
+    const answer = question.answers.id(answerId);
+    if (!answer) return res.status(404).json({ success: false, message: 'Answer not found' });
+
+    if (!answer.upvotes) answer.upvotes = [];
+    const userIdStr = req.user._id.toString();
+    const idx = answer.upvotes.findIndex((uId) => uId.toString() === userIdStr);
+
+    let voted = false;
+    if (idx > -1) {
+      answer.upvotes.splice(idx, 1);
+      voted = false;
+    } else {
+      answer.upvotes.push(req.user._id);
+      voted = true;
+    }
+
+    await question.save();
+
+    const updatedQuestion = await Question.findById(targetQuestionId)
+      .populate('userId', 'name avatar')
+      .populate('answers.userId', 'name avatar');
+
+    res.json({
+      success: true,
+      data: updatedQuestion,
+      voted,
+      helpfulCount: answer.upvotes.length
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.generateQuestionHelp = async (req, res) => {
   try {
     const { title, content, category, mode } = req.body;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, Send, User, ChevronRight, HelpCircle } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Send, User, ChevronRight, HelpCircle, Loader2 } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -7,6 +7,7 @@ export default function QASection({ universityId, user }) {
   const [questions, setQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState('');
   const [loading, setLoading] = useState(false);
+  const [votingAnswerId, setVotingAnswerId] = useState(null);
 
   useEffect(() => {
     fetchQuestions();
@@ -18,6 +19,26 @@ export default function QASection({ universityId, user }) {
       setQuestions(res.data.data || []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleHelpfulVote = async (questionId, answerId) => {
+    if (!user) return toast.error('Please login to mark answer as helpful');
+    if (votingAnswerId) return;
+
+    setVotingAnswerId(answerId);
+    try {
+      const res = await api.put(`/questions/${questionId}/answers/${answerId}/upvote`);
+      if (res.data?.success) {
+        toast.success(res.data.voted ? 'Marked as helpful!' : 'Helpful vote removed');
+        setQuestions((prevQuestions) =>
+          prevQuestions.map((q) => (q._id === questionId ? (res.data.data || q) : q))
+        );
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit vote');
+    } finally {
+      setVotingAnswerId(null);
     }
   };
 
@@ -84,17 +105,36 @@ export default function QASection({ universityId, user }) {
 
               {/* Answers */}
               <div className="pl-4 sm:pl-14 space-y-4">
-                 {(q.answers || []).map((ans, j) => (
-                   <div key={j} className="p-4 bg-light-bg dark:bg-dark-border/50 rounded-2xl relative">
-                      <p className="text-sm">{ans.content}</p>
-                      <div className="flex items-center justify-between mt-3">
-                         <span className="text-[10px] font-bold text-light-muted italic">Answered by {ans.userId?.name || 'Student'}</span>
-                         <button className="flex items-center gap-1 text-[10px] font-bold text-link uppercase">
-                            <ThumbsUp className="w-3 h-3" /> Helpful
-                         </button>
-                      </div>
-                   </div>
-                 ))}
+                 {(q.answers || []).map((ans) => {
+                   const upvotesArr = ans.upvotes || [];
+                   const helpfulCount = upvotesArr.length;
+                   const isVoted = user && upvotesArr.some((uId) => (uId._id || uId).toString() === user._id.toString());
+                   const isVoting = votingAnswerId === ans._id;
+
+                   return (
+                     <div key={ans._id || ans.content} className="p-4 bg-light-bg dark:bg-dark-border/50 rounded-2xl relative">
+                        <p className="text-sm">{ans.content}</p>
+                        <div className="flex items-center justify-between mt-3">
+                           <span className="text-[10px] font-bold text-light-muted italic">Answered by {ans.userId?.name || 'Student'}</span>
+                           <button
+                             type="button"
+                             onClick={() => handleHelpfulVote(q._id, ans._id)}
+                             disabled={isVoting}
+                             className={`flex items-center gap-1 text-[10px] font-bold uppercase transition-colors ${
+                               isVoted ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : 'text-link hover:opacity-80'
+                             } disabled:opacity-50`}
+                           >
+                             {isVoting ? (
+                               <Loader2 className="w-3 h-3 animate-spin" />
+                             ) : (
+                               <ThumbsUp className={`w-3 h-3 ${isVoted ? 'fill-current' : ''}`} />
+                             )}
+                             <span>Helpful {helpfulCount > 0 ? `(${helpfulCount})` : ''}</span>
+                           </button>
+                        </div>
+                     </div>
+                   );
+                 })}
                  
                  {q.answers?.length === 0 && (
                    <div className="p-4 border border-dashed border-light-border dark:border-dark-border rounded-2xl text-center">

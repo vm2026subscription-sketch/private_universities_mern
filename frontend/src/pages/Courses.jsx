@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
   ChevronRight, CheckCircle2, Sparkles, Building2, Pencil, Trash2,
-  AlertTriangle, Save, Loader2, Award
+  AlertTriangle, Save, Loader2, Award, AlertCircle, RefreshCw
 } from 'lucide-react';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -335,10 +335,13 @@ export default function Courses() {
   const universityName = searchParams.get('universityName');
   const cachedStreams = readSessionCache(STREAMS_CACHE_KEY, STREAMS_CACHE_TTL_MS) || [];
   
+  const urlSearchParam = searchParams.get('search') || '';
   const [courses, setCourses] = useState([]);
   const [streams, setStreams] = useState(cachedStreams);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [fetchError, setFetchError] = useState(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [search, setSearch] = useState(urlSearchParam);
   const [stateSearch, setStateSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -346,15 +349,39 @@ export default function Courses() {
   const deferredSearch = useDeferredValue(search);
   const deferredStateSearch = useDeferredValue(stateSearch);
 
+  useEffect(() => {
+    const q = searchParams.get('search') || '';
+    setSearch(q);
+  }, [location.search]);
+
   // Edit / Delete modal state
   const [editingCourse, setEditingCourse] = useState(null);
   const [deletingCourse, setDeletingCourse] = useState(null);
 
+  const extractTextValues = (val) => {
+    if (val === null || val === undefined) return [];
+    if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+      return [String(val).trim()];
+    }
+    if (Array.isArray(val)) {
+      return val.flatMap(extractTextValues);
+    }
+    if (typeof val === 'object') {
+      return [
+        val.name,
+        val.title,
+        val.specializationName,
+        val.baseCourse,
+        val.city,
+        val.state,
+      ].flatMap(extractTextValues);
+    }
+    return [];
+  };
+
   const normalizeText = (...values) =>
     values
-      .flat()
-      .filter((value) => value !== null && value !== undefined)
-      .map((value) => String(value).trim())
+      .flatMap(extractTextValues)
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
@@ -377,6 +404,7 @@ export default function Courses() {
   useEffect(() => {
     let active = true;
     const loadData = async () => {
+      setFetchError(null);
       try {
         let queryParams = new URLSearchParams();
         if (selectedCategory !== 'All') queryParams.append('category', selectedCategory);
@@ -415,15 +443,15 @@ export default function Courses() {
             setTotalCount(data.data?.length || 0);
           }
         }
-      } catch {
-        if (active) setCourses([]);
+      } catch (err) {
+        if (active) setFetchError(err?.response?.data?.message || 'Failed to load courses. Please check your network connection and try again.');
       } finally {
         if (active) setLoading(false);
       }
     };
     loadData();
     return () => { active = false; };
-  }, [selectedCategory, universityId, selectedState, selectedCourse, selectedStream]);
+  }, [selectedCategory, universityId, selectedState, selectedCourse, selectedStream, reloadToken]);
 
   useEffect(() => {
     setVisibleCount(24);
@@ -481,23 +509,34 @@ export default function Courses() {
         category: course.category || 'Others',
         stream: course.stream || 'Others',
         normName: normalizeText(course.name),
-        searchIndex: normalizeText(course.name, course.category, course.stream, course.specializations),
+        searchIndex: normalizeText(
+          course.name,
+          course.baseCourse,
+          course.specializationName,
+          course.category,
+          course.stream,
+          course.specializations,
+          course.entranceExams,
+          course.universityId
+        ),
       }));
   }, [courses, selectedCourse]);
 
   const filteredCourseGroups = useMemo(() => {
     let filtered = courseGroups;
     if (selectedSpec !== 'All') {
-      filtered = filtered.filter(group => 
-        group.specializations?.includes(selectedSpec) || 
-        group.specializationName === selectedSpec
-      );
+      filtered = filtered.filter(group => {
+        const specList = Array.isArray(group.specializations)
+          ? group.specializations.map(s => (typeof s === 'object' ? s?.name : s)).filter(Boolean)
+          : [];
+        return specList.includes(selectedSpec) || group.specializationName === selectedSpec;
+      });
     }
-    const query = search.trim().toLowerCase();
+    const query = (deferredSearch || search).trim().toLowerCase();
     if (!query) return filtered;
-    const terms = query.split(' ').filter(Boolean);
+    const terms = query.split(/\s+/).filter(Boolean);
     return filtered.filter((group) => terms.every(t => group.searchIndex.includes(t)));
-  }, [courseGroups, deferredSearch, selectedSpec]);
+  }, [courseGroups, deferredSearch, search, selectedSpec]);
 
   const visibleCourseGroups = useMemo(() => filteredCourseGroups.slice(0, visibleCount), [filteredCourseGroups, visibleCount]);
 
@@ -549,18 +588,25 @@ export default function Courses() {
     if (selectedSpec !== 'All') {
       filtered = filtered.filter(c => c.specializationName === selectedSpec);
     }
-    const query = search.trim().toLowerCase();
+    const query = (deferredSearch || search).trim().toLowerCase();
     if (!query) return filtered;
-    return filtered.filter((course) =>
-      normalizeText(
+    const terms = query.split(/\s+/).filter(Boolean);
+    return filtered.filter((course) => {
+      const searchIndex = normalizeText(
         course.universityId?.name,
         course.universityId?.city,
         course.universityId?.state,
         course.specializationName,
-        course.name
-      ).includes(query)
-    );
-  }, [courses, selectedCourse, search, selectedSpec]);
+        course.baseCourse,
+        course.name,
+        course.category,
+        course.stream,
+        course.entranceExams,
+        course.specializations
+      );
+      return terms.every(t => searchIndex.includes(t));
+    });
+  }, [courses, selectedCourse, deferredSearch, search, selectedSpec]);
 
   const visibleColleges = useMemo(() => filteredColleges.slice(0, visibleCount), [filteredColleges, visibleCount]);
 
@@ -885,6 +931,19 @@ export default function Courses() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {[1,2,3,4,5,6].map(i => <CardSkeleton key={i} />)}
             </div>
+          ) : fetchError ? (
+            <Card className="border-2 border-dashed">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to Load Courses"
+                description={fetchError}
+                action={(
+                  <Button onClick={() => setReloadToken((t) => t + 1)} className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4" /> Retry
+                  </Button>
+                )}
+              />
+            </Card>
           ) : (
             <div className="space-y-16">
               {filteredCourseGroups.length === 0 && !selectedCourse && (

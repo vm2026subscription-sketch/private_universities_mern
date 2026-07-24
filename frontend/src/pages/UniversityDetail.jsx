@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, Globe, Phone, Mail, BookOpen, Users, Award, 
-  Building, Bookmark, Share2, Camera, ChevronRight, CheckCircle2, ArrowRight, ExternalLink,
+  Building, Bookmark, Share2, ChevronRight, CheckCircle2, ArrowRight, ExternalLink,
   Edit, Trash2, Save, X, ClipboardList, GraduationCap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +16,7 @@ import UniversityLogo from '../components/common/UniversityLogo';
 // generateBrochure (jspdf ~1MB) is loaded on demand inside the download handler
 // so the PDF library never ships with the initial page load.
 import LeadCaptureModal from '../components/university/LeadCaptureModal';
+import { getValidEmail, getValidPhone } from '../utils/contactValidation';
 
 const tabs = ['Overview', 'Courses', 'Admissions', 'Placements', 'Campus', 'Scholarships', 'Q&A', 'News'];
 
@@ -296,7 +297,7 @@ export default function UniversityDetail() {
       {/* Header Banner */}
       <div className="h-48 md:h-64 bg-slate-900 relative overflow-hidden">
         {uni.bannerImageUrl ? (
-          <img src={uni.bannerImageUrl} alt={uni.name} className="w-full h-full object-cover opacity-50" />
+          <img src={uni.bannerImageUrl} alt={uni.name} className="w-full h-full object-cover opacity-50" loading="eager" decoding="async" fetchPriority="high" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary-light opacity-20" />
         )}
@@ -492,13 +493,17 @@ export default function UniversityDetail() {
                     <div className="space-y-8">
                       <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-link border-b border-primary/10 pb-4">Campus Contacts</h3>
                       <div className="space-y-5">
-                         {[
-                           { icon: MapPin, value: uni.address || `${uni.city}, ${uni.state}` },
-                           { icon: Globe, value: uni.website, link: true },
-                           ...(admissionUrl ? [{ icon: ExternalLink, value: admissionUrl, link: true, isAdmission: true }] : []),
-                           { icon: Mail, value: uni.email || `admissions@${uni.slug}.edu.in` },
-                           { icon: Phone, value: uni.phone || '+91 000 000 0000' }
-                         ].map((item, i) => (
+                         {(() => {
+                           const validEmail = getValidEmail(uni.email, uni.admissions?.contactEmail);
+                           const validPhone = getValidPhone(uni.phone, uni.admissions?.contactPhone);
+                           return [
+                             { icon: MapPin, value: uni.address || `${uni.city}, ${uni.state}` },
+                             { icon: Globe, value: uni.website, link: true },
+                             ...(admissionUrl ? [{ icon: ExternalLink, value: admissionUrl, link: true, isAdmission: true }] : []),
+                             ...(validEmail ? [{ icon: Mail, value: validEmail }] : []),
+                             ...(validPhone ? [{ icon: Phone, value: validPhone }] : []),
+                           ].filter(item => Boolean(item.value));
+                         })().map((item, i) => (
                            <div key={i} className="flex gap-4 items-start">
                              <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl">
                                <item.icon className="w-4 h-4 text-slate-400" />
@@ -749,7 +754,7 @@ export default function UniversityDetail() {
                 >
                   <div className="w-16 h-16 bg-slate-50 rounded-2xl mb-4 flex items-center justify-center overflow-hidden border border-slate-100 p-2">
                     {u.logoUrl ? (
-                      <img src={u.logoUrl} alt={u.name} className="w-full h-full object-contain" />
+                      <img src={u.logoUrl} alt={u.name} className="w-full h-full object-contain" loading="lazy" decoding="async" />
                     ) : (
                       <span className="text-2xl font-bold text-link">{u.name[0]}</span>
                     )}

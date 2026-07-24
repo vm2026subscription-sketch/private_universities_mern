@@ -16,12 +16,15 @@ import {
   Briefcase,
   Bell,
   Share2,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import api, { TOKEN_KEY, REFRESH_KEY } from '../utils/api';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getUniversityDisplayType } from '../utils/universityType';
 import useClickOutside from '../hooks/useClickOutside';
+import { EmptyState, Button } from '../components/ui';
 
 const DashboardOverview = lazy(() => import('../components/profile/DashboardOverview'));
 const SavedColleges = lazy(() => import('../components/profile/SavedColleges'));
@@ -59,9 +62,9 @@ export default function Profile() {
   const [allCourses, setAllCourses] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState(null);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [compareList, setCompareList] = useState([]);
-  const [allUniversities, setAllUniversities] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -74,12 +77,12 @@ export default function Profile() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [profileRes, coursesRes, recommendRes, trendsRes, allUniRes, notificationsRes] = await Promise.allSettled([
+      setProfileError(null);
+      const [profileRes, coursesRes, recommendRes, trendsRes, notificationsRes] = await Promise.allSettled([
         api.get('/users/profile'),
         api.get('/courses'),
         api.get('/users/recommendations'),
         api.get('/universities/trends'),
-        api.get('/universities?limit=1000'),
         api.get('/notifications'),
       ]);
 
@@ -91,10 +94,10 @@ export default function Profile() {
       setAllCourses(coursesRes.status === 'fulfilled' ? (coursesRes.value.data.data || []) : []);
       setRecommendations(recommendRes.status === 'fulfilled' ? (recommendRes.value.data.data || []) : []);
       setTrends(trendsRes.status === 'fulfilled' ? trendsRes.value.data : { popularUniversities: [], trendingCourses: [] });
-      setAllUniversities(allUniRes.status === 'fulfilled' ? (allUniRes.value.data.data || []) : []);
       setNotifications(notificationsRes.status === 'fulfilled' ? (notificationsRes.value.data.data || []) : []);
     } catch (error) {
       console.error('Profile load failed:', error);
+      setProfileError('Failed to load profile data. Please check your network connection and try again.');
       toast.error('Failed to load profile data');
     } finally {
       setLoading(false);
@@ -342,11 +345,28 @@ export default function Profile() {
     }
   };
 
-  if (loading || !fullUser) {
+  if (loading && !fullUser) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-light-bg dark:bg-dark-bg gap-4">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary shadow-lg" />
         <p className="text-sm font-bold text-light-muted animate-pulse">Synchronizing your dashboard...</p>
+      </div>
+    );
+  }
+
+  if (!fullUser && profileError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-light-bg dark:bg-dark-bg">
+        <EmptyState
+          icon={AlertCircle}
+          title="Failed to Load Profile"
+          description={profileError}
+          action={
+            <Button onClick={fetchData} className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" /> Retry
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -411,7 +431,7 @@ export default function Profile() {
           >
             <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-primary/20 overflow-hidden shrink-0 border-2 border-white/50">
               {fullUser.avatar ? (
-                <img src={fullUser.avatar} className="w-full h-full object-cover" alt="Profile" />
+                <img src={fullUser.avatar} className="w-full h-full object-cover" alt="Profile" loading="lazy" decoding="async" />
               ) : (
                 fullUser.name?.charAt(0)
               )}

@@ -14,6 +14,7 @@ export default function FAQManager() {
   const [form, setForm] = useState(empty());
   const [editId, setEditId] = useState(null);
   const [show, setShow] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => api.get('/admin/faqs').then(r => setItems(r.data.data || []));
   useEffect(() => { load(); }, []);
@@ -21,11 +22,14 @@ export default function FAQManager() {
 
   const save = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     try {
       if (editId) await api.put(`/admin/faqs/${editId}`, form);
       else await api.post('/admin/faqs', form);
       toast.success('Saved'); setForm(empty()); setEditId(null); setShow(false); load();
     } catch (err) { toast.error('Failed'); }
+    finally { setSaving(false); }
   };
 
   const edit = (f) => { setForm(f); setEditId(f._id); setShow(true); };
@@ -46,7 +50,7 @@ export default function FAQManager() {
             <FormField label="Order"><TextInput type="number" value={form.order} onChange={e => upd('order', Number(e.target.value))} /></FormField>
           </div>
           <CheckboxField label="Published" checked={form.isPublished} onChange={e => upd('isPublished', e.target.checked)} />
-          <FormActions onCancel={() => { setShow(false); setEditId(null); }} isEditing={!!editId} />
+          <FormActions loading={saving} onCancel={() => { setShow(false); setEditId(null); }} isEditing={!!editId} />
         </form>
       )}
       <DataTable data={items} columns={[

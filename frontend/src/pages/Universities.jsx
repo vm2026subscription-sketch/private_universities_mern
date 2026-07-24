@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap, Loader2 } from 'lucide-react';
+import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
@@ -18,34 +18,35 @@ import LeadCaptureModal from '../components/university/LeadCaptureModal';
 
 const states = [
   'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
-  'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli', 'Daman and Diu', 'Delhi NCR', 
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 
-  'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 
-  'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 
-  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 
-  'Uttarakhand', 'West Bengal'
+  'Chandigarh', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 
+  'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 'Kerala', 
+  'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 
+  'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 
+  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
 ];
 const naacGrades = ['A++','A+','A','B++','B','Not Rated'];
 
 export default function Universities() {
-  const { user } = useAuth();
-  const [universities, setUniversities] = useState([]);
-  const [savedIds, setSavedIds] = useState([]);
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState('ranking');
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
-  const [leadModalOpen, setLeadModalOpen] = useState(false);
-  const [selectedUni, setSelectedUni] = useState(null);
-  const [leadType, setLeadType] = useState('apply');
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const initialSearch = searchParams.get('search') || '';
-  const initialState = searchParams.get('state');
-  const initialCity = searchParams.get('city');
-  
+  const initialState = searchParams.get('state') || '';
+  const initialCity = searchParams.get('city') || '';
+
+  const { user } = useAuth();
+  const [universities, setUniversities] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [savedIds, setSavedIds] = useState([]);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [selectedUniForLead, setSelectedUniForLead] = useState(null);
+  const [leadModalType, setLeadModalType] = useState('apply');
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState('nirf'); // 'nirf' | 'rating' | 'name'
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ 
     state: initialState ? [initialState] : [], 
     type: 'both', 
@@ -124,6 +125,7 @@ export default function Universities() {
 
   useEffect(() => {
     setLoading(true);
+    setFetchError(null);
     const params = new URLSearchParams();
     if (initialSearch) params.set('search', initialSearch);
     if (filters.state.length) params.set('state', filters.state.join(','));
@@ -140,8 +142,10 @@ export default function Universities() {
         setUniversities(prev => [...prev, ...(data.data || [])]);
       }
       setTotal(data.total || 0);
-    }).catch(() => setUniversities([])).finally(() => setLoading(false));
-  }, [filters, sort, page, initialSearch]);
+    }).catch((err) => {
+      setFetchError(err.response?.data?.message || 'Unable to load universities. Please check your connection and try again.');
+    }).finally(() => setLoading(false));
+  }, [filters, sort, page, initialSearch, reloadToken]);
 
   const toggleFilter = (key, value) => {
     setFilters(f => {
@@ -251,7 +255,20 @@ export default function Universities() {
 
         <div className="flex-1">
           <p className="text-sm text-light-muted mb-4">{total} universities found</p>
-          {loading ? <CardSkeleton /> : universities.length === 0 ? (
+          {loading ? (
+            <CardSkeleton />
+          ) : fetchError ? (
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to Load Universities"
+              description={fetchError}
+              action={
+                <Button onClick={() => setReloadToken((t) => t + 1)} className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4" /> Retry
+                </Button>
+              }
+            />
+          ) : universities.length === 0 ? (
             <EmptyState
               icon={GraduationCap}
               title="No Universities Found"

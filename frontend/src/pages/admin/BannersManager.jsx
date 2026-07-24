@@ -15,6 +15,7 @@ export default function BannersManager() {
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => api.get('/admin/banners').then(r => setBanners(r.data.data || [])).catch(() => toast.error('Failed to load'));
   useEffect(() => {
@@ -28,6 +29,8 @@ export default function BannersManager() {
 
   const save = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     try {
       const payload = { ...form, priority: Number(form.priority) || 0, universityId: form.universityId || null };
       if (form.startDate) payload.startDate = form.startDate;
@@ -39,6 +42,7 @@ export default function BannersManager() {
       else { await api.post('/admin/banners', payload); toast.success('Created'); }
       setForm(emptyForm()); setEditId(null); setShowForm(false); load();
     } catch (err) { toast.error(err.response?.data?.message || 'Save failed'); }
+    finally { setSaving(false); }
   };
 
   const edit = (b) => {
@@ -155,7 +159,7 @@ export default function BannersManager() {
             <FormField label="End Date"><TextInput type="date" value={form.endDate} onChange={e => upd('endDate', e.target.value)} /></FormField>
           </div>
           <CheckboxField label="Active" checked={form.isActive} onChange={e => upd('isActive', e.target.checked)} />
-          <FormActions onCancel={() => { setShowForm(false); setEditId(null); setForm(emptyForm()); }} isEditing={!!editId} />
+          <FormActions loading={saving} onCancel={() => { setShowForm(false); setEditId(null); setForm(emptyForm()); }} isEditing={!!editId} />
         </form>
       )}
 

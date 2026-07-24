@@ -1,24 +1,9 @@
-import { LayoutDashboard, Bookmark, BookOpen, Clock, Activity, TrendingUp, TrendingDown, Users, Award, ChevronRight, MapPin, Sparkles, Download, MessageSquare, Target, CheckCircle2, Lightbulb } from 'lucide-react';
+import { LayoutDashboard, Bookmark, BookOpen, Clock, Activity, TrendingUp, ChevronRight, MapPin, Sparkles, Target, CheckCircle2, Lightbulb } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 export default function DashboardOverview({ stats = {}, recentlyViewed = [], fullUser = {}, trends = {} }) {
-  // Dynamic Score Calculation
-  const calculateScore = () => {
-    let score = 0;
-    if (fullUser?.name) score += 10;
-    if (fullUser?.avatar) score += 10;
-    if (fullUser?.profile?.city) score += 10;
-    if (fullUser?.profile?.targetExam) score += 10;
-    if (fullUser?.profile?.stream) score += 10;
-    if (fullUser?.savedUniversities?.length > 0) score += 25;
-    if (fullUser?.savedCourses?.length > 0) score += 25;
-    return score;
-  };
-
-  const readinessScore = calculateScore();
-
   const cards = [
     { label: 'Saved Colleges', value: stats?.savedCollegesCount || 0, icon: Bookmark, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
     { label: 'Selected Courses', value: stats?.savedCoursesCount || 0, icon: BookOpen, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
