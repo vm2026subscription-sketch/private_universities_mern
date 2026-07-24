@@ -134,18 +134,17 @@ export default function Universities() {
     if (filters.naacGrade.length) params.set('naacGrade', filters.naacGrade.join(','));
     params.set('sort', sort);
     params.set('page', page);
-    params.set('limit', 12);
+    params.set('limit', 6);
     api.get(`/universities?${params}`).then(({ data }) => {
-      if (page === 1) {
-        setUniversities(data.data || []);
-      } else {
-        setUniversities(prev => [...prev, ...(data.data || [])]);
-      }
+      setUniversities(data.data || []);
       setTotal(data.total || 0);
     }).catch((err) => {
       setFetchError(err.response?.data?.message || 'Unable to load universities. Please check your connection and try again.');
     }).finally(() => setLoading(false));
   }, [filters, sort, page, initialSearch, reloadToken]);
+    }).catch(() => setUniversities([])).finally(() => setLoading(false));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [filters, sort, page, initialSearch]);
 
   const toggleFilter = (key, value) => {
     setFilters(f => {
@@ -404,14 +403,44 @@ export default function Universities() {
             </div>
           )}
 
-          {universities.length < total && !loading && (
-            <div className="mt-10 text-center">
-              <Button
-                variant="outline"
-                onClick={() => setPage(prev => prev + 1)}
+          {total > 6 && !loading && (
+            <div className="mt-10 flex items-center justify-center gap-2 flex-wrap">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-bold disabled:opacity-40 hover:bg-primary hover:text-white hover:border-primary transition-all"
               >
-                Load More Universities
-              </Button>
+                ← Prev
+              </button>
+
+              {Array.from({ length: Math.ceil(total / 6) }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === Math.ceil(total / 6) || Math.abs(p - page) <= 2)
+                .reduce((acc, p, idx, arr) => {
+                  if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, idx) =>
+                  p === '...' ? (
+                    <span key={`dots-${idx}`} className="px-2 text-slate-400">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${page === p ? 'bg-primary text-white shadow-md' : 'border border-slate-200 dark:border-white/10 hover:bg-primary hover:text-white hover:border-primary'}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+              <button
+                onClick={() => setPage(p => Math.min(Math.ceil(total / 6), p + 1))}
+                disabled={page === Math.ceil(total / 6)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-bold disabled:opacity-40 hover:bg-primary hover:text-white hover:border-primary transition-all"
+              >
+                Next →
+              </button>
             </div>
           )}
 

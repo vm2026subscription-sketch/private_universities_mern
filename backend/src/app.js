@@ -33,8 +33,7 @@ app.set('trust proxy', 1);
 app.use(compression());
 
 const BASE_ORIGINS = [
-  'http://localhost:5173',
-  'http://localhost:5174',
+  ...(!isProduction() ? ['http://localhost:5173', 'http://localhost:5174'] : []),
   'https://privateuniversity.vidyarthimitra.org',
   'https://www.privateuniversity.vidyarthimitra.org',
   'https://university.vidyarthimitra.org',
