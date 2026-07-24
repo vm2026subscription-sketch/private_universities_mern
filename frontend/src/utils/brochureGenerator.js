@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { getUniversityDisplayType } from './universityType';
+import { getValidEmail, getValidPhone } from './contactValidation';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 const PC  = [13, 148, 136];   // primary teal  #0d9488
@@ -83,14 +84,17 @@ export const generateBrochure = (university) => {
   sectionHeader(doc, '  UNIVERSITY AT A GLANCE', y);
   y += 8;
 
+  const validEmail = getValidEmail(u.email, u.admissions?.contactEmail);
+  const validPhone = getValidPhone(u.phone, u.admissions?.contactPhone);
+
   const overview = [
     ['Institution Type',   type],
     ['Established',        safe(u.establishedYear)],
     ['NAAC Grade',         safe(u.naacGrade)],
     ['NIRF Rank',          u.nirfRank ? `#${u.nirfRank}` : 'N/A'],
     ['Website',            safe(u.website)],
-    ['Email',              safe(u.email || u.admissions?.contactEmail)],
-    ['Phone',              safe(u.phone || u.admissions?.contactPhone)],
+    ...(validEmail ? [['Email', validEmail]] : []),
+    ...(validPhone ? [['Phone', validPhone]] : []),
     ['Address',            safe(u.address || `${u.city}, ${u.state}`)],
   ];
 
@@ -223,12 +227,15 @@ export const generateBrochure = (university) => {
     y += 4;
   }
 
+  const admEmail = getValidEmail(u.admissions?.contactEmail, u.email);
+  const admPhone = getValidPhone(u.admissions?.contactPhone, u.phone);
+
   const admData = [
     ['Application Fee',       u.admissions?.applicationFee ? `Rs. ${u.admissions.applicationFee}` : 'N/A'],
     ['Accepted Exams',        (u.admissions?.acceptedExams || []).join(', ') || 'N/A'],
     ['Counselling Info',      safe(u.admissions?.counsellingInfo)],
-    ['Contact Email',         safe(u.admissions?.contactEmail || u.email)],
-    ['Contact Phone',         safe(u.admissions?.contactPhone || u.phone)],
+    ...(admEmail ? [['Contact Email', admEmail]] : []),
+    ...(admPhone ? [['Contact Phone', admPhone]] : []),
   ];
 
   tr = autoTable(doc, {

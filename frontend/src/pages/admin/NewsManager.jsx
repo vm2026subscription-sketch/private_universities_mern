@@ -15,6 +15,7 @@ export default function NewsManager() {
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => api.get('/admin/content?resource=news').then(r => setItems(r.data.data?.news || [])).catch(() => toast.error('Failed'));
   useEffect(() => { load(); }, []);
@@ -22,6 +23,8 @@ export default function NewsManager() {
 
   const save = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     try {
       const payload = {
         title: form.title, summary: form.summary || undefined, content: form.content || undefined,
@@ -33,6 +36,7 @@ export default function NewsManager() {
       else { await api.post('/admin/news', payload); toast.success('Created'); }
       setForm(emptyForm()); setEditId(null); setShowForm(false); load();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+    finally { setSaving(false); }
   };
 
   const edit = (n) => {
@@ -63,7 +67,7 @@ export default function NewsManager() {
           <FormField label="Content"><TextArea value={form.content} onChange={e => upd('content', e.target.value)} className="min-h-[150px]" /></FormField>
           <FormField label="Tags (one per line)"><TextArea value={form.tagsText} onChange={e => upd('tagsText', e.target.value)} className="min-h-[60px]" /></FormField>
           <CheckboxField label="Featured Article" checked={form.isFeatured} onChange={e => upd('isFeatured', e.target.checked)} />
-          <FormActions onCancel={() => { setShowForm(false); setEditId(null); }} isEditing={!!editId} />
+          <FormActions loading={saving} onCancel={() => { setShowForm(false); setEditId(null); }} isEditing={!!editId} />
         </form>
       )}
 

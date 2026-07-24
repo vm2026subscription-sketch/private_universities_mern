@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Trash2, Star, MessageSquare, Share2, GitCompare, Download, FileText, ExternalLink, Heart } from 'lucide-react';
 import { calculateFitScore } from '../../utils/fitScore';

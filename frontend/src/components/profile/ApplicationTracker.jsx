@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Briefcase, Clock, CheckCircle, XCircle, ChevronRight, MapPin, Calendar, ExternalLink } from 'lucide-react';
+import React from 'react';
+import { Briefcase, Clock, MapPin, Calendar, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
@@ -13,15 +13,6 @@ export default function ApplicationTracker({ applications = [], onUpdateStatus }
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'accepted': return CheckCircle;
-      case 'rejected': return XCircle;
-      case 'applied': return Briefcase;
-      default: return Clock;
-    }
-  };
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -31,7 +22,6 @@ export default function ApplicationTracker({ applications = [], onUpdateStatus }
 
       <div className="grid grid-cols-1 gap-4">
         {applications.map((app, i) => {
-          const StatusIcon = getStatusIcon(app.status);
           const uni = app.universityId || {};
 
           return (

@@ -10,6 +10,15 @@ const toPlainObject = (user) => {
   return typeof user.toObject === 'function' ? user.toObject() : user;
 };
 
+const checkHasCompletedPreferences = (source) => {
+  if (source.hasCompletedPreferences === true) return true;
+  const p = source.profile || {};
+  if (p.state || p.stream || p.preferredCourse || (Array.isArray(p.preferredStates) && p.preferredStates.length > 0)) {
+    return true;
+  }
+  return false;
+};
+
 const getSafeUser = (user) => {
   const source = toPlainObject(user);
   if (!source) return null;
@@ -27,6 +36,7 @@ const getSafeUser = (user) => {
     authProvider: source.authProvider,
     status: source.status,
     profileCompleteness: source.profileCompleteness || 0,
+    hasCompletedPreferences: checkHasCompletedPreferences(source),
   };
 };
 

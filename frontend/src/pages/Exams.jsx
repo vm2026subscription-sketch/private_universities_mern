@@ -1,10 +1,10 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ExternalLink, FileCheck2, Landmark, Search, Globe, MapPin, CheckCircle2, X } from 'lucide-react';
+import { CalendarDays, ExternalLink, FileCheck2, Landmark, Search, Globe, MapPin, CheckCircle2, X, AlertCircle, RefreshCw } from 'lucide-react';
 import Seo from '../components/common/Seo';
 import api from '../utils/api';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { readSessionCache, writeSessionCache } from '../utils/pageCache';
-import { EmptyState } from '../components/ui';
+import { EmptyState, Button } from '../components/ui';
 
 const CATEGORY_LABELS = ['all', 'engineering', 'medical', 'management', 'law', 'others'];
 const EXAMS_CACHE_KEY = 'vm_exams_catalog_v1';
@@ -18,12 +18,15 @@ export default function Exams() {
   const [search, setSearch] = useState('');
   const [exams, setExams] = useState(cachedExams);
   const [loading, setLoading] = useState(cachedExams.length === 0);
+  const [fetchError, setFetchError] = useState(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     let active = true;
 
     const loadExams = async () => {
+      setFetchError(null);
       if (cachedExams.length === 0) {
         setLoading(true);
       }
@@ -33,8 +36,8 @@ export default function Exams() {
         const nextExams = Array.isArray(data.data) ? data.data : [];
         setExams(nextExams);
         writeSessionCache(EXAMS_CACHE_KEY, nextExams);
-      } catch {
-        if (active && cachedExams.length === 0) setExams([]);
+      } catch (err) {
+        if (active) setFetchError(err.response?.data?.message || 'Failed to load entrance exams. Please check your network connection and try again.');
       } finally {
         if (active) setLoading(false);
       }
@@ -44,7 +47,7 @@ export default function Exams() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [reloadToken]);
 
   const indexedExams = useMemo(() => {
     return exams.map((exam) => ({
@@ -207,6 +210,17 @@ export default function Exams() {
 
       {loading ? (
         <CardSkeleton count={6} />
+      ) : fetchError ? (
+        <EmptyState
+          icon={AlertCircle}
+          title="Failed to Load Exams"
+          description={fetchError}
+          action={
+            <Button onClick={() => setReloadToken((t) => t + 1)} className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" /> Retry
+            </Button>
+          }
+        />
       ) : filteredExams.length === 0 ? (
         <EmptyState
           icon={Search}

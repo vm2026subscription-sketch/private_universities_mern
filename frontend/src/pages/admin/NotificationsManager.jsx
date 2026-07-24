@@ -13,6 +13,7 @@ export default function NotificationsManager() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(empty());
   const [show, setShow] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => api.get('/admin/notifications').then(r => setItems(r.data.data || []));
   useEffect(() => { load(); }, []);
@@ -20,10 +21,13 @@ export default function NotificationsManager() {
 
   const save = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     try {
       await api.post('/admin/notifications', form);
       toast.success('Sent'); setForm(empty()); setShow(false); load();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+    finally { setSaving(false); }
   };
 
   const del = async (id) => { if (!confirm('Delete?')) return; await api.delete(`/admin/notifications/${id}`); toast.success('Deleted'); load(); };
@@ -46,7 +50,7 @@ export default function NotificationsManager() {
           <FormField label="Message"><TextArea value={form.message} onChange={e => upd('message', e.target.value)} required /></FormField>
           <CheckboxField label="Broadcast to all users" checked={form.isBroadcast} onChange={e => upd('isBroadcast', e.target.checked)} />
           {!form.isBroadcast && <FormField label="User ID"><TextInput value={form.userId} onChange={e => upd('userId', e.target.value)} required /></FormField>}
-          <FormActions onCancel={() => setShow(false)} submitLabel="Send Notification" />
+          <FormActions loading={saving} onCancel={() => setShow(false)} submitLabel="Send Notification" />
         </form>
       )}
       <DataTable data={items} columns={[

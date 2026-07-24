@@ -68,6 +68,7 @@ const userSchema = new mongoose.Schema({
     profileImage: String
   },
   profileCompleteness: { type: Number, default: 0 },
+  hasCompletedPreferences: { type: Boolean, default: false },
 
   savedUniversities: [{ type: mongoose.Schema.Types.ObjectId, ref: 'University' }],
   savedCourses:      [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],

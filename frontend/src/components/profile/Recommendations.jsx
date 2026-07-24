@@ -4,12 +4,20 @@ import { calculateFitScore } from '../../utils/fitScore';
 import { getUniversityDisplayType, getUniversityTypeValue } from '../../utils/universityType';
 
 export default function Recommendations({ recommendations, onSave, userPrefs }) {
-  if (!userPrefs?.preferredStates?.length && !userPrefs?.collegeType) {
+  const hasAnyPref = Boolean(
+    userPrefs?.preferredStates?.length ||
+    userPrefs?.collegeType ||
+    userPrefs?.stream ||
+    userPrefs?.preferredCourse ||
+    userPrefs?.state
+  );
+
+  if (!hasAnyPref) {
     return (
       <div className="card p-12 text-center">
         <Lightbulb className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
         <h3 className="font-bold text-lg mb-2">Set Your Preferences First</h3>
-        <p className="text-light-muted text-sm">Go to the Preferences tab and fill in your preferred state and college type to get smart recommendations.</p>
+        <p className="text-light-muted text-sm">Fill in your preferences to get smart personalized recommendations.</p>
       </div>
     );
   }

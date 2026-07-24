@@ -15,6 +15,7 @@ export default function ExamsManager() {
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => api.get('/admin/content?resource=exams').then(r => setItems(r.data.data?.exams || [])).catch(() => toast.error('Failed'));
   useEffect(() => { load(); }, []);
@@ -22,6 +23,8 @@ export default function ExamsManager() {
 
   const save = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     try {
       const payload = {
         name: form.name, shortName: form.shortName || undefined, conductingBody: form.conductingBody || undefined,
@@ -34,6 +37,7 @@ export default function ExamsManager() {
       else { await api.post('/admin/exams', payload); toast.success('Created'); }
       setForm(emptyForm()); setEditId(null); setShowForm(false); load();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+    finally { setSaving(false); }
   };
 
   const edit = (ex) => {
@@ -66,7 +70,7 @@ export default function ExamsManager() {
           </div>
           <FormField label="Eligibility"><TextArea value={form.eligibility} onChange={e => upd('eligibility', e.target.value)} className="min-h-[80px]" /></FormField>
           <FormField label="Pattern"><TextArea value={form.pattern} onChange={e => upd('pattern', e.target.value)} className="min-h-[80px]" /></FormField>
-          <FormActions onCancel={() => { setShowForm(false); setEditId(null); }} isEditing={!!editId} />
+          <FormActions loading={saving} onCancel={() => { setShowForm(false); setEditId(null); }} isEditing={!!editId} />
         </form>
       )}
 

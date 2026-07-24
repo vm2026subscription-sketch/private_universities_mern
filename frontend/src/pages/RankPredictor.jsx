@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, Target, Search, ArrowRight, ArrowLeft, Building2,
-  ChevronRight, MapPin, Award, Sparkles
+  ChevronRight, MapPin, Award, Sparkles, Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 
-const EXAMS = [
+const DEFAULT_EXAMS = [
   { id: 'JEE Main', name: 'JEE Main 2026', type: 'Engineering' },
   { id: 'MHT-CET', name: 'MHT-CET 2026', type: 'Engineering/Pharmacy' },
   { id: 'NEET', name: 'NEET UG 2026', type: 'Medical' },
@@ -18,6 +18,8 @@ const CATEGORIES = ['Open', 'OBC', 'SC', 'ST', 'EWS', 'TFWS'];
 
 export default function RankPredictor() {
   const [step, setStep] = useState(1);
+  const [examsList, setExamsList] = useState(DEFAULT_EXAMS);
+  const [examsLoading, setExamsLoading] = useState(true);
   const [formData, setFormData] = useState({
     exam: '',
     score: '',
@@ -26,6 +28,21 @@ export default function RankPredictor() {
   });
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    api.get('/exams')
+      .then(({ data }) => {
+        if (Array.isArray(data.data) && data.data.length > 0) {
+          setExamsList(data.data.map(e => ({
+            id: e.shortName || e.name,
+            name: e.shortName ? `${e.name} (${e.shortName})` : e.name,
+            type: e.category || 'Entrance Exam'
+          })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setExamsLoading(false));
+  }, []);
 
   const handlePredict = async () => {
     setLoading(true);
@@ -100,14 +117,14 @@ export default function RankPredictor() {
               >
                 <h2 className="text-2xl font-bold mb-8 text-center">Select Your Entrance Exam</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {EXAMS.map(exam => (
+                  {examsList.map(exam => (
                     <button 
                       key={exam.id}
                       onClick={() => { setFormData({ ...formData, exam: exam.id }); setStep(2); }}
                       className={`p-8 rounded-[2rem] border-2 transition-all text-left group flex items-center justify-between ${formData.exam === exam.id ? 'border-primary bg-primary/5' : 'border-slate-50 hover:border-primary/30 hover:bg-slate-50'}`}
                     >
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">{exam.type}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2 capitalize">{exam.type}</p>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white">{exam.name}</h3>
                       </div>
                       <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">

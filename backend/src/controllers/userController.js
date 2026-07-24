@@ -5,6 +5,7 @@ const { getSafeUserProfile } = require('../utils/userSerializer');
 const { signAccessToken } = require('../utils/tokenService');
 const { issueRefreshToken, revokeAllForUser } = require('../services/refreshTokenService');
 const { setRefreshCookie } = require('./authController');
+const { uploadToCloudinary } = require('../utils/imageUpload');
 const mongoose = require('mongoose');
 
 const APPLICATION_STATUSES = ['applied', 'pending', 'accepted', 'rejected'];
@@ -59,11 +60,22 @@ exports.updateProfile = async (req, res) => {
       user.avatar = String(req.body.avatar || '').trim();
     }
 
+    if (req.body.hasCompletedPreferences !== undefined) {
+      user.hasCompletedPreferences = Boolean(req.body.hasCompletedPreferences);
+    }
+
     if (req.body.profile && typeof req.body.profile === 'object') {
       user.profile = {
         ...(user.profile?.toObject ? user.profile.toObject() : user.profile || {}),
         ...req.body.profile,
       };
+      // Mark completed if profile preferences are supplied
+      if (req.body.hasCompletedPreferences === undefined) {
+        const p = user.profile;
+        if (p.state || p.stream || p.preferredCourse || (Array.isArray(p.preferredStates) && p.preferredStates.length > 0)) {
+          user.hasCompletedPreferences = true;
+        }
+      }
     }
 
     user.profileCompleteness = calculateProfileCompleteness(user);
@@ -72,6 +84,41 @@ exports.updateProfile = async (req, res) => {
     res.json({ success: true, data: getSafeUserProfile(user) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select an image file to upload' });
+    }
+
+    let imageUrl;
+    try {
+      const result = await uploadToCloudinary(req.file.buffer, { folder: 'vidyarthi-mitra/avatars' });
+      imageUrl = result.url;
+    } catch (err) {
+      const base64 = req.file.buffer.toString('base64');
+      imageUrl = `data:${req.file.mimetype};base64,${base64}`;
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.avatar = imageUrl;
+    user.profileCompleteness = calculateProfileCompleteness(user);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      data: getSafeUserProfile(user),
+      url: imageUrl,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Avatar upload failed' });
   }
 };
 
@@ -267,7 +314,7 @@ exports.upsertNote = async (req, res) => {
 exports.getRecommendations = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    const { preferredStates, collegeType } = user.profile || {};
+    const { preferredStates, collegeType, stream, preferredCourse, state } = user.profile || {};
 
     const query = {};
 
@@ -279,16 +326,71 @@ exports.getRecommendations = async (req, res) => {
       query.type = collegeType;
     }
 
-    if (user.savedUniversities.length > 0) {
+    if (user.savedUniversities && user.savedUniversities.length > 0) {
       query._id = { $nin: user.savedUniversities };
     }
 
-    const recommendations = await University.find(query)
-      .select('name state city type naacGrade nirfRank slug logoUrl stats')
-      .limit(20)
+    let recommendations = await University.find(query)
+      .select('name state city type naacGrade nirfRank slug logoUrl stats description')
+      .populate('courses')
+      .limit(30)
       .sort({ nirfRank: 1 });
 
-    res.json({ success: true, data: recommendations, total: recommendations.length });
+    // Fallback: If strict state/type filtering yields fewer than 4 items, relax state filter to ensure user receives results
+    if (recommendations.length < 4) {
+      const fallbackQuery = {};
+      if (collegeType && collegeType !== 'both') {
+        fallbackQuery.type = collegeType;
+      }
+      if (user.savedUniversities && user.savedUniversities.length > 0) {
+        fallbackQuery._id = { $nin: user.savedUniversities };
+      }
+
+      const fallbackRecs = await University.find(fallbackQuery)
+        .select('name state city type naacGrade nirfRank slug logoUrl stats description')
+        .populate('courses')
+        .limit(20)
+        .sort({ nirfRank: 1 });
+
+      const existingIds = new Set(recommendations.map((r) => r._id.toString()));
+      for (const rec of fallbackRecs) {
+        if (!existingIds.has(rec._id.toString())) {
+          recommendations.push(rec);
+        }
+      }
+    }
+
+    // Rank / Score based on stream, preferredCourse, and state matching
+    if (stream || preferredCourse || state || (preferredStates && preferredStates.length > 0)) {
+      const courseRegex = preferredCourse ? new RegExp(preferredCourse, 'i') : null;
+      const streamRegex = stream ? new RegExp(stream, 'i') : null;
+
+      recommendations = recommendations
+        .map((uni) => {
+          let score = 0;
+          if (preferredStates?.includes(uni.state)) score += 30;
+          else if (state && uni.state === state) score += 15;
+
+          if (uni.courses && Array.isArray(uni.courses)) {
+            const hasMatchingCourse = uni.courses.some(
+              (c) =>
+                (courseRegex && (courseRegex.test(c.name || '') || courseRegex.test(c.stream || ''))) ||
+                (streamRegex && (streamRegex.test(c.stream || '') || streamRegex.test(c.name || '')))
+            );
+            if (hasMatchingCourse) score += 40;
+          }
+
+          if (streamRegex && (streamRegex.test(uni.description || '') || streamRegex.test(uni.name || ''))) {
+            score += 10;
+          }
+
+          return { uni, score };
+        })
+        .sort((a, b) => b.score - a.score || (a.uni.nirfRank || 999) - (b.uni.nirfRank || 999))
+        .map((item) => item.uni);
+    }
+
+    res.json({ success: true, data: recommendations.slice(0, 20), total: recommendations.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -45,7 +45,7 @@ export default function SponsoredUniversities({ page = 'home' }) {
                 <div className="flex items-center justify-between gap-4 mb-4">
                   <div className="w-16 h-16 bg-white rounded-2xl shadow-md border border-slate-50 p-2 flex items-center justify-center overflow-hidden shrink-0">
                     {b.imageUrl ? (
-                      <img src={b.imageUrl} alt={name} className="w-full h-full object-contain" />
+                      <img src={b.imageUrl} alt={name} className="w-full h-full object-contain" loading="lazy" decoding="async" />
                     ) : (
                       <UniversityLogo logoUrl={u?.logoUrl || u?.logo} name={name} />
                     )}

@@ -14,6 +14,7 @@ export default function PagesManager() {
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => api.get('/admin/pages').then(r => setItems(r.data.data || [])).catch(() => toast.error('Failed to load'));
   useEffect(() => { load(); }, []);
@@ -21,11 +22,14 @@ export default function PagesManager() {
 
   const save = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     try {
       if (editId) { await api.put(`/admin/pages/${editId}`, form); toast.success('Updated'); }
       else { await api.post('/admin/pages', form); toast.success('Created'); }
       setForm(emptyForm()); setEditId(null); setShowForm(false); load();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+    finally { setSaving(false); }
   };
 
   const edit = (p) => { setForm({ ...p, order: p.order || 0 }); setEditId(p._id); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -60,7 +64,7 @@ export default function PagesManager() {
           </div>
           <FormField label="Content (HTML/Markdown)"><TextArea value={form.content} onChange={e => upd('content', e.target.value)} className="min-h-[250px] font-mono text-sm" /></FormField>
           <CheckboxField label="Published" checked={form.isPublished} onChange={e => upd('isPublished', e.target.checked)} />
-          <FormActions onCancel={() => { setShowForm(false); setEditId(null); setForm(emptyForm()); }} isEditing={!!editId} />
+          <FormActions loading={saving} onCancel={() => { setShowForm(false); setEditId(null); setForm(emptyForm()); }} isEditing={!!editId} />
         </form>
       )}
       <DataTable data={items} columns={columns} searchFields={['title', 'slug']} searchPlaceholder="Search pages..."

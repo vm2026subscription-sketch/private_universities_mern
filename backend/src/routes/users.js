@@ -2,6 +2,7 @@ const router = require('express').Router();
 const {
   getProfile,
   updateProfile,
+  uploadAvatar,
   getSavedUniversities,
   saveUniversity,
   removeSavedUniversity,
@@ -18,10 +19,12 @@ const {
   markNotificationRead,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
+const { upload } = require('../utils/imageUpload');
 
 /* ── Profile ─────────────────────────────────────── */
 router.get('/profile',  protect, getProfile);
 router.put('/profile',  protect, updateProfile);
+router.post('/avatar',   protect, upload.single('avatar'), uploadAvatar);
 
 /* ── Saved Universities ──────────────────────────── */
 router.get('/saved-universities',                    protect, getSavedUniversities);

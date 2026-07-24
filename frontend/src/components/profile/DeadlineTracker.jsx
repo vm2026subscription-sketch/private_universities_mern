@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calendar, Clock, AlertCircle, ChevronRight, MapPin, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';

@@ -167,6 +167,7 @@ const AccessibilityWidget = ({ inline = false }) => {
       className={inline ? 'relative' : 'fixed left-4 bottom-6 md:bottom-8 z-[80] flex items-end gap-2'}
     >
       <button
+        type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={`rounded-xl flex items-center justify-center transition-all ${
           inline
@@ -184,7 +185,9 @@ const AccessibilityWidget = ({ inline = false }) => {
 
       {!inline && (
         <button
+          type="button"
           onClick={handleSpeak}
+          aria-label={isSpeaking ? 'Turn off Click-to-Speak' : 'Turn on Click-to-Speak'}
           className={`mt-4 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
             isSpeaking
               ? 'bg-accent text-white scale-110 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
@@ -217,6 +220,7 @@ const AccessibilityWidget = ({ inline = false }) => {
                 <button
                   type="button"
                   onClick={handleSpeak}
+                  aria-label={isSpeaking ? 'Turn off Click-to-Speak' : 'Turn on Click-to-Speak'}
                   className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 ${
                     isSpeaking
                       ? 'bg-accent text-white shadow-[0_0_15px_rgba(245,158,11,0.25)]'
@@ -229,6 +233,7 @@ const AccessibilityWidget = ({ inline = false }) => {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
+                  aria-label="Close accessibility options menu"
                   className="w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-red-500"
                   title="Close Menu"
                 >

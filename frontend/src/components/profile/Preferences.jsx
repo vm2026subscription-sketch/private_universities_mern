@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Save, MapPin, BookOpen, Building } from 'lucide-react';
+import { Settings, Save, MapPin, BookOpen, Building, Loader2 } from 'lucide-react';
 
 export default function Preferences({ profile, onSave }) {
   const [formData, setFormData] = useState({
@@ -12,6 +12,7 @@ export default function Preferences({ profile, onSave }) {
   });
 
   const [newState, setNewState] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const handleAddState = () => {
     if (newState && !formData.preferredStates.includes(newState)) {
@@ -24,9 +25,15 @@ export default function Preferences({ profile, onSave }) {
     setFormData({ ...formData, preferredStates: formData.preferredStates.filter(st => st !== s) });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -138,8 +145,16 @@ export default function Preferences({ profile, onSave }) {
         </div>
 
         <div className="pt-4 border-t border-light-border dark:border-dark-border">
-          <button type="submit" className="btn-primary flex items-center gap-2 w-full md:w-auto justify-center">
-            <Save className="w-4 h-4" /> Save Preferences
+          <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2 w-full md:w-auto justify-center disabled:opacity-60">
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" /> Save Preferences
+              </>
+            )}
           </button>
         </div>
       </form>

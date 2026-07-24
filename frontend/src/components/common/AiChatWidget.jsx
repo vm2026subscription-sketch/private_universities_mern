@@ -525,13 +525,14 @@ export default function AiChatWidget() {
             <button 
               type="button" 
               onClick={() => handleTranslate('mr')}
+              aria-label="Translate to Marathi"
               className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors mr-1 ${
                 language === 'mr' ? 'bg-[#9B2A02] border-transparent' : 'border border-white/30 bg-white/10 hover:bg-white/20'
               }`}
             >
               MR
             </button>
-            <button type="button" onClick={closeChat} className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+            <button type="button" onClick={closeChat} aria-label="Close AI Chat" className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -562,6 +563,7 @@ export default function AiChatWidget() {
                       <button
                         type="button"
                         onClick={() => speakMessage(message.content)}
+                        aria-label={currentlySpeaking === message.content ? 'Stop speaking' : 'Read message aloud'}
                         className={`transition-colors p-1 rounded hover:bg-light-card dark:hover:bg-dark-bg shrink-0 ${
                           currentlySpeaking === message.content
                             ? 'text-link animate-pulse'
@@ -623,6 +625,7 @@ export default function AiChatWidget() {
             <button
               type="button"
               onClick={toggleListening}
+              aria-label={isListening ? 'Stop listening' : 'Start voice typing'}
               className={`absolute right-12 bottom-1.5 w-9 h-9 rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-light-border dark:border-dark-border ${
                 isListening
                   ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/20 border-transparent'
@@ -635,6 +638,7 @@ export default function AiChatWidget() {
             <button
               type="submit"
               disabled={loading || !input.trim()}
+              aria-label="Send message"
               className="absolute right-1.5 bottom-1.5 w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-light text-white flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-lg shadow-primary/20 border border-accent/20"
             >
               <Send className="w-4 h-4" />

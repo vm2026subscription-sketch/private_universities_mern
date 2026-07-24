@@ -1,7 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { CheckCircle2, XCircle, AlertTriangle, RefreshCw, FileText, FileSpreadsheet, Check } from 'lucide-react';
-import axios from 'axios';
 import api from '../../utils/api';  
 
 const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {

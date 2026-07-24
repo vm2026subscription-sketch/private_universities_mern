@@ -14,6 +14,7 @@ export default function TestimonialsManager() {
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => api.get('/admin/testimonials').then(r => setItems(r.data.data || [])).catch(() => toast.error('Failed to load'));
   useEffect(() => { load(); }, []);
@@ -21,11 +22,14 @@ export default function TestimonialsManager() {
 
   const save = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     try {
       if (editId) { await api.put(`/admin/testimonials/${editId}`, form); toast.success('Updated'); }
       else { await api.post('/admin/testimonials', form); toast.success('Created'); }
       setForm(emptyForm()); setEditId(null); setShowForm(false); load();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+    finally { setSaving(false); }
   };
 
   const edit = (t) => { setForm(t); setEditId(t._id); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -60,7 +64,7 @@ export default function TestimonialsManager() {
             <CheckboxField label="Approved" checked={form.isApproved} onChange={e => upd('isApproved', e.target.checked)} />
             <CheckboxField label="Featured" checked={form.isFeatured} onChange={e => upd('isFeatured', e.target.checked)} />
           </div>
-          <FormActions onCancel={() => { setShowForm(false); setEditId(null); setForm(emptyForm()); }} isEditing={!!editId} />
+          <FormActions loading={saving} onCancel={() => { setShowForm(false); setEditId(null); setForm(emptyForm()); }} isEditing={!!editId} />
         </form>
       )}
       <DataTable data={items} columns={columns} searchFields={['name', 'university', 'content']} searchPlaceholder="Search testimonials..."

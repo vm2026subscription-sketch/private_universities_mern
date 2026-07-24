@@ -14,7 +14,9 @@ import {
   Sparkles,
   ArrowRight,
   Bell,
+  Loader2,
 } from 'lucide-react';
+import { isValidEmail } from '../../utils/contactValidation';
 
 const footerGroups = [
   {
@@ -63,14 +65,24 @@ export default function Footer() {
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const cleanedEmail = email.trim();
+
+    if (!cleanedEmail) {
+      return toast.error('Please enter your email address');
+    }
+
+    if (!isValidEmail(cleanedEmail)) {
+      return toast.error('Please enter a valid email address');
+    }
+
     setSubscribing(true);
     try {
-      await api.post('/newsletter/subscribe', { email: email.trim() });
-      toast.success('Subscribed successfully!');
+      const res = await api.post('/newsletter/subscribe', { email: cleanedEmail });
+      toast.success(res.data?.message || 'Subscribed successfully!');
       setEmail('');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Subscription failed. Try again.');
+      const errorMsg = err.response?.data?.message || 'Subscription failed. Try again.';
+      toast.error(errorMsg);
     } finally {
       setSubscribing(false);
     }
@@ -82,7 +94,7 @@ export default function Footer() {
         <div className="grid gap-8 lg:grid-cols-[1.5fr_2fr] mb-8">
           <div className="rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-sm p-8 shadow-lg">
             <div className="inline-flex items-center rounded-2xl bg-white px-4 py-3 shadow-lg">
-              <img src={logo} alt="Vidyarthi Mitra" className="h-9" />
+              <img src={logo} alt="Vidyarthi Mitra" className="h-9" loading="lazy" decoding="async" />
             </div>
             <div className="mt-6 space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full bg-accent/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-accent-light">
@@ -205,14 +217,22 @@ export default function Footer() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                className="flex-1 md:w-64 px-4 py-3 rounded-2xl bg-white/10 border border-white/15 text-white placeholder-white/40 text-sm outline-none focus:border-accent/50 focus:bg-white/15 transition-all"
+                disabled={subscribing}
+                className="flex-1 md:w-64 px-4 py-3 rounded-2xl bg-white/10 border border-white/15 text-white placeholder-white/40 text-sm outline-none focus:border-accent/50 focus:bg-white/15 transition-all disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={subscribing}
-                className="px-5 py-3 rounded-2xl bg-accent text-slate-950 text-sm font-bold hover:bg-accent-light transition-all disabled:opacity-60 whitespace-nowrap"
+                className="px-5 py-3 rounded-2xl bg-accent text-slate-950 text-sm font-bold hover:bg-accent-light transition-all disabled:opacity-60 whitespace-nowrap flex items-center justify-center gap-2"
               >
-                {subscribing ? 'Subscribing...' : 'Subscribe'}
+                {subscribing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Subscribing...</span>
+                  </>
+                ) : (
+                  'Subscribe'
+                )}
               </button>
             </form>
           </div>

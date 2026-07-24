@@ -1,3 +1,5 @@
+import { getValidPhone, getValidEmail } from './contactValidation';
+
 // Central SEO helpers. Keeps title/description/OG generation consistent across
 // pages and mirrors the admin `seo` override fields (see University model).
 
@@ -68,6 +70,8 @@ const compact = (obj) =>
 // Structured data for a university detail page: CollegeOrUniversity + breadcrumb.
 export const universityJsonLd = (u = {}) => {
   const s = buildUniversitySeo(u);
+  const phone = getValidPhone(u.phone, u.admissions?.contactPhone);
+  const email = getValidEmail(u.email, u.admissions?.contactEmail);
 
   const org = compact({
     '@type': 'CollegeOrUniversity',
@@ -76,8 +80,8 @@ export const universityJsonLd = (u = {}) => {
     description: s.description,
     logo: u.logoUrl || undefined,
     image: u.bannerImageUrl || u.logoUrl || undefined,
-    telephone: u.phone || undefined,
-    email: u.email || undefined,
+    telephone: phone || undefined,
+    email: email || undefined,
     foundingDate: u.establishedYear ? String(u.establishedYear) : undefined,
     sameAs: u.website ? [u.website] : undefined,
   });

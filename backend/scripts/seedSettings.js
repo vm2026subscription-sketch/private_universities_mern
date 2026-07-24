@@ -42,6 +42,11 @@ const defaultSettings = [
   // Integration
   { key: 'geminiApiEnabled', value: true, category: 'integration', label: 'Gemini AI Chat Enabled', type: 'boolean' },
   { key: 'cloudinaryFolder', value: 'vidyarthi-mitra', category: 'integration', label: 'Cloudinary Root Folder', type: 'text' },
+
+  // Onboarding / Preferences Notice
+  { key: 'preferencesNoticeEnabled', value: true, category: 'general', label: 'Enable Preferences Form Notice / Message', type: 'boolean' },
+  { key: 'preferencesNoticeTitle', value: 'Important Notice', category: 'general', label: 'Preferences Notice Title', type: 'text' },
+  { key: 'preferencesNoticeMessage', value: 'Admissions for 2026-27 are open across top private & deemed universities. Please select your preferences below to receive tailored guidance.', category: 'general', label: 'Preferences Notice Content / Message', type: 'textarea' },
 ];
 
 async function seed() {

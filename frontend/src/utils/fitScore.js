@@ -35,6 +35,22 @@ export const calculateFitScore = (university, userPrefs) => {
     if (userPrefs.preferredStates.includes(university.state)) {
       score += 20;
     }
+  } else if (userPrefs.state) {
+    totalCriteria += 15;
+    if (university.state === userPrefs.state) {
+      score += 15;
+    }
+  }
+
+  // Stream Match (20%)
+  if (userPrefs.stream) {
+    totalCriteria += 20;
+    const streamRegex = new RegExp(userPrefs.stream, 'i');
+    const matchesStream =
+      university.courses?.some((c) => streamRegex.test(c.stream || '') || streamRegex.test(c.name || '')) ||
+      streamRegex.test(university.description || '') ||
+      streamRegex.test(university.name || '');
+    if (matchesStream) score += 20;
   }
 
   // 4. Type Match (15%)
