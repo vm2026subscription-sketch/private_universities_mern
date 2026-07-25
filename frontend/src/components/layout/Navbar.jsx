@@ -3,14 +3,12 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Moon, Sun, Menu, X, User, Bookmark, Settings, LogOut, 
-  ChevronDown, GraduationCap, Building2, Stethoscope, Scale, 
-  Palette, Briefcase, MapPin, Trophy, BookOpen, Globe, Shield 
+  ChevronDown, Building2, BookOpen, Shield 
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import logo from '../../assets/logo.png';
-import AccessibilityWidget from './AccessibilityWidget';
 
 
 export default function Navbar() {
@@ -22,7 +20,6 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [activeMegaMenu, setActiveMegaMenu] = useState(null);
   const location = useLocation();
   
   const searchRef = useRef(null);

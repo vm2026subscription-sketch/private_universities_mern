@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bot, Grip, MessageSquare, Minimize2, Send, Sparkles, X, Trash2, Maximize2, Mic, MicOff, Volume2 } from 'lucide-react';
+import { Bot, Grip, MessageSquare, Send, Sparkles, X, Maximize2, Mic, MicOff, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -382,16 +382,6 @@ export default function AiChatWidget() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     await askAssistant(input);
-  };
-
-  const clearChat = () => {
-    setMessages([
-      {
-        role: 'assistant',
-        content: 'Chat cleared. How else can I help you today?',
-        timestamp: new Date(),
-      },
-    ]);
   };
 
   const postLastQuestion = async () => {

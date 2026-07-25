@@ -1,5 +1,4 @@
 const Notification = require('../models/Notification');
-const User = require('../models/User');
 
 exports.getAll = async (req, res) => {
   try {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, CheckCircle, Mail, Phone, MapPin, Loader2, ArrowRight } from 'lucide-react';
+import { X, CheckCircle, Phone, Loader2, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 

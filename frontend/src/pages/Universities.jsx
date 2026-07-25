@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap, AlertCircle, RefreshCw } from 'lucide-react';
 import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
@@ -40,10 +40,7 @@ export default function Universities() {
   const [fetchError, setFetchError] = useState(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [savedIds, setSavedIds] = useState([]);
-  const [downloadingId, setDownloadingId] = useState(null);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
-  const [selectedUniForLead, setSelectedUniForLead] = useState(null);
-  const [leadModalType, setLeadModalType] = useState('apply');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('nirf'); // 'nirf' | 'rating' | 'name'
   const [showFilters, setShowFilters] = useState(false);
@@ -278,8 +275,6 @@ export default function Universities() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {universities.map(u => {
                  const isSaved = savedIds.includes(u._id);
-                 const userPrefs = user?.profile;
-                 const fitScore = calculateFitScore(u, userPrefs);
                  const displayType = getUniversityDisplayType(u);
                  
                   return (

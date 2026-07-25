@@ -1,4 +1,3 @@
-import React from 'react';
 import { Briefcase, Clock, MapPin, Calendar, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';

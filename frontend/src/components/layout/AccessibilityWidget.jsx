@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, Accessibility, X, MessageSquarePlus } from 'lucide-react';
+=======
+import { useState, useEffect } from 'react';
+import { Volume2, Accessibility, X } from 'lucide-react';
+>>>>>>> 5c7672f (Remove dead code and cleanup project)
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
 import { toast } from 'react-hot-toast';

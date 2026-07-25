@@ -63,7 +63,6 @@ export default function UniversityDetail() {
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 0);
   const [loading, setLoading] = useState(true);
   const [similarUnis, setSimilarUnis] = useState([]);
-  const [logoFailed, setLogoFailed] = useState(false);
   const [error, setError] = useState(null);
 
   const { user } = useAuth();

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2, Plus, Eye, EyeOff, Download } from 'lucide-react';
+import { Pencil, Trash2, Plus, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import { useRole } from '../../hooks/useRole';
 import DataTable from './components/DataTable';
-import { FormField, TextInput, TextArea, SelectInput, CheckboxField, FormActions } from './components/FormFields';
+import { FormField, TextInput, SelectInput, CheckboxField, FormActions } from './components/FormFields';
 
 const emptyForm = () => ({ title: '', subtitle: '', imageUrl: '', mediaType: 'image', videoUrl: '', link: '', linkText: '', position: 'hero', page: 'home', isActive: true, priority: 0, startDate: '', endDate: '', backgroundColor: '', textColor: '', universityId: '' });
 
