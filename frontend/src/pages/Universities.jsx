@@ -142,9 +142,6 @@ export default function Universities() {
       setFetchError(err.response?.data?.message || 'Unable to load universities. Please check your connection and try again.');
     }).finally(() => setLoading(false));
   }, [filters, sort, page, initialSearch, reloadToken]);
-    }).catch(() => setUniversities([])).finally(() => setLoading(false));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [filters, sort, page, initialSearch]);
 
   const toggleFilter = (key, value) => {
     setFilters(f => {
