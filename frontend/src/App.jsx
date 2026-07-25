@@ -6,6 +6,7 @@
   import { AiChatProvider } from './context/AiChatContext';
   import ErrorBoundary from './components/common/ErrorBoundary';
   import ProtectedRoute from './components/common/ProtectedRoute';
+  import usePageTracking from './hooks/usePageTracking';
   import Navbar from './components/layout/Navbar';
   import Footer from './components/layout/Footer';
   import MobileNav from './components/layout/MobileNav';
@@ -151,6 +152,11 @@
   }
 
   export default function App() {
+    // GA4: fire a page_view on first load and every route change. Safe to call
+    // here — App renders inside <BrowserRouter> (see main.jsx), so useLocation
+    // is available.
+    usePageTracking();
+
     return (
       <ErrorBoundary>
         <ThemeProvider>

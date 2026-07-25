@@ -5,6 +5,18 @@
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#002147" />
+    <!-- Google Analytics 4 (official gtag.js). send_page_view:false because this
+         is a React Router SPA — page_view is sent on every route change from
+         src/hooks/usePageTracking.js, so navigations are tracked without the
+         initial auto page_view double-counting. Measurement IDs are public by
+         design (visible in client requests), so hardcoding here is fine. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-STE21TDGS4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-STE21TDGS4', { send_page_view: false });
+    </script>
     <!-- SEO-START: the block below is the default fallback for the homepage and
          is replaced per-page at runtime for crawlers by /api/render (server render)
          and at runtime for browsers by the <Seo> component (react-helmet). -->
