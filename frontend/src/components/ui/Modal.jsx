@@ -7,11 +7,17 @@ const SIZES = { sm: 'max-w-md', md: 'max-w-2xl', lg: 'max-w-4xl' };
 
 export default function Modal({ open, onClose, title, size = 'md', children }) {
   const panelRef = useRef(null);
+  // Keep the latest onClose without making it an effect dependency. Parents
+  // usually pass a fresh inline onClose every render; if the setup effect
+  // depended on it, it would re-run on every keystroke and panelRef.focus()
+  // would steal focus out of inputs (you could only type one word at a time).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') onCloseRef.current?.();
     };
     document.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
@@ -21,7 +27,7 @@ export default function Modal({ open, onClose, title, size = 'md', children }) {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
