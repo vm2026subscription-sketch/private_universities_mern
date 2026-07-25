@@ -297,7 +297,7 @@ export default function Universities() {
 
                       {/* Download Brochure — captures the student's details (lead) before download */}
                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedUni(u); setLeadType('brochure'); setLeadModalOpen(true); }}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedUniForLead(u); setLeadModalType('brochure'); setLeadModalOpen(true); }}
                           className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-link hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90"
                           title="Download University Brochure (PDF)"
                         >
@@ -364,9 +364,9 @@ export default function Universities() {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      setSelectedUni(u);
+                                      setSelectedUniForLead(u);
                                       setLeadModalOpen(true);
-                                      setLeadType('apply');
+                                      setLeadModalType('apply');
                                     }}
                                     className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
                                   >
@@ -446,11 +446,11 @@ export default function Universities() {
       <LeadCaptureModal
         isOpen={leadModalOpen}
         onClose={() => setLeadModalOpen(false)}
-        university={selectedUni}
-        leadType={leadType}
+        university={selectedUniForLead}
+        leadType={leadModalType}
         onSuccess={() => {
-          if (leadType === 'brochure' && selectedUni) {
-            handleDownloadBrochure(selectedUni);
+          if (leadModalType === 'brochure' && selectedUniForLead) {
+            handleDownloadBrochure(selectedUniForLead);
           }
         }}
       />
