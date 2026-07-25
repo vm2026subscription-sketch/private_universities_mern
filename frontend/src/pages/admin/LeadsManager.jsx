@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Building2, TrendingUp, Eye, FileText, CheckCircle, Download, ExternalLink } from 'lucide-react';
+import { Mail, Building2, TrendingUp, Eye, FileText, Download, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import DataTable from './components/DataTable';

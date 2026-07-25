@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2, Plus, Bell } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import { useRole } from '../../hooks/useRole';

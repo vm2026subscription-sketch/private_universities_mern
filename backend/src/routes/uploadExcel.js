@@ -1,7 +1,6 @@
 const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
-const mongoose = require('mongoose');
 const University = require('../models/University');
 const Course = require('../models/Course');
 const AuditLog = require('../models/AuditLog');

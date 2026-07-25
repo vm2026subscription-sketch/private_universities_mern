@@ -13,7 +13,6 @@ import {
   Copy,
   CheckCircle2,
   AlertCircle,
-  StarOff,
   Star,
   Crown,
   Medal,
@@ -742,19 +741,6 @@ export default function UniversitiesManager() {
       load();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete university');
-    }
-  };
-
-  const removeSponsorship = async (university) => {
-    if (!window.confirm(`Remove sponsorship from "${university.name}"? This will reset their tier to None.`)) return;
-    try {
-      await api.patch(`/admin/universities/${university._id}/sponsorship`, {
-        isSponsored: false,
-      });
-      toast.success(`Sponsorship removed from ${university.name}`);
-      load();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to remove sponsorship');
     }
   };
 

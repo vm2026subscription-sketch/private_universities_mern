@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRightLeft, Check, GraduationCap, Search, Trash2, MapPin, X, Scale, Layers, Sparkles, GripVertical, AlertCircle, Loader2, Award, Star, ArrowUpRight, Trophy, TrendingUp, Crown } from 'lucide-react';
+import { ArrowRightLeft, Check, GraduationCap, Search, Trash2, MapPin, X, Scale, Layers, GripVertical, AlertCircle, Loader2, Award, Star, ArrowUpRight, Trophy, TrendingUp, Crown } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import api from '../utils/api';
@@ -487,8 +487,6 @@ export default function UniversityComparison() {
 
               {/* Overall Verdict Banner */}
               {(() => {
-                const rankingWinnerIds = comparison?.summary?.bestFor?.ranking || [];
-                const placementWinnerIds = comparison?.summary?.bestFor?.placements || [];
                 const allWinnerCounts = {};
                 comparison?.universities?.forEach(u => { allWinnerCounts[u._id] = 0; });
                 Object.values(comparison?.summary?.bestFor || {}).forEach(ids => {

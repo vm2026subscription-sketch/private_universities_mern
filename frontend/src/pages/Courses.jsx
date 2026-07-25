@@ -4,7 +4,7 @@ import Seo from '../components/common/Seo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, BookOpen, GraduationCap, MapPin, Search, Filter, X, 
-  ChevronRight, CheckCircle2, Sparkles, Building2, Pencil, Trash2,
+  ChevronRight, CheckCircle2, Building2, Pencil, Trash2,
   AlertTriangle, Save, Loader2, Award, AlertCircle, RefreshCw
 } from 'lucide-react';
 import api from '../utils/api';

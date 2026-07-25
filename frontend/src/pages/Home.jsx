@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   GraduationCap, BookOpen, Users, ArrowRight, MapPin, ChevronRight,
-  Bell, Target, Stethoscope, Briefcase, Scale, Palette, Building2,
+  Bell, Stethoscope, Briefcase, Scale, Palette, Building2,
   Atom, MessageSquare,
-  ShieldCheck, FileDown, Sparkles, PhoneCall,
-  School, Trophy, Newspaper, Search, ThumbsUp,
-  Award, Plus, X, Star, Loader2
+  ShieldCheck, FileDown, PhoneCall,
+  School, Search,
+  Award, Plus, X, Loader2
 } from 'lucide-react';
 import api from '../utils/api';
 import { isValidEmail, isValidPhone } from '../utils/contactValidation';
@@ -217,8 +217,8 @@ export default function Home() {
   ];
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
-  const [selectedUni, setSelectedUni] = useState(null);
-  const [leadType, setLeadType] = useState('apply');
+  const [selectedUni] = useState(null);
+  const leadType = 'apply';
   const featuredUniversity = featuredUniversities[currentSlide % featuredUniversities.length];
   const deferredSearchTerm = useDeferredValue(searchTerm);
 

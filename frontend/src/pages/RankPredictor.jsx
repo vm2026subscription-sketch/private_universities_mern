@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Trophy, Target, Search, ArrowRight, ArrowLeft, Building2,
-  ChevronRight, MapPin, Award, Sparkles, Loader2
+  Trophy, ArrowRight, ArrowLeft,
+  ChevronRight, MapPin, Award
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
@@ -19,7 +19,7 @@ const CATEGORIES = ['Open', 'OBC', 'SC', 'ST', 'EWS', 'TFWS'];
 export default function RankPredictor() {
   const [step, setStep] = useState(1);
   const [examsList, setExamsList] = useState(DEFAULT_EXAMS);
-  const [examsLoading, setExamsLoading] = useState(true);
+  const [, setExamsLoading] = useState(true);
   const [formData, setFormData] = useState({
     exam: '',
     score: '',

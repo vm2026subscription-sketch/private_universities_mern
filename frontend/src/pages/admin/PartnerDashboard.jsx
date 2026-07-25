@@ -96,7 +96,6 @@ export default function PartnerDashboard() {
 
   const { university, totalLeads, applyLeads, brochureLeads, recentLeads, dailyLeads, profileViews } = data;
   const tier = TIER_CONFIG[university.sponsorTier] || TIER_CONFIG.none;
-  const cpl = totalLeads > 0 ? 'Active' : 'No leads yet';
   const expiryDate = university.sponsorExpiry
     ? new Date(university.sponsorExpiry).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
     : 'No expiry set';
