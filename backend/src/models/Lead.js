@@ -14,4 +14,10 @@ const leadSchema = new mongoose.Schema({
 leadSchema.index({ universityId: 1, createdAt: -1 });
 leadSchema.index({ email: 1, phone: 1 });
 
+
+// createdAt: the unfiltered admin lead list and the CSV export both sort on it.
+// universityId + leadType: the per-partner apply/brochure counts.
+leadSchema.index({ createdAt: -1 });
+leadSchema.index({ universityId: 1, leadType: 1 });
+
 module.exports = mongoose.model('Lead', leadSchema);

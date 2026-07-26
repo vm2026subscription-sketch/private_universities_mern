@@ -7,6 +7,7 @@ const { issueRefreshToken, revokeAllForUser } = require('../services/refreshToke
 const { setRefreshCookie } = require('./authController');
 const { uploadToCloudinary } = require('../utils/imageUpload');
 const mongoose = require('mongoose');
+const { serverError, fail, paginated } = require('../utils/apiResponse');
 
 const APPLICATION_STATUSES = ['applied', 'pending', 'accepted', 'rejected'];
 
@@ -38,7 +39,7 @@ exports.getProfile = async (req, res) => {
 
     res.json({ success: true, data: getSafeUserProfile(user) });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.getProfile');
   }
 };
 
@@ -49,7 +50,7 @@ exports.updateProfile = async (req, res) => {
       .populate('savedCourses');
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return fail(res, 404, 'User not found');
     }
 
     if (typeof req.body.name === 'string' && req.body.name.trim()) {
@@ -83,14 +84,14 @@ exports.updateProfile = async (req, res) => {
 
     res.json({ success: true, data: getSafeUserProfile(user) });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.updateProfile');
   }
 };
 
 exports.uploadAvatar = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Please select an image file to upload' });
+      return fail(res, 400, 'Please select an image file to upload');
     }
 
     let imageUrl;
@@ -104,7 +105,7 @@ exports.uploadAvatar = async (req, res) => {
 
     const user = await User.findById(req.user._id);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return fail(res, 404, 'User not found');
     }
 
     user.avatar = imageUrl;
@@ -118,7 +119,9 @@ exports.uploadAvatar = async (req, res) => {
       url: imageUrl,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message || 'Avatar upload failed' });
+    // Was `error.message || 'Avatar upload failed'`, which echoed the raw
+    // Cloudinary/driver message (including config details) to the client.
+    return serverError(res, error, 'user.uploadAvatar');
   }
 };
 
@@ -127,39 +130,39 @@ exports.getSavedUniversities = async (req, res) => {
     const user = await User.findById(req.user._id).populate('savedUniversities');
     res.json({ success: true, data: user.savedUniversities });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.getSavedUniversities');
   }
 };
 
 exports.saveUniversity = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.universityId)) {
-      return res.status(400).json({ success: false, message: 'Invalid university ID' });
+      return fail(res, 400, 'Invalid university ID');
     }
 
     const user = await User.findById(req.user._id);
     const university = await University.findById(req.params.universityId).select('_id');
 
     if (!university) {
-      return res.status(404).json({ success: false, message: 'University not found' });
+      return fail(res, 404, 'University not found');
     }
 
     if (user.savedUniversities.map(String).includes(req.params.universityId)) {
-      return res.status(400).json({ success: false, message: 'Already saved' });
+      return fail(res, 400, 'Already saved');
     }
 
     user.savedUniversities.push(req.params.universityId);
     await user.save();
     res.json({ success: true, message: 'University saved' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.saveUniversity');
   }
 };
 
 exports.removeSavedUniversity = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.universityId)) {
-      return res.status(400).json({ success: false, message: 'Invalid university ID' });
+      return fail(res, 400, 'Invalid university ID');
     }
 
     await User.findByIdAndUpdate(req.user._id, {
@@ -167,7 +170,7 @@ exports.removeSavedUniversity = async (req, res) => {
     });
     res.json({ success: true, message: 'University removed' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.removeSavedUniversity');
   }
 };
 
@@ -176,39 +179,39 @@ exports.getSavedCourses = async (req, res) => {
     const user = await User.findById(req.user._id).populate('savedCourses');
     res.json({ success: true, data: user.savedCourses });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.getSavedCourses');
   }
 };
 
 exports.saveCourse = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.courseId)) {
-      return res.status(400).json({ success: false, message: 'Invalid course ID' });
+      return fail(res, 400, 'Invalid course ID');
     }
 
     const user = await User.findById(req.user._id);
     const course = await Course.findById(req.params.courseId).select('_id');
 
     if (!course) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
+      return fail(res, 404, 'Course not found');
     }
 
     if (user.savedCourses.map(String).includes(req.params.courseId)) {
-      return res.status(400).json({ success: false, message: 'Course already saved' });
+      return fail(res, 400, 'Course already saved');
     }
 
     user.savedCourses.push(req.params.courseId);
     await user.save();
     res.json({ success: true, message: 'Course saved' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.saveCourse');
   }
 };
 
 exports.removeSavedCourse = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.courseId)) {
-      return res.status(400).json({ success: false, message: 'Invalid course ID' });
+      return fail(res, 400, 'Invalid course ID');
     }
 
     await User.findByIdAndUpdate(req.user._id, {
@@ -216,7 +219,7 @@ exports.removeSavedCourse = async (req, res) => {
     });
     res.json({ success: true, message: 'Course removed' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.removeSavedCourse');
   }
 };
 
@@ -224,30 +227,30 @@ exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Both fields are required' });
+      return fail(res, 400, 'Both fields are required');
     }
 
     const password = String(newPassword);
 
     // Matches the registration/reset policy (8+, bounded, not trivially weak).
     if (password.length < 8) {
-      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters long' });
+      return fail(res, 400, 'New password must be at least 8 characters long');
     }
     if (password.length > 128) {
-      return res.status(400).json({ success: false, message: 'New password must be at most 128 characters long' });
+      return fail(res, 400, 'New password must be at most 128 characters long');
     }
     if (password === String(currentPassword)) {
-      return res.status(400).json({ success: false, message: 'New password must be different from the current one' });
+      return fail(res, 400, 'New password must be different from the current one');
     }
 
     const user = await User.findById(req.user._id).select('+password');
     if (!user.password) {
-      return res.status(400).json({ success: false, message: 'Password not set (OAuth account)' });
+      return fail(res, 400, 'Password not set (OAuth account)');
     }
 
     const ok = await user.comparePassword(currentPassword);
     if (!ok) {
-      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+      return fail(res, 401, 'Current password is incorrect');
     }
 
     user.password = password;
@@ -278,7 +281,7 @@ exports.changePassword = async (req, res) => {
     });
   } catch (error) {
     console.error('[user] changePassword failed:', error);
-    res.status(500).json({ success: false, message: 'Could not change password' });
+    fail(res, 500, 'Could not change password');
   }
 };
 
@@ -286,7 +289,7 @@ exports.upsertRating = async (req, res) => {
   try {
     const { rating } = req.body;
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
+      return fail(res, 400, 'Rating must be between 1 and 5');
     }
 
     await User.findByIdAndUpdate(req.user._id, {
@@ -295,7 +298,7 @@ exports.upsertRating = async (req, res) => {
 
     res.json({ success: true, message: 'Rating saved' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.upsertRating');
   }
 };
 
@@ -307,7 +310,7 @@ exports.upsertNote = async (req, res) => {
     });
     res.json({ success: true, message: 'Note saved' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.upsertNote');
   }
 };
 
@@ -390,9 +393,15 @@ exports.getRecommendations = async (req, res) => {
         .map((item) => item.uni);
     }
 
-    res.json({ success: true, data: recommendations.slice(0, 20), total: recommendations.length });
+    const RECOMMENDATION_LIMIT = 20;
+    return paginated(res, {
+      data: recommendations.slice(0, RECOMMENDATION_LIMIT),
+      total: recommendations.length,
+      page: 1,
+      limit: RECOMMENDATION_LIMIT,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.getRecommendations');
   }
 };
 
@@ -400,27 +409,27 @@ exports.addApplication = async (req, res) => {
   try {
     const { universityId, notes } = req.body;
     if (!universityId) {
-      return res.status(400).json({ success: false, message: 'University is required' });
+      return fail(res, 400, 'University is required');
     }
     if (!mongoose.Types.ObjectId.isValid(universityId)) {
-      return res.status(400).json({ success: false, message: 'Invalid university ID' });
+      return fail(res, 400, 'Invalid university ID');
     }
 
     const university = await University.findById(universityId).select('_id');
     if (!university) {
-      return res.status(404).json({ success: false, message: 'University not found' });
+      return fail(res, 404, 'University not found');
     }
 
     const user = await User.findById(req.user._id);
     if (user.applications.some((application) => application.universityId.toString() === universityId)) {
-      return res.status(400).json({ success: false, message: 'Application already tracked' });
+      return fail(res, 400, 'Application already tracked');
     }
 
     user.applications.push({ universityId, notes, status: 'applied' });
     await user.save();
     res.json({ success: true, message: 'Application added to tracker' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.addApplication');
   }
 };
 
@@ -428,7 +437,7 @@ exports.updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body;
     if (!APPLICATION_STATUSES.includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid application status' });
+      return fail(res, 400, 'Invalid application status');
     }
 
     const result = await User.updateOne(
@@ -437,12 +446,12 @@ exports.updateApplicationStatus = async (req, res) => {
     );
 
     if (!result.matchedCount) {
-      return res.status(404).json({ success: false, message: 'Application not found' });
+      return fail(res, 404, 'Application not found');
     }
 
     res.json({ success: true, message: 'Status updated' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.updateApplicationStatus');
   }
 };
 
@@ -451,7 +460,7 @@ exports.getNotifications = async (req, res) => {
     const user = await User.findById(req.user._id).select('notifications');
     res.json({ success: true, data: user.notifications });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.getNotifications');
   }
 };
 
@@ -463,6 +472,6 @@ exports.markNotificationRead = async (req, res) => {
     );
     res.json({ success: true, message: 'Notification read' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'user.markNotificationRead');
   }
 };

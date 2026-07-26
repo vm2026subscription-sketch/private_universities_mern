@@ -47,3 +47,6 @@ import_unis.py
 *.import.json
 mh_deemed_import.json
 mh_deemed_import_filled.json
+
+# Scratch archives from an earlier session; not part of the project.
+_to_delete/

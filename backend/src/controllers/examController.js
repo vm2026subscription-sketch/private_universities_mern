@@ -1,4 +1,5 @@
 const Exam = require('../models/Exam');
+const { serverError, fail } = require('../utils/apiResponse');
 
 exports.getExams = async (req, res) => {
   try {
@@ -17,7 +18,7 @@ exports.getExams = async (req, res) => {
     res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({ success: true, data: exams });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'exam.getExams');
   }
 };
 
@@ -28,16 +29,16 @@ exports.getUpcoming = async (req, res) => {
     res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({ success: true, data: exams });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'exam.getUpcoming');
   }
 };
 
 exports.getExam = async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
-    if (!exam) return res.status(404).json({ success: false, message: 'Exam not found' });
+    if (!exam) return fail(res, 404, 'Exam not found');
     res.json({ success: true, data: exam });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'exam.getExam');
   }
 };

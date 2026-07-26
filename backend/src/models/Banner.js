@@ -28,4 +28,10 @@ const bannerSchema = new mongoose.Schema({
 bannerSchema.index({ position: 1, isActive: 1, priority: -1 });
 bannerSchema.index({ page: 1, isActive: 1 });
 
+
+// getActiveBanners filters isActive + page + position and sorts by priority;
+// neither existing index covers that combination. getAnalytics sorts impressions.
+bannerSchema.index({ isActive: 1, page: 1, position: 1, priority: -1 });
+bannerSchema.index({ impressions: -1 });
+
 module.exports = mongoose.model('Banner', bannerSchema);

@@ -133,8 +133,27 @@ universitySchema.pre('validate', function(next) {
   next();
 });
 
+/**
+ * Whether the pre-save hook should derive the slug from the name.
+ *
+ * Auto-generate when the name changed — but NEVER overwrite a slug the caller set
+ * deliberately in the same operation.
+ *
+ * Without the isModified('slug') guard this hook clobbered the collision-free slug
+ * that utils/slug.buildUniqueSlug had just computed, so creating a second
+ * university whose name slugifies identically (the same institution name in a
+ * different state — precisely what the name+state import matching now does)
+ * failed on the unique index with E11000. routes/uploadExcel documents having to
+ * use insertMany specifically to dodge this hook.
+ *
+ * Exposed as a static so the decision can be unit tested without a database.
+ */
+const shouldRegenerateSlug = (doc) => doc.isModified('name') && !doc.isModified('slug');
+
+universitySchema.statics.shouldRegenerateSlug = shouldRegenerateSlug;
+
 universitySchema.pre('save', function(next) {
-  if (this.isModified('name')) {
+  if (shouldRegenerateSlug(this)) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
   next();
@@ -148,5 +167,27 @@ universitySchema.index({ type: 1, nirfRank: 1 });
 universitySchema.index({ state: 1, nirfRank: 1 });
 universitySchema.index({ isSponsored: -1, sponsorPriority: -1 });
 universitySchema.index({ state: 1, 'stats.avgPackageLPA': -1 });
+
+
+/**
+ * Added indexes, each backing a query that previously did a collection scan:
+ *  - { name, state }: the import matcher's key (utils/universityMatching) and
+ *    adminController's bulk-import lookup. The existing `name` TEXT index cannot
+ *    serve an equality match, so every imported row scanned all universities —
+ *    O(rows x universities) on a 400-university, 2000-row import.
+ *  - { status, isSponsored, sponsorPriority, nirfRank }: the default university
+ *    listing (published + sponsored-first + by rank). Previously the match used
+ *    an index but the sort did not, forcing an in-memory sort of the result set.
+ *  - { views }: getTrends and the SaaS "top viewed" report both sort on it.
+ *  - { updatedAt }: every admin getContentData listing sorts newest-updated first.
+ *  - { admissions.acceptedExams }: the ?entranceExam filter.
+ *  - { status, seo.indexStatus }: the sitemap's filter.
+ */
+universitySchema.index({ name: 1, state: 1 });
+universitySchema.index({ status: 1, isSponsored: -1, sponsorPriority: -1, nirfRank: 1 });
+universitySchema.index({ views: -1 });
+universitySchema.index({ updatedAt: -1 });
+universitySchema.index({ 'admissions.acceptedExams': 1 });
+universitySchema.index({ status: 1, 'seo.indexStatus': 1 });
 
 module.exports = mongoose.model('University', universitySchema);

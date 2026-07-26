@@ -4,14 +4,13 @@ const Course = require('../models/Course');
 const { buildUniqueSlug } = require('../utils/slug');
 const { escapeRegExp } = require('../utils/regex');
 const { getDisplayUniversityType, normalizeUniversityClassification } = require('../utils/universityClassification');
+const { serverError, fail, paginated } = require('../utils/apiResponse');
+const { publishedUniversityFilter, normalSegmentFilter, segmentFilter } = require('../utils/universityFilters');
 
 const uniq = (items) => [...new Set(items.filter(Boolean))];
-const PUBLISHED_UNIVERSITY_FILTER = {
-  $or: [
-    { status: 'published' },
-    { status: { $exists: false } },
-  ],
-};
+// Shared with courseController, questionController and the sitemap so a record
+// that is invisible on one endpoint is invisible on all of them.
+const PUBLISHED_UNIVERSITY_FILTER = publishedUniversityFilter();
 
 const collectCourseFees = (courses = []) => {
   const fees = courses.flatMap((course) => {
@@ -123,22 +122,10 @@ const createComparisonRows = (profiles) => {
 
 const buildSegmentFilter = (requestedType) => {
   if (requestedType === 'foreign' || requestedType === 'twinning') {
-    return {
-      $or: [
-        { segment: requestedType },
-        { segment: { $exists: false }, type: requestedType },
-      ],
-    };
+    return segmentFilter(requestedType);
   }
 
-  const conditions = [
-    {
-      $or: [
-        { segment: 'normal' },
-        { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
-      ],
-    },
-  ];
+  const conditions = [normalSegmentFilter()];
 
   if (requestedType === 'private' || requestedType === 'deemed') {
     conditions.push({
@@ -278,37 +265,112 @@ exports.getUniversities = async (req, res) => {
     let universities;
     let total;
 
+    const projection = LIST_FIELDS.split(' ').reduce((acc, field) => {
+      acc[field] = 1;
+      return acc;
+    }, {});
+
     if (sort === 'fees_asc' || sort === 'fees_desc') {
-      const allUniversities = await University.find(filter, LIST_FIELDS).populate({
-        path: 'courses',
-        select: 'feesPerYear specializations.feesPerYear'
-      });
-      const sortedUniversities = allUniversities.sort((a, b) => {
-        // Prepend sponsorship sorting
-        const aSponsored = a.isSponsored && (!a.sponsorExpiry || new Date(a.sponsorExpiry) > new Date());
-        const bSponsored = b.isSponsored && (!b.sponsorExpiry || new Date(b.sponsorExpiry) > new Date());
+      /**
+       * Fee sorting, entirely server-side.
+       *
+       * This branch previously loaded EVERY matching university with its courses
+       * populated, sorted the whole array in Node, and then sliced one page out of
+       * it — so a request for 12 records pulled ~400 universities and ~8k course
+       * subdocuments into the heap and threw almost all of it away. The work now
+       * happens in one aggregation that returns exactly one page plus the count.
+       *
+       * The $lookup sub-pipeline projects a single number per course (the lower of
+       * its own feesPerYear and its cheapest specialization) instead of the whole
+       * document, so the join stays narrow. Requires MongoDB 5.0+ for the
+       * sub-pipeline form.
+       *
+       * BEHAVIOUR CHANGE, deliberate: universities with no fee data at all now sort
+       * LAST in both directions. Previously the missing-fee sentinel was
+       * MAX_SAFE_INTEGER regardless of direction, so "Highest fees first" led with
+       * the universities that have no fees recorded.
+       */
+      const feeSentinel = sort === 'fees_desc' ? -1 : Number.MAX_SAFE_INTEGER;
+      const now = new Date();
 
-        if (aSponsored && !bSponsored) return -1;
-        if (!aSponsored && bSponsored) return 1;
-        if (aSponsored && bSponsored) {
-          if ((b.sponsorPriority || 0) !== (a.sponsorPriority || 0)) {
-            return (b.sponsorPriority || 0) - (a.sponsorPriority || 0);
-          }
-        }
+      const [result] = await University.aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: 'courses',
+            localField: '_id',
+            foreignField: 'universityId',
+            as: '_courseFees',
+            pipeline: [
+              {
+                $project: {
+                  _id: 0,
+                  min: {
+                    $min: {
+                      $concatArrays: [
+                        [{ $ifNull: ['$feesPerYear', null] }],
+                        { $ifNull: ['$specializations.feesPerYear', []] },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          $addFields: {
+            // $min ignores nulls and yields null for an empty input.
+            _minFee: { $min: '$_courseFees.min' },
+            _sponsoredActive: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$isSponsored', true] },
+                    {
+                      $or: [
+                        { $eq: [{ $ifNull: ['$sponsorExpiry', null] }, null] },
+                        { $gt: ['$sponsorExpiry', now] },
+                      ],
+                    },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            _feeOrder: { $ifNull: ['$_minFee', feeSentinel] },
+            // Priority only applies to a live sponsorship, matching the previous
+            // comparator: an expired sponsor's stale sponsorPriority must not
+            // promote it above ordinary universities.
+            _sponsorRank: {
+              $cond: [{ $eq: ['$_sponsoredActive', 1] }, { $ifNull: ['$sponsorPriority', 0] }, 0],
+            },
+          },
+        },
+        {
+          $sort: {
+            _sponsoredActive: -1,
+            _sponsorRank: -1,
+            _feeOrder: sort === 'fees_desc' ? -1 : 1,
+            name: 1,
+          },
+        },
+        {
+          $facet: {
+            data: [{ $skip: skip }, { $limit: normalizedLimit }, { $project: projection }],
+            total: [{ $count: 'count' }],
+          },
+        },
+      ]);
 
-        const aMinFees = collectCourseFees(a.courses)?.min ?? Number.MAX_SAFE_INTEGER;
-        const bMinFees = collectCourseFees(b.courses)?.min ?? Number.MAX_SAFE_INTEGER;
-        return sort === 'fees_desc' ? bMinFees - aMinFees : aMinFees - bMinFees;
-      });
-
-      total = sortedUniversities.length;
-      universities = sortedUniversities.slice(skip, skip + normalizedLimit);
+      universities = result?.data || [];
+      total = result?.total?.[0]?.count || 0;
     } else if (isRankingSort && !needsCoursePopulate) {
-      const projection = LIST_FIELDS.split(' ').reduce((acc, field) => {
-        acc[field] = 1;
-        return acc;
-      }, {});
-
       const [result] = await University.aggregate([
         { $match: filter },
         {
@@ -347,15 +409,14 @@ exports.getUniversities = async (req, res) => {
     }
 
     res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
-    res.json({
-      success: true,
+    return paginated(res, {
       data: universities,
       total,
       page: normalizedPage,
-      pages: Math.ceil(total / normalizedLimit),
+      limit: normalizedLimit,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.getUniversities');
   }
 };
 
@@ -368,7 +429,7 @@ exports.getUniversity = async (req, res) => {
       university = await University.findOne({ _id: id, ...PUBLISHED_UNIVERSITY_FILTER }).populate('courses');
     }
     
-    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    if (!university) return fail(res, 404, 'University not found');
 
     // Fallback: If courses array is empty (due to seeder logic), fetch them manually
     if (!university.courses || university.courses.length === 0) {
@@ -389,7 +450,7 @@ exports.getUniversity = async (req, res) => {
 
     res.json({ success: true, data: university });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.getUniversity');
   }
 };
 
@@ -408,7 +469,7 @@ exports.createUniversity = async (req, res) => {
     const university = await University.create(payload);
     res.status(201).json({ success: true, data: university });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.createUniversity');
   }
 };
 
@@ -425,21 +486,21 @@ exports.updateUniversity = async (req, res) => {
       });
     }
     const university = await University.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
-    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    if (!university) return fail(res, 404, 'University not found');
     res.json({ success: true, data: university });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.updateUniversity');
   }
 };
 
 exports.deleteUniversity = async (req, res) => {
   try {
     const university = await University.findByIdAndDelete(req.params.id);
-    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    if (!university) return fail(res, 404, 'University not found');
     await Course.deleteMany({ universityId: req.params.id });
     res.json({ success: true, message: 'Deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.deleteUniversity');
   }
 };
 
@@ -484,7 +545,7 @@ exports.searchUniversities = async (req, res) => {
 
     res.json({ success: true, data: universities });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.searchUniversities');
   }
 };
 
@@ -493,7 +554,7 @@ exports.compareUniversities = async (req, res) => {
     const requestedIds = uniq((req.body.universityIds || []).map((id) => id?.toString().trim()));
 
     if (requestedIds.length < 2) {
-      return res.status(400).json({ success: false, message: 'Please select at least 2 universities to compare' });
+      return fail(res, 400, 'Please select at least 2 universities to compare');
     }
 
     const universities = await University.find({ _id: { $in: requestedIds }, ...PUBLISHED_UNIVERSITY_FILTER }).populate('courses');
@@ -502,7 +563,7 @@ exports.compareUniversities = async (req, res) => {
       .filter(Boolean);
 
     if (orderedUniversities.length < 2) {
-      return res.status(404).json({ success: false, message: 'Selected universities not found' });
+      return fail(res, 404, 'Selected universities not found');
     }
 
     const profiles = orderedUniversities.map(buildComparisonProfile);
@@ -537,22 +598,14 @@ exports.compareUniversities = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.compareUniversities');
   }
 };
 
 exports.getTrends = async (req, res) => {
   try {
     const popularUniversities = await University.find({
-      $and: [
-        PUBLISHED_UNIVERSITY_FILTER,
-        {
-          $or: [
-            { segment: 'normal' },
-            { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
-          ],
-        },
-      ],
+      $and: [PUBLISHED_UNIVERSITY_FILTER, normalSegmentFilter()],
     }).sort({ views: -1 }).limit(6).select('name slug views logoUrl city state segment institutionKind type');
     const trendingCourses = await Course.aggregate([
       { $group: { _id: '$category', count: { $sum: 1 } } },
@@ -562,7 +615,7 @@ exports.getTrends = async (req, res) => {
     res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, popularUniversities, trendingCourses });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.getTrends');
   }
 };
 
@@ -572,15 +625,7 @@ exports.getStateCounts = async (req, res) => {
     const rows = await University.aggregate([
       {
         $match: {
-          $and: [
-            PUBLISHED_UNIVERSITY_FILTER,
-            {
-              $or: [
-                { segment: 'normal' },
-                { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
-              ],
-            },
-          ],
+          $and: [PUBLISHED_UNIVERSITY_FILTER, normalSegmentFilter()],
         },
       },
       { $match: { state: { $nin: [null, ''] } } },
@@ -591,7 +636,7 @@ exports.getStateCounts = async (req, res) => {
     res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, data: counts });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.getStateCounts');
   }
 };
 
@@ -602,10 +647,10 @@ exports.getSimilarUniversities = async (req, res) => {
     const { id } = req.params;
     // Guard against a non-ObjectId id (otherwise a CastError leaks as a 500).
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(404).json({ success: false, message: 'University not found' });
+      return fail(res, 404, 'University not found');
     }
     const university = await University.findOne({ _id: id, ...PUBLISHED_UNIVERSITY_FILTER });
-    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    if (!university) return fail(res, 404, 'University not found');
     const classification = normalizeUniversityClassification(university);
 
     // Fetch pool of potential similar universities
@@ -668,6 +713,6 @@ exports.getSimilarUniversities = async (req, res) => {
 
     res.json({ success: true, data: recommendations });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'university.getSimilarUniversities');
   }
 };

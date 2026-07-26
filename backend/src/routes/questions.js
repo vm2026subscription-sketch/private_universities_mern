@@ -1,8 +1,11 @@
 const router = require('express').Router();
 const { getQuestions, getQuestion, createQuestion, postAnswer, upvoteQuestion, upvoteAnswer, markBestAnswer, generateQuestionHelp } = require('../controllers/questionController');
 const { protect } = require('../middleware/auth');
+const { aiAssistLimiter } = require('../middleware/rateLimiters');
 router.route('/').get(getQuestions).post(protect, createQuestion);
-router.post('/assist', generateQuestionHelp);
+// Public and unauthenticated, but every call spends a Gemini request from a quota
+// measured in tens per day on the free tier — so it gets its own per-IP budget.
+router.post('/assist', aiAssistLimiter, generateQuestionHelp);
 router.get('/:id', getQuestion);
 router.post('/:id/answers', protect, postAnswer);
 router.put('/:id/upvote', protect, upvoteQuestion);

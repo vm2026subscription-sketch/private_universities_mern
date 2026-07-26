@@ -24,6 +24,7 @@ const bhashiniRoutes = require('./routes/bhashini');
 const sitemapRoutes = require('./routes/sitemap');
 
 const errorHandler = require('./middleware/errorHandler');
+const { notFoundHandler } = require('./middleware/errorHandler');
 const { isProduction } = require('./config/env');
 const compression = require('compression');
 
@@ -157,6 +158,10 @@ app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
 app.use('/api/v1', publicRoutes);
 app.use('/api/v1/admin/upload', uploadExcelRoutes);
+
+// Unmatched route -> JSON 404 (must stay after every route, before errorHandler)
+// so the API never answers with Express' default HTML error page.
+app.use(notFoundHandler);
 
 app.use(errorHandler);
 

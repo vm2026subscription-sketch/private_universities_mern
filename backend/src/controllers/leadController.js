@@ -1,54 +1,93 @@
+const mongoose = require('mongoose');
 const Lead = require('../models/Lead');
 const University = require('../models/University');
+const { serverError, fail, paginated, parsePagination } = require('../utils/apiResponse');
+const { validateSubmission, normalizeEmail, asString } = require('../utils/validators');
+
+const LEAD_TYPES = ['apply', 'brochure'];
 
 // Submit a lead (public route)
 exports.submitLead = async (req, res) => {
   try {
-    const { name, email, phone, state, preferredCourse, universityId, leadType, notes } = req.body;
+    // A lead is a billable event for the sponsoring university, so the payload is
+    // validated properly rather than just checked for truthiness: a malformed
+    // email or phone here is a lead the partner cannot act on but still receives.
+    const problem = validateSubmission(req.body, {
+      required: [
+        { key: 'name', label: 'Name' },
+        { key: 'email', label: 'Email' },
+        { key: 'phone', label: 'Phone' },
+        { key: 'state', label: 'State' },
+        { key: 'universityId', label: 'University' },
+        { key: 'leadType', label: 'Lead type' },
+      ],
+      email: true,
+      phone: true,
+      phoneRequired: true,
+    });
+    if (problem) return fail(res, 400, problem);
 
-    if (!name || !email || !phone || !state || !universityId || !leadType) {
-      return res.status(400).json({
-        success: false,
-        message: 'All fields (name, email, phone, state, universityId, leadType) are required.'
-      });
+    const leadType = asString(req.body.leadType).toLowerCase();
+    if (!LEAD_TYPES.includes(leadType)) {
+      return fail(res, 400, `Lead type must be one of: ${LEAD_TYPES.join(', ')}`);
     }
 
-    const university = await University.findById(universityId);
+    // A non-ObjectId universityId previously reached findById and threw a
+    // CastError that surfaced as a 500.
+    const universityId = asString(req.body.universityId);
+    if (!mongoose.Types.ObjectId.isValid(universityId)) {
+      return fail(res, 404, 'University not found.');
+    }
+
+    // Only the existence of the university matters here — select nothing else.
+    const university = await University.exists({ _id: universityId });
     if (!university) {
-      return res.status(404).json({ success: false, message: 'University not found.' });
+      return fail(res, 404, 'University not found.');
     }
 
-    const lead = await Lead.create({ name, email, phone, state, preferredCourse, universityId, leadType, notes });
+    const lead = await Lead.create({
+      name: asString(req.body.name),
+      email: normalizeEmail(req.body.email),
+      phone: asString(req.body.phone),
+      state: asString(req.body.state),
+      preferredCourse: asString(req.body.preferredCourse) || undefined,
+      universityId,
+      leadType,
+      notes: asString(req.body.notes) || undefined,
+    });
 
     res.status(201).json({ success: true, message: 'Lead captured successfully.', data: lead });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'lead.submitLead');
   }
 };
 
 // Retrieve leads (admin route)
 exports.getLeads = async (req, res) => {
   try {
-    const { universityId, page = 1, limit = 20 } = req.query;
+    const { universityId } = req.query;
     const filter = {};
-    if (universityId) filter.universityId = universityId;
+    if (universityId) {
+      if (!mongoose.Types.ObjectId.isValid(universityId)) {
+        return fail(res, 400, 'Invalid universityId');
+      }
+      filter.universityId = universityId;
+    }
 
-    const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
-    const normalizedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
-    const skip = (normalizedPage - 1) * normalizedLimit;
+    const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20 });
 
     const [leads, total] = await Promise.all([
       Lead.find(filter)
         .populate('universityId', 'name slug logoUrl state city')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(normalizedLimit),
-      Lead.countDocuments(filter)
+        .limit(limit),
+      Lead.countDocuments(filter),
     ]);
 
-    res.json({ success: true, data: leads, total, page: normalizedPage, pages: Math.ceil(total / normalizedLimit) });
+    return paginated(res, { data: leads, total, page, limit });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'lead.getLeads');
   }
 };
 
@@ -80,7 +119,7 @@ exports.getSaaSAnalytics = async (req, res) => {
 
     res.json({ success: true, data: { totalLeads, sponsoredCount, leadsByUniversity: leadsByUni, topViewedUniversities: topViewed } });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'lead.getSaaSAnalytics');
   }
 };
 
@@ -131,7 +170,7 @@ exports.exportLeadsCSV = async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send('\uFEFF' + csv); // BOM prefix for Excel UTF-8 compatibility
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'lead.exportLeadsCSV');
   }
 };
 
@@ -139,16 +178,23 @@ exports.exportLeadsCSV = async (req, res) => {
 exports.getPartnerAnalytics = async (req, res) => {
   try {
     const { universityId } = req.params;
-    const { days = 30 } = req.query;
+
+    // A non-ObjectId param previously threw a CastError surfaced as a 500.
+    if (!mongoose.Types.ObjectId.isValid(universityId)) {
+      return fail(res, 404, 'University not found.');
+    }
 
     const university = await University.findById(universityId)
       .select('name slug logoUrl state city isSponsored sponsorTier sponsorExpiry views');
     if (!university) {
-      return res.status(404).json({ success: false, message: 'University not found.' });
+      return fail(res, 404, 'University not found.');
     }
 
+    // Clamp the window: parseInt('abc') gave NaN, which made `since` an Invalid
+    // Date and silently returned an empty chart.
+    const days = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 365);
     const since = new Date();
-    since.setDate(since.getDate() - parseInt(days, 10));
+    since.setDate(since.getDate() - days);
 
     // Leads for this university in date range
     const [totalLeads, applyLeads, brochureLeads, recentLeads] = await Promise.all([
@@ -186,6 +232,6 @@ exports.getPartnerAnalytics = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'lead.getPartnerAnalytics');
   }
 };

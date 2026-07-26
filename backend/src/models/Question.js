@@ -25,4 +25,9 @@ questionSchema.index({ category: 1, createdAt: -1 });
 questionSchema.index({ universityId: 1, createdAt: -1 });
 questionSchema.index({ userId: 1 });
 
+
+// The unfiltered community feed ("All" category) sorts newest-first and matched
+// none of the compound indexes above.
+questionSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Question', questionSchema);

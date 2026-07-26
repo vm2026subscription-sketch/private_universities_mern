@@ -1,17 +1,30 @@
 const cloudinary = require('../config/cloudinary');
 const multer = require('multer');
+const { inspectImage } = require('./fileSignature');
 
 // Multer memory storage for buffer-based uploads
 const storage = multer.memoryStorage();
 
+/**
+ * First-pass filter on the declared MIME type.
+ *
+ * This is a cheap reject for obviously-wrong uploads, NOT a security control:
+ * `file.mimetype` is a client-supplied header and can say anything. The
+ * authoritative check is middleware/fileValidation.validateImageUpload, which
+ * inspects the actual bytes after Multer has buffered them.
+ *
+ * SVG deliberately excluded: SVGs can embed <script>, making them a stored-XSS
+ * vector if ever served inline. Raster formats only.
+ */
 const fileFilter = (req, file, cb) => {
-  // SVG deliberately excluded: SVGs can embed <script>, making them a stored-XSS
-  // vector if ever served inline. Raster formats only.
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPEG, PNG, WebP, and GIF images are allowed'), false);
+    // statusCode makes this a 400 in the shared error handler instead of a 500.
+    const error = new Error('Only JPEG, PNG, WebP, and GIF images are allowed');
+    error.statusCode = 400;
+    cb(error, false);
   }
 };
 
@@ -86,6 +99,13 @@ const deleteFromCloudinary = async (publicId) => {
 const handleImageUpload = (folder = 'general') => async (req, res, next) => {
   if (!req.file) return next();
 
+  // Content check, in case this middleware is mounted without
+  // fileValidation.validateImageUpload in front of it.
+  const inspection = inspectImage(req.file.buffer);
+  if (!inspection.ok) {
+    return res.status(400).json({ success: false, message: inspection.message });
+  }
+
   try {
     const result = await uploadToCloudinary(req.file.buffer, {
       folder: `vidyarthi-mitra/${folder}`
@@ -93,7 +113,10 @@ const handleImageUpload = (folder = 'general') => async (req, res, next) => {
     req.uploadedImage = result;
     next();
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Image upload failed: ' + error.message });
+    // Was `'Image upload failed: ' + error.message`, which leaked the raw
+    // Cloudinary error (including account/config details) to the client.
+    console.error('[cloudinary] Upload failed:', error);
+    res.status(500).json({ success: false, message: 'Image upload failed. Please try again.' });
   }
 };
 

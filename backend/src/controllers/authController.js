@@ -21,6 +21,12 @@ const otpService = require('../services/otpService');
 const { getSafeUser } = require('../utils/userSerializer');
 const { logAction } = require('../services/auditService');
 const { isDevEchoEnabled, isProduction, getAuthConfig } = require('../config/env');
+// `fail`, `normalizeEmail` and `isValidEmail` used to be defined locally here and
+// again (in slightly different forms) elsewhere in the codebase. They now come
+// from the shared helpers so every endpoint returns the identical error shape and
+// applies the identical address rules.
+const { fail } = require('../utils/apiResponse');
+const { normalizeEmail, isValidEmail } = require('../utils/validators');
 const {
   signAccessToken,
   signMfaChallengeToken,
@@ -46,15 +52,11 @@ const REFRESH_COOKIE = 'vm_refresh';
  */
 const DUMMY_HASH = bcrypt.hashSync('vidyarthi-mitra-timing-equalizer', 12);
 
-const normalizeEmail = (email = '') => String(email).trim().toLowerCase();
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const getClientUrl = () =>
   (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
 
 /** Uniform message for every credential failure — never reveals which part failed. */
 const INVALID_CREDENTIALS = 'Invalid email or password';
-
-const fail = (res, status, message) => res.status(status).json({ success: false, message });
 
 /**
  * Rejects passwords that are too short, absurdly long (bcrypt truncates at 72

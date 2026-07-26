@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Course = require('../models/Course');
 const { escapeRegExp } = require('../utils/regex');
+const { serverError, fail, paginated } = require('../utils/apiResponse');
+const { publishedUniversityFilter, segmentFilter } = require('../utils/universityFilters');
 
 const STREAM_MAP = {
   'mba/pgdm': 'Management',
@@ -20,12 +22,8 @@ const normalizeStream = (stream) => {
   return STREAM_MAP[key] || stream;
 };
 
-const PUBLISHED_UNIVERSITY_MATCH = {
-  $or: [
-    { 'universityId.status': 'published' },
-    { 'universityId.status': { $exists: false } },
-  ],
-};
+// The university is joined in under `universityId` here, hence the prefix.
+const PUBLISHED_UNIVERSITY_MATCH = publishedUniversityFilter('universityId');
 
 exports.getCourses = async (req, res) => {
   try {
@@ -48,7 +46,7 @@ exports.getCourses = async (req, res) => {
     
     if (universityId) {
       if (!mongoose.Types.ObjectId.isValid(universityId)) {
-        return res.status(400).json({ success: false, message: 'Invalid universityId' });
+        return fail(res, 400, 'Invalid universityId');
       }
       match.universityId = new mongoose.Types.ObjectId(universityId);
     }
@@ -77,27 +75,25 @@ exports.getCourses = async (req, res) => {
     });
     pipeline.push({ $unwind: '$universityId' });
 
-    const universityMatch = {};
-    Object.assign(universityMatch, PUBLISHED_UNIVERSITY_MATCH);
+    /**
+     * Both the published-status check and the segment check are $or clauses, so
+     * they MUST be combined under $and. Assigning `universityMatch.$or` twice
+     * (the previous code) silently discarded the published filter, which meant
+     * courses belonging to DRAFT universities were served on the public course
+     * list whenever a segment filter applied — i.e. by default.
+     */
+    const universityConditions = [PUBLISHED_UNIVERSITY_MATCH];
+
+    if (segment && segment !== 'all' && !universityId) {
+      universityConditions.push(segmentFilter(segment, 'universityId'));
+    }
+
+    const universityMatch = { $and: universityConditions };
     if (state && state !== 'All') {
       universityMatch['universityId.state'] = { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') };
     }
-    if (segment && segment !== 'all' && !universityId) {
-      if (segment === 'foreign' || segment === 'twinning') {
-        universityMatch.$or = [
-          { 'universityId.segment': segment },
-          { 'universityId.segment': { $exists: false }, 'universityId.type': segment },
-        ];
-      } else {
-        universityMatch.$or = [
-          { 'universityId.segment': 'normal' },
-          { 'universityId.segment': { $exists: false }, 'universityId.type': { $nin: ['foreign', 'twinning'] } },
-        ];
-      }
-    }
-    if (Object.keys(universityMatch).length) {
-      pipeline.push({ $match: universityMatch });
-    }
+
+    pipeline.push({ $match: universityMatch });
     
     // Get total count before pagination
     const countPipeline = [...pipeline, { $count: 'total' }];
@@ -139,18 +135,17 @@ exports.getCourses = async (req, res) => {
     const courses = await Course.aggregate(pipeline);
 
     res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
-    res.json({
-      success: true,
+    // This endpoint used to be the ONLY one returning pagination nested under a
+    // `pagination` key. It still does — plus the flat fields every other list
+    // endpoint emits — so both conventions now resolve to the same numbers.
+    return paginated(res, {
       data: courses,
-      pagination: {
-        total,
-        page: normalizedPage,
-        limit: normalizedLimit,
-        pages: Math.ceil(total / normalizedLimit)
-      }
+      total,
+      page: normalizedPage,
+      limit: normalizedLimit,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'course.getCourses');
   }
 };
 
@@ -160,7 +155,7 @@ exports.getCategories = async (req, res) => {
     res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, data: categories });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'course.getCategories');
   }
 };
 
@@ -173,7 +168,7 @@ exports.getGroupedCourses = async (req, res) => {
     // Filter by universityId if provided
     if (universityId) {
       if (!mongoose.Types.ObjectId.isValid(universityId)) {
-        return res.status(400).json({ success: false, message: 'Invalid universityId' });
+        return fail(res, 400, 'Invalid universityId');
       }
       pipeline.push({ $match: { universityId: new mongoose.Types.ObjectId(universityId) } });
     }
@@ -201,33 +196,12 @@ exports.getGroupedCourses = async (req, res) => {
     pipeline.push({ $unwind: '$university' });
 
     const universityMatch = {};
-    universityMatch.$and = [
-      {
-        $or: [
-          { 'university.status': 'published' },
-          { 'university.status': { $exists: false } },
-        ],
-      },
-    ];
+    universityMatch.$and = [publishedUniversityFilter('university')];
     if (state && state !== 'All') {
       universityMatch.$and.push({ 'university.state': { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') } });
     }
     if (segment && segment !== 'all' && !universityId) {
-      if (segment === 'foreign' || segment === 'twinning') {
-        universityMatch.$and.push({
-          $or: [
-            { 'university.segment': segment },
-            { 'university.segment': { $exists: false }, 'university.type': segment },
-          ],
-        });
-      } else {
-        universityMatch.$and.push({
-          $or: [
-            { 'university.segment': 'normal' },
-            { 'university.segment': { $exists: false }, 'university.type': { $nin: ['foreign', 'twinning'] } },
-          ],
-        });
-      }
+      universityMatch.$and.push(segmentFilter(segment, 'university'));
     }
     if (universityMatch.$and.length) {
       pipeline.push({ $match: universityMatch });
@@ -299,7 +273,7 @@ exports.getGroupedCourses = async (req, res) => {
     res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({ success: true, data: grouped });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'course.getGroupedCourses');
   }
 };
 
@@ -317,20 +291,7 @@ exports.getStreamStats = async (req, res) => {
       { $unwind: '$university' },
       {
         $match: {
-          $and: [
-            {
-              $or: [
-                { 'university.status': 'published' },
-                { 'university.status': { $exists: false } },
-              ],
-            },
-            {
-              $or: [
-                { 'university.segment': 'normal' },
-                { 'university.segment': { $exists: false }, 'university.type': { $nin: ['foreign', 'twinning'] } },
-              ],
-            },
-          ],
+          $and: [publishedUniversityFilter('university'), segmentFilter('normal', 'university')],
         },
       },
       {
@@ -351,7 +312,7 @@ exports.getStreamStats = async (req, res) => {
     res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, data: stats });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'course.getStreamStats');
   }
 };
 
@@ -360,12 +321,12 @@ exports.getCourse = async (req, res) => {
     // Guard against a non-ObjectId id, which otherwise throws a Mongoose
     // CastError surfaced as a raw 500. A malformed id is simply "not found".
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
+      return fail(res, 404, 'Course not found');
     }
     const course = await Course.findById(req.params.id).populate('universityId');
-    if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
+    if (!course) return fail(res, 404, 'Course not found');
     res.json({ success: true, data: course });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'course.getCourse');
   }
 };

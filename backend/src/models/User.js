@@ -142,4 +142,14 @@ userSchema.methods.isLocked = function() {
 
 userSchema.statics.ROLES = ROLES;
 
+
+/**
+ * The User collection previously relied only on the unique email / sparse phone
+ * indexes, so the admin user list (sort createdAt desc) and every dashboard
+ * count (by role, by verification state) scanned the whole collection.
+ */
+userSchema.index({ createdAt: -1 });
+userSchema.index({ role: 1, status: 1 });
+userSchema.index({ isEmailVerified: 1 });
+
 module.exports = mongoose.model('User', userSchema);

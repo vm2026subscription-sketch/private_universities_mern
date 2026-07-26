@@ -8,6 +8,9 @@ const { buildUniqueSlug } = require('../utils/slug');
 const { normalizeUniversityClassification } = require('../utils/universityClassification');
 const { logAction } = require('../services/auditService');
 const { revokeAllForUser } = require('../services/refreshTokenService');
+const { serverError, fail, paginated, parsePagination } = require('../utils/apiResponse');
+const { escapeRegExp } = require('../utils/regex');
+const { findExistingUniversity, describeMatch } = require('../utils/universityMatching');
 
 const splitPipe = (value) => String(value || '').split('|').map((item) => item.trim()).filter(Boolean);
 const parseNumber = (value) => {
@@ -203,7 +206,7 @@ exports.getDashboard = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.getDashboard');
   }
 };
 
@@ -250,16 +253,44 @@ exports.getContentData = async (req, res) => {
 
     res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.getContentData');
   }
 };
 
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 }).select('name email role isEmailVerified createdAt');
-    res.json({ success: true, data: users });
+    const { role, status, search } = req.query;
+    const filter = {};
+    if (role) filter.role = role;
+    if (status) filter.status = status;
+    if (search) {
+      const safe = escapeRegExp(String(search).trim());
+      filter.$or = [
+        { name: { $regex: safe, $options: 'i' } },
+        { email: { $regex: safe, $options: 'i' } },
+      ];
+    }
+
+    // Pagination is opt-in (?page/?limit); without it the full list is returned
+    // so the existing admin screen is unaffected.
+    const { page, limit, skip, isPaginated } = parsePagination(req.query, { defaultLimit: 25 });
+
+    const query = User.find(filter)
+      .sort({ createdAt: -1 })
+      .select('name email role status isEmailVerified createdAt');
+
+    if (isPaginated) query.skip(skip).limit(limit);
+
+    const [users, total] = await Promise.all([query, User.countDocuments(filter)]);
+
+    return paginated(res, {
+      data: users,
+      total,
+      page: isPaginated ? page : 1,
+      limit: isPaginated ? limit : null,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.getUsers');
   }
 };
 
@@ -280,7 +311,7 @@ exports.getUsers = async (req, res) => {
 exports.updateUserAccess = async (req, res) => {
   try {
     const target = await User.findById(req.params.id);
-    if (!target) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!target) return fail(res, 404, 'User not found');
 
     const updates = {};
     let privilegeChanged = false;
@@ -328,10 +359,10 @@ exports.updateUserAccess = async (req, res) => {
     if (typeof req.body.status === 'string') {
       const nextStatus = req.body.status.trim();
       if (!['active', 'suspended', 'banned'].includes(nextStatus)) {
-        return res.status(400).json({ success: false, message: 'Invalid account status' });
+        return fail(res, 400, 'Invalid account status');
       }
       if (String(target._id) === String(req.user._id) && nextStatus !== 'active') {
-        return res.status(400).json({ success: false, message: 'You cannot suspend or ban your own account' });
+        return fail(res, 400, 'You cannot suspend or ban your own account');
       }
       if (nextStatus !== target.status) {
         updates.status = nextStatus;
@@ -374,24 +405,24 @@ exports.updateUserAccess = async (req, res) => {
     res.json({ success: true, data });
   } catch (error) {
     console.error('[admin] updateUserAccess failed:', error);
-    res.status(500).json({ success: false, message: 'Could not update user access' });
+    fail(res, 500, 'Could not update user access');
   }
 };
 
 exports.deleteUser = async (req, res) => {
   try {
     if (req.user._id.toString() === req.params.id) {
-      return res.status(400).json({ success: false, message: 'You cannot delete your own account' });
+      return fail(res, 400, 'You cannot delete your own account');
     }
 
     const target = await User.findById(req.params.id);
-    if (!target) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!target) return fail(res, 404, 'User not found');
 
     // Deleting the last superadmin would permanently orphan the admin panel.
     if (target.role === 'superadmin') {
       const remaining = await User.countDocuments({ role: 'superadmin', _id: { $ne: target._id } });
       if (remaining === 0) {
-        return res.status(400).json({ success: false, message: 'Cannot delete the last remaining superadmin' });
+        return fail(res, 400, 'Cannot delete the last remaining superadmin');
       }
     }
 
@@ -413,17 +444,17 @@ exports.deleteUser = async (req, res) => {
     res.json({ success: true, message: 'User deleted' });
   } catch (error) {
     console.error('[admin] deleteUser failed:', error);
-    res.status(500).json({ success: false, message: 'Could not delete user' });
+    fail(res, 500, 'Could not delete user');
   }
 };
 
 exports.deleteQuestion = async (req, res) => {
   try {
     const question = await Question.findByIdAndDelete(req.params.id);
-    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
+    if (!question) return fail(res, 404, 'Question not found');
     res.json({ success: true, message: 'Question deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.deleteQuestion');
   }
 };
 
@@ -453,7 +484,7 @@ exports.createUniversity = async (req, res) => {
     const populatedUniversity = await University.findById(university._id).populate('courses');
     res.status(201).json({ success: true, data: populatedUniversity });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.createUniversity');
   }
 };
 
@@ -470,7 +501,7 @@ exports.updateUniversity = async (req, res) => {
     }
 
     const existing = await University.findById(req.params.id);
-    if (!existing) return res.status(404).json({ success: false, message: 'University not found' });
+    if (!existing) return fail(res, 404, 'University not found');
 
     // Only superadmin can modify sponsorship fields
     if (req.user?.role !== 'superadmin') {
@@ -492,20 +523,20 @@ exports.updateUniversity = async (req, res) => {
     university = await University.findById(university._id).populate('courses');
     res.json({ success: true, data: university });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.updateUniversity');
   }
 };
 
 exports.deleteUniversity = async (req, res) => {
   try {
     const university = await University.findByIdAndDelete(req.params.id);
-    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    if (!university) return fail(res, 404, 'University not found');
 
     await Course.deleteMany({ universityId: req.params.id });
 
     res.json({ success: true, message: 'University deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.deleteUniversity');
   }
 };
 
@@ -533,11 +564,11 @@ exports.patchSponsorship = async (req, res) => {
       runValidators: true,
     }).select('name slug isSponsored sponsorTier sponsorPriority sponsorExpiry');
 
-    if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    if (!university) return fail(res, 404, 'University not found');
 
     res.json({ success: true, data: university });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.patchSponsorship');
   }
 };
 
@@ -545,7 +576,7 @@ exports.duplicateUniversity = async (req, res) => {
   try {
     const sourceUniversity = await University.findById(req.params.id).populate('courses');
     if (!sourceUniversity) {
-      return res.status(404).json({ success: false, message: 'University not found' });
+      return fail(res, 404, 'University not found');
     }
 
     const source = sourceUniversity.toObject();
@@ -585,7 +616,7 @@ exports.duplicateUniversity = async (req, res) => {
     const populatedUniversity = await University.findById(duplicatedUniversity._id).populate('courses');
     res.status(201).json({ success: true, data: populatedUniversity });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.duplicateUniversity');
   }
 };
 
@@ -593,7 +624,7 @@ exports.createCourse = async (req, res) => {
   try {
     const payload = sanitizeCoursePayload(req.body, req.body.universityId);
     if (!payload) {
-      return res.status(400).json({ success: false, message: 'Course base name is required' });
+      return fail(res, 400, 'Course base name is required');
     }
     if (payload.name) {
       payload.slug = await buildUniqueSlug({
@@ -615,19 +646,19 @@ exports.createCourse = async (req, res) => {
     const populatedCourse = await Course.findById(course._id).populate('universityId', 'name slug city state');
     res.status(201).json({ success: true, data: populatedCourse });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.createCourse');
   }
 };
 
 exports.updateCourse = async (req, res) => {
   try {
     const existingCourse = await Course.findById(req.params.id);
-    if (!existingCourse) return res.status(404).json({ success: false, message: 'Course not found' });
+    if (!existingCourse) return fail(res, 404, 'Course not found');
 
     const oldUniversityId = existingCourse.universityId?.toString();
     const payload = sanitizeCoursePayload(req.body, req.body.universityId || existingCourse.universityId);
     if (!payload) {
-      return res.status(400).json({ success: false, message: 'Course base name is required' });
+      return fail(res, 400, 'Course base name is required');
     }
     if (payload.name) {
       payload.slug = await buildUniqueSlug({
@@ -668,14 +699,14 @@ exports.updateCourse = async (req, res) => {
 
     res.json({ success: true, data: course });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.updateCourse');
   }
 };
 
 exports.deleteCourse = async (req, res) => {
   try {
     const course = await Course.findByIdAndDelete(req.params.id);
-    if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
+    if (!course) return fail(res, 404, 'Course not found');
 
     const university = await University.findByIdAndUpdate(course.universityId, { $pull: { courses: course._id } }, { new: true });
     if (university) {
@@ -688,7 +719,7 @@ exports.deleteCourse = async (req, res) => {
 
     res.json({ success: true, message: 'Course deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.deleteCourse');
   }
 };
 
@@ -697,27 +728,27 @@ exports.createExam = async (req, res) => {
     const exam = await Exam.create(req.body);
     res.status(201).json({ success: true, data: exam });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.createExam');
   }
 };
 
 exports.updateExam = async (req, res) => {
   try {
     const exam = await Exam.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!exam) return res.status(404).json({ success: false, message: 'Exam not found' });
+    if (!exam) return fail(res, 404, 'Exam not found');
     res.json({ success: true, data: exam });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.updateExam');
   }
 };
 
 exports.deleteExam = async (req, res) => {
   try {
     const exam = await Exam.findByIdAndDelete(req.params.id);
-    if (!exam) return res.status(404).json({ success: false, message: 'Exam not found' });
+    if (!exam) return fail(res, 404, 'Exam not found');
     res.json({ success: true, message: 'Exam deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.deleteExam');
   }
 };
 
@@ -726,27 +757,27 @@ exports.createNews = async (req, res) => {
     const article = await News.create(req.body);
     res.status(201).json({ success: true, data: article });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.createNews');
   }
 };
 
 exports.updateNews = async (req, res) => {
   try {
     const article = await News.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!article) return res.status(404).json({ success: false, message: 'News article not found' });
+    if (!article) return fail(res, 404, 'News article not found');
     res.json({ success: true, data: article });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.updateNews');
   }
 };
 
 exports.deleteNews = async (req, res) => {
   try {
     const article = await News.findByIdAndDelete(req.params.id);
-    if (!article) return res.status(404).json({ success: false, message: 'News article not found' });
+    if (!article) return fail(res, 404, 'News article not found');
     res.json({ success: true, message: 'News article deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.deleteNews');
   }
 };
 
@@ -754,27 +785,49 @@ exports.bulkImportUniversities = async (req, res) => {
   try {
     const list = Array.isArray(req.body) ? req.body : req.body.universities;
     if (!Array.isArray(list)) {
-      return res.status(400).json({ success: false, message: 'Invalid data format. Expected an array of universities.' });
+      return fail(res, 400, 'Invalid data format. Expected an array of universities.');
     }
 
     const results = [];
     const errors = [];
+    const created = [];
+    const updated = [];
 
-    for (const item of list) {
+    for (const [index, item] of list.entries()) {
       try {
         const { payload, courses, hasCoursesField } = sanitizeUniversityPayload(item);
         if (!payload.name || !payload.state || !payload.city) {
-          errors.push({ item, error: 'Name, state, and city are required.' });
+          errors.push({ index, name: payload.name || null, item, error: 'Name, state, and city are required.' });
           continue;
         }
 
-        let university;
-        if (payload.universityCode) {
-          university = await University.findOne({ universityCode: payload.universityCode.toUpperCase() });
+        /**
+         * Matching now goes through the shared resolver: universityCode first,
+         * then name + STATE.
+         *
+         * Matching on name alone (the previous behaviour) merged two different
+         * institutions that happen to share a name in different states — the
+         * second row silently overwrote the first record instead of creating the
+         * new one, so an import of N universities could persist fewer than N and
+         * corrupt the survivor's data with the other's values.
+         */
+        const match = await findExistingUniversity({
+          name: payload.name,
+          state: payload.state,
+          universityCode: payload.universityCode,
+        });
+
+        if (match.ambiguous) {
+          errors.push({
+            index,
+            name: payload.name,
+            item,
+            error: `"${payload.name}" matches more than one existing university (${match.candidates.join(', ')}). Provide a universityCode or a state to disambiguate.`,
+          });
+          continue;
         }
-        if (!university) {
-          university = await University.findOne({ name: payload.name });
-        }
+
+        const university = match.doc;
 
         if (university) {
           payload.slug = await buildUniqueSlug({
@@ -783,37 +836,45 @@ exports.bulkImportUniversities = async (req, res) => {
             currentId: university._id,
             fallback: 'university',
           });
-          const updated = await University.findByIdAndUpdate(university._id, payload, { new: true, runValidators: true });
+          const doc = await University.findByIdAndUpdate(university._id, payload, { new: true, runValidators: true });
           if (hasCoursesField) {
-            await syncUniversityCourses(updated, courses);
+            await syncUniversityCourses(doc, courses);
           }
-          results.push(updated);
+          results.push(doc);
+          updated.push({ index, name: doc.name, state: doc.state, matchedBy: describeMatch(match.matchedBy) });
         } else {
           payload.slug = await buildUniqueSlug({
             model: University,
             value: payload.name,
             fallback: 'university',
           });
-          const created = await University.create(payload);
+          const doc = await University.create(payload);
           if (hasCoursesField) {
-            await syncUniversityCourses(created, courses);
+            await syncUniversityCourses(doc, courses);
           }
-          results.push(created);
+          results.push(doc);
+          created.push({ index, name: doc.name, state: doc.state });
         }
       } catch (err) {
-        errors.push({ item, error: err.message });
+        errors.push({ index, name: item?.name || null, item, error: err.message });
       }
     }
 
     res.json({
       success: true,
-      message: `Bulk import completed: ${results.length} succeeded, ${errors.length} failed.`,
+      message: `Bulk import completed: ${results.length} succeeded (${created.length} created, ${updated.length} updated), ${errors.length} failed.`,
       succeededCount: results.length,
       failedCount: errors.length,
-      errors
+      createdCount: created.length,
+      updatedCount: updated.length,
+      // Which rows were merged into an existing record and on what key, so an
+      // unexpected merge is visible in the response instead of only in the data.
+      created,
+      updated,
+      errors,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.bulkImportUniversities');
   }
 };
 
@@ -821,30 +882,59 @@ exports.bulkImportCourses = async (req, res) => {
   try {
     const list = Array.isArray(req.body) ? req.body : req.body.courses;
     if (!Array.isArray(list)) {
-      return res.status(400).json({ success: false, message: 'Invalid data format. Expected an array of courses.' });
+      return fail(res, 400, 'Invalid data format. Expected an array of courses.');
     }
 
     const results = [];
     const errors = [];
+    const unmatchedUniversities = new Map();
 
-    for (const item of list) {
+    for (const [index, item] of list.entries()) {
       try {
         let universityId = item.universityId;
+
         if (!universityId && item.universityName) {
-          const uni = await University.findOne({ name: item.universityName });
-          if (uni) {
-            universityId = uni._id;
+          // Resolve by name + state (same rule as the university import), so a
+          // course row is never attached to a same-named institution in another
+          // state. `universityState` is the preferred key; `state` is accepted as
+          // an alias because that is what the university payload calls it.
+          const match = await findExistingUniversity({
+            name: item.universityName,
+            state: item.universityState || item.state,
+          });
+
+          if (match.ambiguous) {
+            errors.push({
+              index,
+              universityName: item.universityName,
+              item,
+              error: `University "${item.universityName}" matches more than one record (${match.candidates.join(', ')}). Add a universityState to disambiguate.`,
+            });
+            continue;
           }
+
+          if (match.doc) universityId = match.doc._id;
         }
 
         if (!universityId) {
-          errors.push({ item, error: 'University not found or not specified.' });
+          const label = item.universityName || '(not specified)';
+          const seen = unmatchedUniversities.get(label) || { name: label, rows: [], count: 0 };
+          seen.rows.push(index);
+          seen.count += 1;
+          unmatchedUniversities.set(label, seen);
+
+          errors.push({
+            index,
+            universityName: item.universityName || null,
+            item,
+            error: 'University not found or not specified.',
+          });
           continue;
         }
 
         const payload = sanitizeCoursePayload(item, universityId);
         if (!payload) {
-          errors.push({ item, error: 'Course base name is required.' });
+          errors.push({ index, item, error: 'Course base name is required.' });
           continue;
         }
 
@@ -881,19 +971,26 @@ exports.bulkImportCourses = async (req, res) => {
           results.push(created);
         }
       } catch (err) {
-        errors.push({ item, error: err.message });
+        errors.push({ index, item, error: err.message });
       }
     }
+
+    // Unmatched university names, deduplicated and reported with the row indexes
+    // that referenced them, so a failed import says WHICH names to fix rather
+    // than just how many rows failed.
+    const unmatched = [...unmatchedUniversities.values()].sort((a, b) => b.count - a.count);
 
     res.json({
       success: true,
       message: `Bulk import completed: ${results.length} succeeded, ${errors.length} failed.`,
       succeededCount: results.length,
       failedCount: errors.length,
-      errors
+      unmatchedUniversityCount: unmatched.length,
+      unmatchedUniversities: unmatched,
+      errors,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'admin.bulkImportCourses');
   }
 };
 

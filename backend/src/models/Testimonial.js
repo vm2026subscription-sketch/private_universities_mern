@@ -11,6 +11,10 @@ const testimonialSchema = new mongoose.Schema({
   isFeatured: { type: Boolean, default: false }
 }, { timestamps: true });
 
-testimonialSchema.index({ isApproved: 1, isFeatured: -1 });
+// createdAt appended: getApproved sorts { isFeatured: -1, createdAt: -1 }, and
+// without the third key MongoDB still had to sort the matched documents.
+// The old { isApproved: 1, isFeatured: -1 } index is a prefix of this one and is
+// therefore redundant — scripts/ensureIndexes.js reports it so it can be dropped.
+testimonialSchema.index({ isApproved: 1, isFeatured: -1, createdAt: -1 });
 
 module.exports = mongoose.model('Testimonial', testimonialSchema);

@@ -1,17 +1,13 @@
 const University = require('../models/University');
+const { indexableUniversityFilter } = require('../utils/universityFilters');
 
 // The public site origin (Vercel domain). Overridable via env for staging.
 const SITE_URL = (process.env.SITE_URL || 'https://privateuniversity.vidyarthimitra.org').replace(/\/$/, '');
 
-// Only pages that are genuinely public + indexable belong in a sitemap.
-// Mirrors PUBLISHED_UNIVERSITY_FILTER in universityController so the sitemap
-// never advertises a URL that the detail endpoint would 404.
-const PUBLIC_UNIVERSITY_FILTER = {
-  $and: [
-    { $or: [{ status: 'published' }, { status: { $exists: false } }] },
-    { 'seo.indexStatus': { $ne: 'noindex' } },
-  ],
-};
+// Only pages that are genuinely public + indexable belong in a sitemap. Derived
+// from the SAME builder universityController uses, so the sitemap can no longer
+// drift out of sync and advertise a URL the detail endpoint would 404.
+const PUBLIC_UNIVERSITY_FILTER = indexableUniversityFilter();
 
 const xmlEscape = (value) =>
   String(value || '')

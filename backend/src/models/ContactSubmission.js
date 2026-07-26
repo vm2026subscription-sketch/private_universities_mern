@@ -14,4 +14,9 @@ const contactSubmissionSchema = new mongoose.Schema({
 
 contactSubmissionSchema.index({ status: 1, createdAt: -1 });
 
+
+// The existing index is prefixed on `status`, so the UNFILTERED admin list
+// (sort createdAt desc) could not use it.
+contactSubmissionSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('ContactSubmission', contactSubmissionSchema);

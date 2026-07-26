@@ -38,4 +38,21 @@ courseSchema.index({ specializationName: 1 });
 courseSchema.index({ name: 1 });
 
 
+
+/**
+ * Added indexes:
+ *  - { universityId, baseCourse, specializationName }: the exact lookup
+ *    persistCourse() runs for EVERY row of an Excel import. The single-field
+ *    universityId index left it scanning all courses of that university per row.
+ *  - { universityId, name }: adminController.bulkImportCourses' dedup lookup.
+ *  - { feesPerYear } and { category, feesPerYear }: the fee-range distinct() in
+ *    the university filter, and the fee-sorting aggregation's $lookup.
+ *  - { updatedAt }: the admin content listing's sort.
+ */
+courseSchema.index({ universityId: 1, baseCourse: 1, specializationName: 1 });
+courseSchema.index({ universityId: 1, name: 1 });
+courseSchema.index({ feesPerYear: 1 });
+courseSchema.index({ category: 1, feesPerYear: 1 });
+courseSchema.index({ updatedAt: -1 });
+
 module.exports = mongoose.model('Course', courseSchema);

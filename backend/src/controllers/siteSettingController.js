@@ -1,5 +1,6 @@
 const SiteSetting = require('../models/SiteSetting');
 const { logAction } = require('../services/auditService');
+const { serverError, fail } = require('../utils/apiResponse');
 
 exports.getSettings = async (req, res) => {
   try {
@@ -8,14 +9,14 @@ exports.getSettings = async (req, res) => {
     const settings = await SiteSetting.find(filter).sort({ category: 1, key: 1 });
     res.json({ success: true, data: settings });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'siteSetting.getSettings');
   }
 };
 
 exports.upsertSetting = async (req, res) => {
   try {
     const { key, value, category, label, description, type } = req.body;
-    if (!key || !label) return res.status(400).json({ success: false, message: 'Key and label are required' });
+    if (!key || !label) return fail(res, 400, 'Key and label are required');
 
     const existing = await SiteSetting.findOne({ key });
     let setting;
@@ -36,7 +37,7 @@ exports.upsertSetting = async (req, res) => {
 
     res.json({ success: true, data: setting });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'siteSetting.upsertSetting');
   }
 };
 
@@ -61,18 +62,18 @@ exports.bulkUpsertSettings = async (req, res) => {
     await logAction({ userId: req.user._id, action: 'settings_change', resource: 'SiteSetting', description: `Bulk updated ${results.length} settings`, req });
     res.json({ success: true, data: results });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'siteSetting.bulkUpsertSettings');
   }
 };
 
 exports.deleteSetting = async (req, res) => {
   try {
     const setting = await SiteSetting.findByIdAndDelete(req.params.id);
-    if (!setting) return res.status(404).json({ success: false, message: 'Setting not found' });
+    if (!setting) return fail(res, 404, 'Setting not found');
     await logAction({ userId: req.user._id, action: 'delete', resource: 'SiteSetting', resourceId: setting._id, description: `Deleted setting: ${setting.key}`, req });
     res.json({ success: true, message: 'Setting deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'siteSetting.deleteSetting');
   }
 };
 
@@ -84,6 +85,6 @@ exports.getPublicSettings = async (req, res) => {
     settings.forEach(s => { settingsMap[s.key] = s.value; });
     res.json({ success: true, data: settingsMap });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'siteSetting.getPublicSettings');
   }
 };

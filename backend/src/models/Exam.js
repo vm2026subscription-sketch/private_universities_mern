@@ -18,4 +18,13 @@ const examSchema = new mongoose.Schema({
   courses: [String],
 }, { timestamps: true });
 
+
+// The Exam collection had NO indexes. getExams sorts by examDate and filters on
+// category/scope/state; getUpcoming filters examDate >= now and sorts by it.
+examSchema.index({ examDate: 1 });
+examSchema.index({ category: 1, examDate: 1 });
+examSchema.index({ scope: 1, state: 1, examDate: 1 });
+examSchema.index({ registrationDeadline: 1 });
+examSchema.index({ updatedAt: -1 });
+
 module.exports = mongoose.model('Exam', examSchema);

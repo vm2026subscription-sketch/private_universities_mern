@@ -20,11 +20,15 @@ const {
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 const { upload } = require('../utils/imageUpload');
+const { validateImageUpload } = require('../middleware/fileValidation');
 
 /* ── Profile ─────────────────────────────────────── */
 router.get('/profile',  protect, getProfile);
 router.put('/profile',  protect, updateProfile);
-router.post('/avatar',   protect, upload.single('avatar'), uploadAvatar);
+// validateImageUpload verifies the actual bytes, not just the declared MIME
+// type — important here because the avatar can fall back to being stored as a
+// data: URI and re-served to every viewer of the profile.
+router.post('/avatar',   protect, upload.single('avatar'), validateImageUpload, uploadAvatar);
 
 /* ── Saved Universities ──────────────────────────── */
 router.get('/saved-universities',                    protect, getSavedUniversities);

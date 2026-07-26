@@ -10,4 +10,8 @@ const newsletterSchema = new mongoose.Schema({
 
 newsletterSchema.index({ isSubscribed: 1 });
 
+
+// The subscriber list sorts newest-first.
+newsletterSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Newsletter', newsletterSchema);

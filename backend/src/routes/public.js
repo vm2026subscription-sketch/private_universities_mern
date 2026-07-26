@@ -9,6 +9,7 @@ const { subscribe, unsubscribe } = require('../controllers/newsletterController'
 const { getUserNotifications, markAsRead, markAllRead } = require('../controllers/notificationController');
 const { submitLead } = require('../controllers/leadController');
 const { protect } = require('../middleware/auth');
+const { contactLimiter, leadLimiter, newsletterLimiter } = require('../middleware/rateLimiters');
 
 // Public routes
 router.get('/site-settings', getPublicSettings);
@@ -18,10 +19,15 @@ router.get('/testimonials', getApproved);
 router.post('/testimonials', submitPublic);
 router.get('/pages/:slug', getBySlug);
 router.get('/faqs', getPublished);
-router.post('/contact', submit);
-router.post('/newsletter/subscribe', subscribe);
-router.post('/newsletter/unsubscribe', unsubscribe);
-router.post('/leads/submit', submitLead);
+
+// Anonymous writes carry a per-IP budget. Previously only the loose global
+// 1000/15m limiter guarded them, which is ample room for a script to flood the
+// contact inbox, the newsletter list, or — most damaging — the leads table that
+// sponsoring universities are billed against.
+router.post('/contact', contactLimiter, submit);
+router.post('/newsletter/subscribe', newsletterLimiter, subscribe);
+router.post('/newsletter/unsubscribe', newsletterLimiter, unsubscribe);
+router.post('/leads/submit', leadLimiter, submitLead);
 
 // Protected user notification routes
 router.get('/notifications', protect, getUserNotifications);

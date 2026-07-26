@@ -6,21 +6,96 @@ const Course = require('../models/Course');
 const AuditLog = require('../models/AuditLog');
 const path = require('path');
 const { protect, admin } = require('../middleware/auth');
+const { validateSpreadsheetUpload } = require('../middleware/fileValidation');
+const {
+  findExistingUniversity: resolveExistingUniversity,
+  describeMatch: describeMatchLabel,
+} = require('../utils/universityMatching');
+const { compactRows, sheetRowNumber } = require('../utils/sheetRows');
 
 const router = express.Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
+  /**
+   * Cheap first pass on the filename only. The extension is trivially forged, so
+   * every route below also runs validateSpreadsheetUpload, which checks the real
+   * bytes (ZIP+xl/ parts for .xlsx, OLE2 for .xls, genuine text for .csv) once
+   * Multer has buffered them.
+   */
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext === '.xlsx' || ext === '.xls' || ext === '.csv') {
       cb(null, true);
     } else {
-      cb(new Error('Only Excel files are allowed'));
+      const error = new Error('Only .xlsx, .xls and .csv files are allowed');
+      error.statusCode = 400;
+      cb(error);
     }
   },
 });
+
+/**
+ * Every response from this router goes through these two helpers.
+ *
+ * These four endpoints were the only ones in the backend answering with
+ * `{ error: "..." }` instead of `{ success: false, message: "..." }`. They now
+ * emit the standard shape; `error` is retained as a DEPRECATED alias because
+ * frontend/src/pages/admin/ExcelUploader.jsx still reads
+ * `error.response.data.error`. Once that reads `.message`, the alias can go.
+ */
+const uploadFail = (res, statusCode, message) =>
+  res.status(statusCode).json({ success: false, message, error: message });
+
+const uploadError = (res, error, context) => {
+  console.error(`[${context}]`, error);
+  const message =
+    process.env.NODE_ENV === 'development'
+      ? error.message
+      : 'Could not process the uploaded file. Please try again.';
+  return res.status(500).json({ success: false, message, error: message });
+};
+
+/**
+ * Collects unmatched university names so the API can report WHICH names failed
+ * and on WHICH rows, rather than only logging them to the server console.
+ */
+const createUnmatchedTracker = ({ maxNames = 500 } = {}) => {
+  const byName = new Map();
+  let truncated = false;
+  let total = 0;
+
+  return {
+    record(name, sheetRow) {
+      total += 1;
+      const key = String(name || '(blank)').trim() || '(blank)';
+      const entry = byName.get(key);
+      if (entry) {
+        entry.count += 1;
+        // Keep every row for a given name bounded too, so one bad name in a
+        // 50k-row sheet cannot balloon the response.
+        if (entry.rows.length < 50) entry.rows.push(sheetRow);
+        return;
+      }
+      if (byName.size >= maxNames) {
+        truncated = true;
+        return;
+      }
+      byName.set(key, { name: key, count: 1, rows: [sheetRow] });
+    },
+    summary() {
+      return {
+        // Distinct names, most frequent first.
+        unmatchedUniversities: [...byName.values()].sort((a, b) => b.count - a.count),
+        unmatchedUniversityCount: byName.size,
+        unmatchedRowCount: total,
+        // Explicit rather than silent: the caller can tell the list was capped.
+        unmatchedTruncated: truncated,
+      };
+    },
+  };
+};
 
 // ========== CLEANING FUNCTIONS ==========
 function clean(val) {
@@ -308,9 +383,12 @@ function buildAliasLookup(aliasMap) {
   return lut;
 }
 
+// Blank rows are dropped here, so compactRows tags each survivor with its true
+// position in the sheet; sheetRowNumber reads that tag. Without it the row numbers
+// reported to an admin are off by the number of blank rows above the data.
 function sheetToMatrix(sheet) {
   const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, raw: false });
-  return raw.filter(r => Array.isArray(r) && r.some(v => v !== null && String(v).trim() !== ''));
+  return compactRows(raw);
 }
 
 // Pick the row that best matches the canonical aliases, ignoring UI-hint rows,
@@ -566,44 +644,48 @@ function parseCourseRow(row, idx) {
 // ========== VALIDATION ==========
 // A university is only invalid (skipped) when it has no name. Missing State/City
 // no longer discards the record — it imports as a draft so nothing is lost.
-function validateUniversity(data, index) {
+// `rowLabel` is the 1-based SPREADSHEET row number (see sheetRowNumber), not the
+// data-row index. Messages previously said "Row 1" for the first data row even
+// when the header sat on row 4, so an admin looking for the offending row in
+// Excel was sent to the wrong line.
+function validateUniversity(data, rowLabel) {
   const errors = [];
   const warnings = [];
   let status;
 
   if (!data.name) {
-    errors.push(`Row ${index + 1}: University Name is required`);
+    errors.push(`Row ${rowLabel}: University Name is required`);
   } else {
     const missing = [];
     if (!data.state) missing.push('State');
     if (!data.city) missing.push('City');
     if (missing.length) {
       status = 'draft';
-      warnings.push(`Row ${index + 1}: "${data.name}" imported as draft (missing ${missing.join(' & ')}) — complete it to publish`);
+      warnings.push(`Row ${rowLabel}: "${data.name}" imported as draft (missing ${missing.join(' & ')}) — complete it to publish`);
     }
   }
 
   if (data.establishedYear && (data.establishedYear < 1800 || data.establishedYear > new Date().getFullYear())) {
-    warnings.push(`Row ${index + 1}: Unusual established year (${data.establishedYear}) for ${data.name}`);
+    warnings.push(`Row ${rowLabel}: Unusual established year (${data.establishedYear}) for ${data.name}`);
   }
 
   return { isValid: errors.length === 0, errors, warnings, status };
 }
 
-function validateCourse(data, index, registry) {
+// Takes an ALREADY-RESOLVED match rather than the registry, so the caller can
+// reuse the resolution (the containment fallback in registry.resolve scans every
+// known name, and doing it twice per row doubled that cost on a large sheet).
+function validateCourse(data, rowLabel, match) {
   const errors = [];
   const warnings = [];
   if (!data._universityName) {
-    errors.push(`Row ${index + 1}: University Name is required for course`);
-  } else {
-    const m = registry.resolve(data._universityName);
-    if (m.status === 'ambiguous') {
-      errors.push(`Row ${index + 1}: University "${data._universityName}" is ambiguous (matches ${m.candidates.join(', ')}) — needs review`);
-    } else if (m.status === 'none') {
-      errors.push(`Row ${index + 1}: University "${data._universityName}" not found`);
-    }
+    errors.push(`Row ${rowLabel}: University Name is required for course`);
+  } else if (match.status === 'ambiguous') {
+    errors.push(`Row ${rowLabel}: University "${data._universityName}" is ambiguous (matches ${match.candidates.join(', ')}) — needs review`);
+  } else if (match.status === 'none') {
+    errors.push(`Row ${rowLabel}: University "${data._universityName}" not found`);
   }
-  if (!data.baseCourse) errors.push(`Row ${index + 1}: Base Course is required`);
+  if (!data.baseCourse) errors.push(`Row ${rowLabel}: Base Course is required`);
   return { isValid: errors.length === 0, errors, warnings };
 }
 
@@ -650,22 +732,16 @@ function dupKeyField(err) {
   return m ? m[1] : '';
 }
 
-async function findExistingUniversity(u) {
-  // Prefer the stable unique identifier. A matching universityCode means it is
-  // genuinely the same institution.
-  if (u.universityCode) {
-    const byCode = await University.findOne({ universityCode: u.universityCode });
-    if (byCode) return byCode;
-  }
-  // Fall back to name — but SCOPED TO THE SAME STATE. Matching on name alone
-  // (the previous behaviour) wrongly merged two different institutions that
-  // share a name in different states, so in upsert mode later rows overwrote
-  // the existing record instead of creating the intended new one. That silently
-  // dropped many imported universities (e.g. Gujarat, Goa) from the database.
-  const query = { name: u.name };
-  if (u.state) query.state = u.state;
-  return University.findOne(query);
-}
+// Matching (universityCode, then name + state) now lives in
+// utils/universityMatching so this importer and adminController.bulkImport
+// resolve rows identically. It additionally reports an ambiguous name-only match
+// instead of silently returning the first namesake — see persistUniversity.
+const findExistingUniversity = (u) =>
+  resolveExistingUniversity({
+    name: u.name,
+    state: u.state,
+    universityCode: u.universityCode,
+  });
 
 // Fields the importer should never touch on an UPDATE — they are derived or
 // admin-curated, not part of the spreadsheet.
@@ -693,10 +769,23 @@ function buildSafeUpdate(obj, prefix = '', out = {}) {
 // Persist one university. insertMany (not create) is used so the unique slug we
 // computed survives — create() would let the model's pre-save hook overwrite it.
 async function persistUniversity(u, mode, slugFactory) {
-  const existing = await findExistingUniversity(u);
+  const match = await findExistingUniversity(u);
+
+  // A row with no state whose name belongs to more than one existing university
+  // cannot be resolved safely. Upserting into a guessed record would overwrite a
+  // different institution's data, so the row is skipped with an actionable message.
+  if (match.ambiguous) {
+    return {
+      action: 'skipped',
+      error: `"${u.name}" matches more than one existing university (${match.candidates.join(', ')}). Add a State (or a unique University Code) to this row so the import knows which one it is.`,
+    };
+  }
+
+  const existing = match.doc;
+
   if (existing) {
     if (mode !== 'upsert') {
-      return { action: 'skipped', error: `"${u.name}" already exists (matched by ${u.universityCode ? 'university code' : 'name + state'}) — enable Upsert mode to update it` };
+      return { action: 'skipped', error: `"${u.name}" already exists (matched by ${describeMatchLabel(match.matchedBy)}) — enable Upsert mode to update it` };
     }
     // Guard against a universityCode collision between two DIFFERENT institutions.
     // Overwriting would delete the existing university, so skip and warn instead.
@@ -776,26 +865,54 @@ async function persistCourse(course, university, mode) {
   }
 }
 
+/**
+ * Recomputes stats.totalCoursesCount for every university that has courses.
+ *
+ * Both import endpoints previously issued one findByIdAndUpdate PER university
+ * (~400 sequential round-trips) at the end of an import. bulkWrite sends the
+ * same updates in a single command.
+ *
+ * NOTE: like the loop it replaces, this only touches universities that HAVE
+ * courses — a university whose courses were all removed keeps its old count.
+ */
+async function refreshCourseCounts() {
+  const counts = await Course.aggregate([
+    { $group: { _id: '$universityId', count: { $sum: 1 } } },
+  ]);
+
+  if (!counts.length) return;
+
+  await University.bulkWrite(
+    counts.map(({ _id, count }) => ({
+      updateOne: {
+        filter: { _id },
+        update: { $set: { 'stats.totalCoursesCount': count } },
+      },
+    })),
+    { ordered: false }
+  );
+}
+
 async function loadExistingSlugs() {
   const docs = await University.find({}, 'slug');
   return docs.map(d => d.slug).filter(Boolean);
 }
 
 // ========== GET SHEET NAMES ==========
-router.post('/sheets', protect, admin, upload.single('file'), async (req, res) => {
+router.post('/sheets', protect, admin, upload.single('file'), validateSpreadsheetUpload, async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    if (!req.file) return uploadFail(res, 400, 'No file uploaded');
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     res.json({ success: true, sheets: workbook.SheetNames });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return uploadError(res, error, 'uploadExcel.sheets');
   }
 });
 
 // ========== PREVIEW ENDPOINT ==========
-router.post('/preview', protect, admin, upload.single('file'), async (req, res) => {
+router.post('/preview', protect, admin, upload.single('file'), validateSpreadsheetUpload, async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    if (!req.file) return uploadFail(res, 400, 'No file uploaded');
 
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = req.body.sheetName || workbook.SheetNames[0];
@@ -806,7 +923,7 @@ router.post('/preview', protect, admin, upload.single('file'), async (req, res) 
     const { headerRowIndex, idx, dataRows } = parseSheet(rows, kind);
 
     if (headerRowIndex === -1) {
-      return res.status(400).json({ error: 'Could not detect header row' });
+      return uploadFail(res, 400, 'Could not detect header row');
     }
 
     const existingUniversities = await University.find({}, 'name slug universityCode');
@@ -818,12 +935,16 @@ router.post('/preview', protect, admin, upload.single('file'), async (req, res) 
     let allWarnings = [];
     let validCount = 0;
 
+    // Same reporting as /confirm and /bulk, so the preview step can show which
+    // university names will fail BEFORE the import is run.
+    const unmatched = createUnmatchedTracker();
+
     if (kind === 'universities') {
       for (let i = 0; i < dataRows.length; i++) {
         const university = parseUniversityRow(dataRows[i], idx);
         if (!university) continue;
-        const validation = validateUniversity(university, i);
-        parsedData.push({ ...university, _validation: validation });
+        const validation = validateUniversity(university, sheetRowNumber(dataRows, headerRowIndex, i));
+        parsedData.push({ ...university, _validation: validation, _sheetRow: sheetRowNumber(dataRows, headerRowIndex, i) });
         allErrors.push(...validation.errors);
         allWarnings.push(...validation.warnings);
         if (validation.isValid) validCount++;
@@ -833,11 +954,14 @@ router.post('/preview', protect, admin, upload.single('file'), async (req, res) 
       for (let i = 0; i < dataRows.length; i++) {
         const course = parseCourseRow(dataRows[i], idx);
         if (!course) continue;
-        const validation = validateCourse(course, i, registry);
-        parsedData.push({ ...course, _validation: validation });
+        const sheetRow = sheetRowNumber(dataRows, headerRowIndex, i);
+        const match = registry.resolve(course._universityName);
+        const validation = validateCourse(course, sheetRow, match);
+        parsedData.push({ ...course, _validation: validation, _sheetRow: sheetRow });
         allErrors.push(...validation.errors);
         allWarnings.push(...validation.warnings);
         if (validation.isValid) validCount++;
+        else if (match.status === 'none') unmatched.record(course._universityName, sheetRow);
       }
     }
 
@@ -849,19 +973,21 @@ router.post('/preview', protect, admin, upload.single('file'), async (req, res) 
       invalidCount: parsedData.length - validCount,
       errors: [...new Set(allErrors)],
       warnings: [...new Set(allWarnings)],
+      ...unmatched.summary(),
+      headerRowIndex,
+      firstDataSheetRow: sheetRowNumber(dataRows, headerRowIndex, 0),
       preview: parsedData.slice(0, 10),
       fullData: parsedData,
     });
   } catch (error) {
-    console.error('Preview error:', error);
-    res.status(500).json({ error: error.message });
+    return uploadError(res, error, 'uploadExcel.preview');
   }
 });
 
 // ========== SINGLE SHEET CONFIRM ENDPOINT ==========
-router.post('/confirm', protect, admin, upload.single('file'), async (req, res) => {
+router.post('/confirm', protect, admin, upload.single('file'), validateSpreadsheetUpload, async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    if (!req.file) return uploadFail(res, 400, 'No file uploaded');
 
     const { mode = 'upsert', validateOnly = 'false', sheetName: reqSheetName, uploadType } = req.body;
     const shouldValidateOnly = validateOnly === 'true';
@@ -882,7 +1008,7 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
     const { headerRowIndex, idx, dataRows } = parseSheet(rows, kind);
 
     if (headerRowIndex === -1) {
-      return res.status(400).json({ error: 'Could not detect header row' });
+      return uploadFail(res, 400, 'Could not detect header row');
     }
 
     const existingUniversities = await University.find({}, 'name slug universityCode');
@@ -893,6 +1019,15 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
     let results = { created: 0, updated: 0, skipped: 0, ambiguous: 0, warnings: [], errors: [] };
     let processedData = [];
 
+    // Unmatched course rows used to be counted and discarded. The tracker keeps
+    // the university NAME and the spreadsheet ROW so the response can name them.
+    const unmatched = createUnmatchedTracker();
+
+    // Every error entry now carries `sheetRow` — the 1-based row number an admin
+    // actually sees in Excel. `row` (the 0-based data-row index) is kept so
+    // existing consumers do not break.
+    const rowRef = (i) => ({ row: i, sheetRow: sheetRowNumber(dataRows, headerRowIndex, i) });
+
     if (kind === 'universities') {
       for (let i = 0; i < dataRows.length; i++) {
         try {
@@ -902,10 +1037,10 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
             continue;
           }
 
-          const validation = validateUniversity(university, i);
+          const validation = validateUniversity(university, sheetRowNumber(dataRows, headerRowIndex, i));
           if (!validation.isValid) {
             results.skipped++;
-            results.errors.push({ row: i, error: validation.errors.join(', ') });
+            results.errors.push({ ...rowRef(i), name: university.name, error: validation.errors.join(', ') });
             continue;
           }
           if (validation.status) university.status = validation.status;
@@ -921,10 +1056,10 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
           const { action, doc, error } = await persistUniversity(university, mode, slugFactory);
           if (action === 'created') results.created++;
           else if (action === 'updated') results.updated++;
-          else { results.skipped++; if (error) results.errors.push({ row: i, error }); }
+          else { results.skipped++; if (error) results.errors.push({ ...rowRef(i), name: university.name, error }); }
           if (doc) { processedData.push(doc); registry.add(doc); }
         } catch (err) {
-          results.errors.push({ row: i, error: err.message });
+          results.errors.push({ ...rowRef(i), error: err.message });
           results.skipped++;
         }
       }
@@ -941,12 +1076,13 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
           if (match.status === 'ambiguous') {
             results.ambiguous++;
             results.skipped++;
-            results.errors.push({ row: i, error: `Ambiguous university "${course._universityName}" (matches ${match.candidates.join(', ')}) — needs review` });
+            results.errors.push({ ...rowRef(i), universityName: course._universityName, error: `Ambiguous university "${course._universityName}" (matches ${match.candidates.join(', ')}) — needs review` });
             continue;
           }
           if (!match.uni) {
+            unmatched.record(course._universityName, sheetRowNumber(dataRows, headerRowIndex, i));
             results.skipped++;
-            results.errors.push({ row: i, error: `University "${course._universityName}" not found` });
+            results.errors.push({ ...rowRef(i), universityName: course._universityName, error: `University "${course._universityName}" not found` });
             continue;
           }
 
@@ -959,29 +1095,41 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
           const { action, error } = await persistCourse(course, match.uni, mode);
           if (action === 'created') results.created++;
           else if (action === 'updated') results.updated++;
-          else { results.skipped++; if (error) results.errors.push({ row: i, error }); }
+          else { results.skipped++; if (error) results.errors.push({ ...rowRef(i), error }); }
         } catch (err) {
-          results.errors.push({ row: i, error: err.message });
+          results.errors.push({ ...rowRef(i), error: err.message });
           results.skipped++;
         }
       }
     }
 
+    Object.assign(results, unmatched.summary());
+
     if (!shouldValidateOnly) {
-      const universitiesWithCourses = await Course.aggregate([
-        { $group: { _id: '$universityId', count: { $sum: 1 } } },
-      ]);
-      for (const { _id, count } of universitiesWithCourses) {
-        await University.findByIdAndUpdate(_id, { 'stats.totalCoursesCount': count });
-      }
+      await refreshCourseCounts();
 
       try {
+        // Only counts go into the audit log. Storing the whole `results` object
+        // embedded every per-row error and every unmatched name, so a large bad
+        // import could push the audit document toward the 16MB BSON limit and
+        // fail AFTER the data had already been written.
+        const auditSummary = {
+          created: results.created,
+          updated: results.updated,
+          skipped: results.skipped,
+          ambiguous: results.ambiguous,
+          errorCount: results.errors.length,
+          warningCount: results.warnings.length,
+          unmatchedUniversityCount: results.unmatchedUniversityCount,
+          unmatchedRowCount: results.unmatchedRowCount,
+        };
+
         await AuditLog.create([{
           userId: req.user._id,
           action: 'bulk_import',
           resource: kind,
           description: `Import: ${results.created} created, ${results.updated} updated, ${results.skipped} skipped`,
-          changes: { before: null, after: { summary: results } },
+          changes: { before: null, after: { summary: auditSummary } },
           ipAddress: req.ip,
           userAgent: req.headers['user-agent'],
         }]);
@@ -995,19 +1143,23 @@ router.post('/confirm', protect, admin, upload.single('file'), async (req, res) 
       mode: shouldValidateOnly ? 'validation' : 'import',
       sheetType: kind,
       results,
+      // Surfaced at the top level too, so a caller does not have to know it lives
+      // under `results` to show "these 12 university names did not match".
+      ...unmatched.summary(),
       processedCount: processedData.length,
       sampleData: processedData.slice(0, 5),
+      headerRowIndex,
+      firstDataSheetRow: sheetRowNumber(dataRows, headerRowIndex, 0),
     });
   } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: error.message });
+    return uploadError(res, error, 'uploadExcel.confirm');
   }
 });
 
 // ========== BULK UPLOAD - Process Both Universities and Courses Together ==========
-router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => {
+router.post('/bulk', protect, admin, upload.single('file'), validateSpreadsheetUpload, async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    if (!req.file) return uploadFail(res, 400, 'No file uploaded');
 
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const { mode = 'upsert' } = req.body;
@@ -1021,6 +1173,12 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
 
     const registry = createUniversityRegistry();
     const slugFactory = makeSlugFactory(await loadExistingSlugs());
+
+    // Unmatched course rows were previously counted into `skipped` and printed to
+    // the server console — the API response said nothing about WHICH universities
+    // failed to match, so an admin had no way to fix the sheet. The tracker
+    // records each distinct name with the spreadsheet rows that referenced it.
+    const unmatched = createUnmatchedTracker();
 
     // ========== 1. PROCESS UNIVERSITIES SHEET ==========
     const uniSheetName = pickUniversitySheet(workbook);
@@ -1041,10 +1199,10 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
               continue;
             }
 
-            const validation = validateUniversity(university, i);
+            const validation = validateUniversity(university, sheetRowNumber(dataRows, headerRowIndex, i));
             if (!validation.isValid) {
               results.universities.skipped++;
-              results.universities.errors.push({ row: i, error: validation.errors.join(', ') });
+              results.universities.errors.push({ row: i, sheetRow: sheetRowNumber(dataRows, headerRowIndex, i), name: university.name, error: validation.errors.join(', ') });
               continue;
             }
             if (validation.status) university.status = validation.status;
@@ -1053,10 +1211,10 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
             const { action, doc, error } = await persistUniversity(university, mode, slugFactory);
             if (action === 'created') results.universities.created++;
             else if (action === 'updated') results.universities.updated++;
-            else { results.universities.skipped++; if (error) results.universities.errors.push({ row: i, error }); }
+            else { results.universities.skipped++; if (error) results.universities.errors.push({ row: i, sheetRow: sheetRowNumber(dataRows, headerRowIndex, i), name: university.name, error }); }
             if (doc) registry.add(doc);
           } catch (err) {
-            results.universities.errors.push({ row: i, error: err.message });
+            results.universities.errors.push({ row: i, sheetRow: sheetRowNumber(dataRows, headerRowIndex, i), error: err.message });
             results.universities.skipped++;
           }
         }
@@ -1083,10 +1241,9 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
       } else {
         console.log(`   Header row at index ${headerRowIndex}. Field map: ${JSON.stringify(idx)}`);
         let matchedCount = 0;
-        let unmatchedCount = 0;
-        const unmatchedExamples = [];
 
         for (let i = 0; i < dataRows.length; i++) {
+          const sheetRow = sheetRowNumber(dataRows, headerRowIndex, i);
           try {
             const course = parseCourseRow(dataRows[i], idx);
             if (!course) {
@@ -1096,6 +1253,9 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
 
             const uniName = course._universityName;
             if (!uniName || uniName.length < 2) {
+              // A course row with no usable university name is also unmatched —
+              // it was previously indistinguishable from a blank row.
+              unmatched.record(uniName || '(blank)', sheetRow);
               results.courses.skipped++;
               continue;
             }
@@ -1104,13 +1264,15 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
             if (match.status === 'ambiguous') {
               results.courses.ambiguous++;
               results.courses.skipped++;
-              results.courses.errors.push({ row: i, error: `Ambiguous university "${uniName}" (matches ${match.candidates.join(', ')}) — needs review` });
+              results.courses.errors.push({ row: i, sheetRow, universityName: uniName, error: `Ambiguous university "${uniName}" (matches ${match.candidates.join(', ')}) — needs review` });
               continue;
             }
             if (!match.uni) {
-              unmatchedCount++;
-              if (unmatchedExamples.length < 20) unmatchedExamples.push(uniName);
+              unmatched.record(uniName, sheetRow);
               results.courses.skipped++;
+              // The row is also reported as an error so it appears in the same
+              // list as every other failure, with its spreadsheet row number.
+              results.courses.errors.push({ row: i, sheetRow, universityName: uniName, error: `University "${uniName}" not found — no matching university name in the database` });
               continue;
             }
 
@@ -1123,18 +1285,24 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
               results.courses.updated++;
             } else {
               results.courses.skipped++;
-              if (error) results.courses.errors.push({ row: i, error });
+              if (error) results.courses.errors.push({ row: i, sheetRow, error });
             }
           } catch (err) {
-            results.courses.errors.push({ row: i, error: err.message });
+            results.courses.errors.push({ row: i, sheetRow, error: err.message });
             results.courses.skipped++;
           }
         }
 
-        console.log(`   Match results: ${matchedCount} matched, ${unmatchedCount} unmatched, ${results.courses.ambiguous} ambiguous`);
-        if (unmatchedExamples.length > 0) {
-          console.log('   First unmatched university names:');
-          unmatchedExamples.slice(0, 10).forEach(name => console.log(`     - "${name}"`));
+        const unmatchedSummary = unmatched.summary();
+        Object.assign(results.courses, unmatchedSummary);
+        results.courses.matched = matchedCount;
+
+        console.log(`   Match results: ${matchedCount} matched, ${unmatchedSummary.unmatchedRowCount} unmatched, ${results.courses.ambiguous} ambiguous`);
+        if (unmatchedSummary.unmatchedUniversityCount > 0) {
+          console.log('   Unmatched university names (returned in the API response):');
+          unmatchedSummary.unmatchedUniversities.slice(0, 10).forEach(({ name, count, rows }) =>
+            console.log(`     - "${name}" (${count} row${count === 1 ? '' : 's'}, e.g. row ${rows[0]})`)
+          );
         }
       }
     } else {
@@ -1142,21 +1310,36 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
     }
 
     // ========== 3. UPDATE COURSE COUNTS ==========
-    const universitiesWithCourses = await Course.aggregate([
-      { $group: { _id: '$universityId', count: { $sum: 1 } } },
-    ]);
-    for (const { _id, count } of universitiesWithCourses) {
-      await University.findByIdAndUpdate(_id, { 'stats.totalCoursesCount': count });
-    }
+    await refreshCourseCounts();
 
     // ========== 4. AUDIT LOG ==========
     try {
+      // Counts only — see the note in /confirm: the full `results` object carries
+      // every per-row error and every unmatched name.
+      const auditSummary = {
+        universities: {
+          created: results.universities.created,
+          updated: results.universities.updated,
+          skipped: results.universities.skipped,
+          errorCount: results.universities.errors.length,
+        },
+        courses: {
+          created: results.courses.created,
+          updated: results.courses.updated,
+          skipped: results.courses.skipped,
+          ambiguous: results.courses.ambiguous,
+          errorCount: results.courses.errors.length,
+          unmatchedUniversityCount: results.courses.unmatchedUniversityCount,
+          unmatchedRowCount: results.courses.unmatchedRowCount,
+        },
+      };
+
       await AuditLog.create([{
         userId: req.user._id,
         action: 'bulk_import',
         resource: 'both',
         description: `Bulk import: Universities: ${results.universities.created} created, ${results.universities.updated} updated. Courses: ${results.courses.created} created, ${results.courses.updated} updated.`,
-        changes: { before: null, after: { summary: results } },
+        changes: { before: null, after: { summary: auditSummary } },
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
       }]);
@@ -1169,18 +1352,33 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
     console.log(`   Universities: ${results.universities.created} created, ${results.universities.updated} updated, ${results.universities.skipped} skipped`);
     console.log(`   Courses: ${results.courses.created} created, ${results.courses.updated} updated, ${results.courses.skipped} skipped`);
 
+    const unmatchedSummary = unmatched.summary();
+
     res.json({
       success: true,
       results,
-      message: `Universities: ${results.universities.created} created, ${results.universities.updated} updated. Courses: ${results.courses.created} created, ${results.courses.updated} updated.`,
+      message: `Universities: ${results.universities.created} created, ${results.universities.updated} updated. Courses: ${results.courses.created} created, ${results.courses.updated} updated.` +
+        (unmatchedSummary.unmatchedUniversityCount
+          ? ` ${unmatchedSummary.unmatchedRowCount} course row(s) skipped across ${unmatchedSummary.unmatchedUniversityCount} unmatched university name(s).`
+          : ''),
+      // Also exposed at the top level so a caller does not need to know it lives
+      // under results.courses.
+      ...unmatchedSummary,
       summary: {
         universities: { created: results.universities.created, updated: results.universities.updated, skipped: results.universities.skipped },
-        courses: { created: results.courses.created, updated: results.courses.updated, skipped: results.courses.skipped, ambiguous: results.courses.ambiguous },
+        courses: {
+          created: results.courses.created,
+          updated: results.courses.updated,
+          skipped: results.courses.skipped,
+          ambiguous: results.courses.ambiguous,
+          matched: results.courses.matched || 0,
+          unmatchedRows: unmatchedSummary.unmatchedRowCount,
+          unmatchedNames: unmatchedSummary.unmatchedUniversityCount,
+        },
       },
     });
   } catch (error) {
-    console.error('Bulk upload error:', error);
-    res.status(500).json({ error: error.message });
+    return uploadError(res, error, 'uploadExcel.bulk');
   }
 });
 

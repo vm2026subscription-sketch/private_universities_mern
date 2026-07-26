@@ -1,5 +1,5 @@
 /**
- * Tiered rate limiters for authentication endpoints.
+ * Tiered rate limiters for authentication and public-form endpoints.
  *
  * The original setup had a single 30-per-15-minutes limiter shared across every
  * auth route plus a very loose global 1000/15m. That is too coarse: OTP
@@ -67,6 +67,52 @@ const refreshLimiter = build({
   message: 'Too many refresh attempts. Please sign in again.',
 });
 
+/* ── Public, unauthenticated write endpoints ──────────────────────────────────
+ *
+ * These three (contact, lead, newsletter) accept anonymous submissions that land
+ * in collections an admin then reads, and a lead additionally represents a
+ * billable event for a sponsoring university. Only the very loose global
+ * 1000/15m limiter applied before, which is enough headroom for a script to
+ * insert tens of thousands of junk rows — poisoning the leads CSV that partners
+ * are invoiced against.
+ *
+ * Budgets are per-IP and sized well above real human use: a student fills the
+ * contact form once, and requests brochures from a handful of universities.
+ */
+
+/** Contact form. */
+const contactLimiter = build({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Too many messages sent from this network. Please try again later.',
+});
+
+/** Lead capture (Apply / Download brochure) — a student may submit several. */
+const leadLimiter = build({
+  windowMs: 60 * 60 * 1000,
+  max: 15,
+  message: 'Too many requests submitted. Please try again in a little while.',
+});
+
+/** Newsletter subscribe / unsubscribe. */
+const newsletterLimiter = build({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Too many subscription requests. Please try again later.',
+});
+
+/**
+ * AI assist (/questions/assist) — public, and every call costs a Gemini request
+ * against a quota measured in tens per day on the free tier. Without a limiter a
+ * single client can exhaust the quota and take the chat widget down for everyone.
+ * 60/hour is far above conversational use and far below scripted abuse.
+ */
+const aiAssistLimiter = build({
+  windowMs: 60 * 60 * 1000,
+  max: 60,
+  message: 'You have reached the AI assistant limit for now. Please try again in a little while.',
+});
+
 module.exports = {
   loginLimiter,
   otpVerifyLimiter,
@@ -74,4 +120,8 @@ module.exports = {
   registerLimiter,
   passwordResetLimiter,
   refreshLimiter,
+  contactLimiter,
+  leadLimiter,
+  newsletterLimiter,
+  aiAssistLimiter,
 };

@@ -32,7 +32,7 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
   backend-check:
-    name: Backend Syntax Check
+    name: Backend Syntax Check & Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -49,6 +49,14 @@ jobs:
         run: npm ci
         working-directory: backend
 
-      - name: Check syntax (dry run)
-        run: node --check src/server.js
+      # `node --check src/server.js` only parses that one file, so a syntax error
+      # anywhere else in the backend still reached main. Check every file.
+      - name: Check syntax (all backend files)
+        run: |
+          find src scripts tests -name '*.js' -print0 | xargs -0 -n1 node --check
+        working-directory: backend
+
+      # Unit + route-wiring tests. No database or network access required.
+      - name: Run backend tests
+        run: npm test
         working-directory: backend

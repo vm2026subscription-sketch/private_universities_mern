@@ -1,4 +1,5 @@
 const { translateText: geminiTranslate, translateBatch: geminiTranslateBatch } = require('../utils/gemini');
+const { fail } = require('../utils/apiResponse');
 
 // Translation endpoint used by the chatbot's EN/HI/MR language switcher.
 // Bhashini API keys are not available for this project, so translation is
@@ -9,14 +10,14 @@ exports.translateText = async (req, res) => {
     const { text, targetLanguage } = req.body;
 
     if (!text || !targetLanguage) {
-      return res.status(400).json({ success: false, message: 'Text and targetLanguage are required' });
+      return fail(res, 400, 'Text and targetLanguage are required');
     }
 
     const translatedText = await geminiTranslate({ text, targetLanguage });
     res.json({ success: true, translatedText });
   } catch (error) {
     console.error('Translation Error:', error.message);
-    res.status(500).json({ success: false, message: 'Translation failed' });
+    fail(res, 500, 'Translation failed');
   }
 };
 
@@ -27,13 +28,13 @@ exports.translateBatch = async (req, res) => {
     const { texts, targetLanguage } = req.body;
 
     if (!Array.isArray(texts) || !targetLanguage) {
-      return res.status(400).json({ success: false, message: 'texts (array) and targetLanguage are required' });
+      return fail(res, 400, 'texts (array) and targetLanguage are required');
     }
 
     const translations = await geminiTranslateBatch({ texts, targetLanguage });
     res.json({ success: true, translations });
   } catch (error) {
     console.error('Batch Translation Error:', error.message);
-    res.status(500).json({ success: false, message: 'Translation failed' });
+    fail(res, 500, 'Translation failed');
   }
 };

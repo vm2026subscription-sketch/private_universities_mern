@@ -23,4 +23,8 @@ pageSchema.pre('save', function (next) {
 
 pageSchema.index({ isPublished: 1 });
 
+
+// The admin page list sorts by order then newest.
+pageSchema.index({ order: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Page', pageSchema);

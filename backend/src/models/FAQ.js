@@ -11,4 +11,9 @@ const faqSchema = new mongoose.Schema({
 faqSchema.index({ category: 1, order: 1 });
 faqSchema.index({ isPublished: 1 });
 
+
+// The public FAQ endpoint filters isPublished and sorts by order — the existing
+// single-field isPublished index left the sort unindexed.
+faqSchema.index({ isPublished: 1, order: 1 });
+
 module.exports = mongoose.model('FAQ', faqSchema);

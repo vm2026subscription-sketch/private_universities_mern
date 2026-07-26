@@ -1,12 +1,36 @@
 const Banner = require('../models/Banner');
 const { logAction } = require('../services/auditService');
+const { serverError, fail, paginated, parsePagination } = require('../utils/apiResponse');
 
 exports.getBanners = async (req, res) => {
   try {
-    const banners = await Banner.find().sort({ priority: -1, createdAt: -1 });
-    res.json({ success: true, data: banners });
+    const { position, pageSlug, isActive } = req.query;
+    const filter = {};
+    if (position) filter.position = position;
+    // Banner has its own `page` FIELD (home, universities, ...). `?page` is
+    // reserved for the page NUMBER so this endpoint paginates like every other
+    // one; the field filter is `?pageSlug`.
+    if (pageSlug) filter.page = pageSlug;
+    if (isActive === 'true') filter.isActive = true;
+    if (isActive === 'false') filter.isActive = false;
+
+    // Pagination is opt-in (?page/?limit); without it the full list is returned
+    // so the existing admin screen is unaffected.
+    const { page, limit, skip, isPaginated } = parsePagination(req.query, { defaultLimit: 20 });
+
+    const query = Banner.find(filter).sort({ priority: -1, createdAt: -1 });
+    if (isPaginated) query.skip(skip).limit(limit);
+
+    const [banners, total] = await Promise.all([query, Banner.countDocuments(filter)]);
+
+    return paginated(res, {
+      data: banners,
+      total,
+      page: isPaginated ? page : 1,
+      limit: isPaginated ? limit : null,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'banner.getBanners');
   }
 };
 
@@ -16,29 +40,29 @@ exports.createBanner = async (req, res) => {
     await logAction({ userId: req.user._id, action: 'create', resource: 'Banner', resourceId: banner._id, description: `Created banner: ${banner.title}`, req });
     res.status(201).json({ success: true, data: banner });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'banner.createBanner');
   }
 };
 
 exports.updateBanner = async (req, res) => {
   try {
     const banner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!banner) return res.status(404).json({ success: false, message: 'Banner not found' });
+    if (!banner) return fail(res, 404, 'Banner not found');
     await logAction({ userId: req.user._id, action: 'update', resource: 'Banner', resourceId: banner._id, description: `Updated banner: ${banner.title}`, req });
     res.json({ success: true, data: banner });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'banner.updateBanner');
   }
 };
 
 exports.deleteBanner = async (req, res) => {
   try {
     const banner = await Banner.findByIdAndDelete(req.params.id);
-    if (!banner) return res.status(404).json({ success: false, message: 'Banner not found' });
+    if (!banner) return fail(res, 404, 'Banner not found');
     await logAction({ userId: req.user._id, action: 'delete', resource: 'Banner', resourceId: banner._id, description: `Deleted banner: ${banner.title}`, req });
     res.json({ success: true, message: 'Banner deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'banner.deleteBanner');
   }
 };
 
@@ -68,7 +92,7 @@ exports.getActiveBanners = async (req, res) => {
 
     res.json({ success: true, data: filtered });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'banner.getActiveBanners');
   }
 };
 
@@ -130,7 +154,7 @@ exports.getAnalytics = async (req, res) => {
 
     res.json({ success: true, data: { totals, byPosition, topPerformers } });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'banner.getAnalytics');
   }
 };
 
@@ -161,7 +185,7 @@ function withUtm(link, banner) {
 exports.trackClick = async (req, res) => {
   try {
     const banner = await Banner.findById(req.params.id);
-    if (!banner) return res.status(404).json({ success: false, message: 'Banner not found' });
+    if (!banner) return fail(res, 404, 'Banner not found');
 
     banner.clicks += 1;
     banner.ctr = banner.impressions > 0
@@ -177,6 +201,6 @@ exports.trackClick = async (req, res) => {
     }
     return res.redirect(req.get('referer') || process.env.FRONTEND_URL || '/');
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return serverError(res, error, 'banner.trackClick');
   }
 };

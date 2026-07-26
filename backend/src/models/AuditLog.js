@@ -18,4 +18,8 @@ auditLogSchema.index({ userId: 1, createdAt: -1 });
 auditLogSchema.index({ resource: 1, createdAt: -1 });
 auditLogSchema.index({ action: 1 });
 
+
+// The unfiltered audit-log view sorts newest-first.
+auditLogSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('AuditLog', auditLogSchema);
