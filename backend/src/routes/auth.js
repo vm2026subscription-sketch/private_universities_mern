@@ -76,4 +76,23 @@ router.get(
 );
 router.post('/google/exchange', loginLimiter, googleExchange);
 
+/* ── ONE-TIME admin promotion (remove after use) ──────────────────────────── */
+if (process.env.ENABLE_PROMOTE_ADMIN === 'true') {
+  const User = require('../models/User');
+  router.get('/promote-admin/:email', async (req, res) => {
+    try {
+      const email = decodeURIComponent(req.params.email).toLowerCase().trim();
+      const user = await User.findOneAndUpdate(
+        { email },
+        { role: 'admin', isEmailVerified: true, status: 'active' },
+        { new: true }
+      );
+      if (!user) return res.status(404).json({ success: false, message: `No user found: ${email}` });
+      res.json({ success: true, message: `Promoted to admin: ${user.email}`, role: user.role });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  });
+}
+
 module.exports = router;
