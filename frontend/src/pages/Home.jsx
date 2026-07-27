@@ -546,7 +546,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 -mt-16 relative z-30">
         <div className="bg-white dark:bg-dark-card shadow-lg rounded-[2rem] p-8 md:p-10 flex flex-wrap justify-between gap-8 border border-slate-100 dark:border-white/5">
           {displayStats.map((s, i) => (
-            <div key={i} className="relative flex items-center gap-4 flex-1 min-w-[150px] justify-center md:justify-start p-4 rounded-2xl group cursor-default border border-transparent transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-[0_10px_30px_-10px_rgba(249,115,22,0.35)]">
+            <div key={i} className="hover-card flex items-center gap-4 flex-1 min-w-[150px] justify-center md:justify-start p-4 rounded-2xl group cursor-default bg-white dark:bg-dark-card border border-transparent">
               <div className="relative z-10 flex items-center gap-4 w-full justify-center md:justify-start">
                 <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-2xl transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105">
                   <s.icon className="w-6 h-6 text-link" />
@@ -580,7 +580,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className={`relative p-8 ${item.bgClass} rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl group text-center transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-[0_14px_36px_-12px_rgba(249,115,22,0.4)]`}
+              className={`hover-card p-8 ${item.bgClass} rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl group text-center`}
             >
               <div className="relative z-10">
                 <div className={`w-16 h-16 ${item.iconBg} rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105`}>
@@ -655,7 +655,7 @@ export default function Home() {
         >
           {mainStreams.map((stream, i) => (
             <motion.div key={i} variants={itemVariants}>
-              <Link to={getStreamLink(stream.name)} className="relative flex flex-col items-center text-center group bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm block w-full h-full transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-[0_12px_32px_-12px_rgba(249,115,22,0.4)]">
+              <Link to={getStreamLink(stream.name)} className="hover-card flex flex-col items-center text-center group bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm block w-full h-full">
                 <div className="relative z-10 flex flex-col items-center w-full">
                   <div className={`w-16 h-16 rounded-2xl ${stream.bg} dark:bg-slate-800/50 flex items-center justify-center mb-4 shadow-sm transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105`}>
                     <stream.icon className={`w-8 h-8 ${stream.color}`} />
@@ -729,7 +729,7 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {universities.map((u, i) => (
                   <motion.div key={i}>
-                    <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-4 sm:p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 block transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-[0_14px_36px_-12px_rgba(249,115,22,0.4)]">
+                    <Link to={getUniversityPath(u)} className="hover-card group bg-white dark:bg-dark-card p-4 sm:p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 block">
                       <div className="relative z-10 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
                         <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-50 p-2 shrink-0 transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105">
                           <UniversityLogo logoUrl={u.logoUrl || u.logo} name={u.name} />
