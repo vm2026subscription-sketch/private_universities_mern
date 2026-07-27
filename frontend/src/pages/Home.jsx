@@ -546,17 +546,14 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 -mt-16 relative z-30">
         <div className="bg-white dark:bg-dark-card shadow-lg rounded-[2rem] p-8 md:p-10 flex flex-wrap justify-between gap-8 border border-slate-100 dark:border-white/5">
           {displayStats.map((s, i) => (
-            <div key={i} className="relative flex items-center gap-4 flex-1 min-w-[150px] justify-center md:justify-start p-4 rounded-2xl group overflow-hidden cursor-default">
-              {/* Left-to-right animated background (Gradient matching SS1) */}
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
-
+            <div key={i} className="relative flex items-center gap-4 flex-1 min-w-[150px] justify-center md:justify-start p-4 rounded-2xl group cursor-default border border-transparent transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-[0_10px_30px_-10px_rgba(249,115,22,0.35)]">
               <div className="relative z-10 flex items-center gap-4 w-full justify-center md:justify-start">
-                <div className="p-3 bg-primary-50 dark:bg-primary-900/20 group-hover:bg-white/20 rounded-2xl transition-colors duration-500">
-                  <s.icon className="w-6 h-6 text-link group-hover:text-white transition-colors duration-500" />
+                <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-2xl transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105">
+                  <s.icon className="w-6 h-6 text-link" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors duration-500 leading-none">{s.value}</p>
-                  <p className="text-[10px] font-bold text-slate-400 group-hover:text-orange-100 uppercase tracking-widest mt-1 transition-colors duration-500">{s.label}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white group-hover:text-orange-500 transition-colors duration-300 leading-none">{s.value}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 transition-colors duration-300">{s.label}</p>
                 </div>
               </div>
             </div>
@@ -583,17 +580,14 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className={`relative p-8 ${item.bgClass} rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl hover:shadow-primary/20 transition-all group text-center overflow-hidden`}
+              className={`relative p-8 ${item.bgClass} rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl group text-center transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-[0_14px_36px_-12px_rgba(249,115,22,0.4)]`}
             >
-              {/* Left-to-right animated background (Gradient matching SS1) */}
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
-
               <div className="relative z-10">
-                <div className={`w-16 h-16 ${item.iconBg} group-hover:bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-500`}>
-                  <item.icon className={`w-8 h-8 ${item.iconColor} group-hover:text-white transition-colors duration-500`} />
+                <div className={`w-16 h-16 ${item.iconBg} rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105`}>
+                  <item.icon className={`w-8 h-8 ${item.iconColor}`} />
                 </div>
-                <h4 className="font-bold text-lg mb-3 text-slate-900 dark:text-white group-hover:text-white transition-colors duration-500">{item.title}</h4>
-                <p className="text-sm text-slate-500 group-hover:text-white/90 transition-colors duration-500 leading-relaxed">{item.desc}</p>
+                <h4 className="font-bold text-lg mb-3 text-slate-900 dark:text-white group-hover:text-orange-500 transition-colors duration-300">{item.title}</h4>
+                <p className="text-sm text-slate-500 transition-colors duration-300 leading-relaxed">{item.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -661,15 +655,12 @@ export default function Home() {
         >
           {mainStreams.map((stream, i) => (
             <motion.div key={i} variants={itemVariants}>
-              <Link to={getStreamLink(stream.name)} className="relative flex flex-col items-center text-center group bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-xl transition-all overflow-hidden block w-full h-full">
-                {/* Left-to-right animated background (Orange) */}
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-primary origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
-
+              <Link to={getStreamLink(stream.name)} className="relative flex flex-col items-center text-center group bg-white dark:bg-dark-card p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm block w-full h-full transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-[0_12px_32px_-12px_rgba(249,115,22,0.4)]">
                 <div className="relative z-10 flex flex-col items-center w-full">
-                  <div className={`w-16 h-16 rounded-2xl ${stream.bg} dark:bg-slate-800/50 group-hover:bg-white/20 flex items-center justify-center mb-4 shadow-sm transition-all duration-500`}>
-                    <stream.icon className={`w-8 h-8 ${stream.color} group-hover:text-white transition-colors duration-500`} />
+                  <div className={`w-16 h-16 rounded-2xl ${stream.bg} dark:bg-slate-800/50 flex items-center justify-center mb-4 shadow-sm transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105`}>
+                    <stream.icon className={`w-8 h-8 ${stream.color}`} />
                   </div>
-                  <p className="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-white transition-colors duration-500 uppercase">{stream.name}</p>
+                  <p className="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-orange-500 transition-colors duration-300 uppercase">{stream.name}</p>
                 </div>
               </Link>
             </motion.div>
@@ -737,45 +728,42 @@ export default function Home() {
             {universities.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {universities.map((u, i) => (
-                  <motion.div key={i} whileHover={{ y: -5 }}>
-                    <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-4 sm:p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 hover:border-transparent hover:shadow-lg hover:shadow-primary/20 transition-all overflow-hidden block">
-                      {/* Left-to-right animated background (Gradient matching SS1) */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-orange-700 to-orange-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out z-0" />
-
+                  <motion.div key={i}>
+                    <Link to={getUniversityPath(u)} className="group relative bg-white dark:bg-dark-card p-4 sm:p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 block transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-[0_14px_36px_-12px_rgba(249,115,22,0.4)]">
                       <div className="relative z-10 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
-                        <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-50 group-hover:border-transparent transition-colors p-2 shrink-0">
+                        <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden border border-slate-50 p-2 shrink-0 transition-transform duration-300 ease-out group-hover:rotate-3 group-hover:scale-105">
                           <UniversityLogo logoUrl={u.logoUrl || u.logo} name={u.name} />
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
-                            <h3 className="font-bold text-lg line-clamp-1 group-hover:text-white transition-colors">{u.name}</h3>
+                            <h3 className="font-bold text-lg line-clamp-1 group-hover:text-orange-500 transition-colors duration-300">{u.name}</h3>
                             {u.naacGrade && (
-                              <div className="flex items-center gap-1 bg-green-50 group-hover:bg-white/20 text-green-600 group-hover:text-white px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors">
+                              <div className="flex items-center gap-1 bg-green-50 text-green-600 px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors duration-300">
                                 <Award className="w-3 h-3" />
                                 NAAC {u.naacGrade}
                               </div>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-white/90 transition-colors mt-1 mb-4">
-                            <MapPin className="w-3 h-3 text-link group-hover:text-white transition-colors shrink-0" />
+                          <div className="flex items-center gap-2 text-xs text-slate-400 transition-colors duration-300 mt-1 mb-4">
+                            <MapPin className="w-3 h-3 text-link transition-colors duration-300 shrink-0" />
                             <span className="truncate">{u.city && u.city !== 'Unknown' ? `${u.city}, ` : ''}{u.state || 'India'}</span>
                           </div>
 
                           <div className="flex items-center gap-6">
                             <div>
-                              <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-bold tracking-widest">Avg Package</p>
-                              <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors">{u.stats?.avgPackageLPA ? `INR ${u.stats.avgPackageLPA} LPA` : 'N/A'}</p>
+                              <p className="text-[10px] text-slate-400 transition-colors duration-300 uppercase font-bold tracking-widest">Avg Package</p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors duration-300">{u.stats?.avgPackageLPA ? `INR ${u.stats.avgPackageLPA} LPA` : 'N/A'}</p>
                             </div>
                             <div>
-                              <p className="text-[10px] text-slate-400 group-hover:text-white/80 transition-colors uppercase font-bold tracking-widest">Courses</p>
-                              <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors">{u.stats?.totalCoursesCount ? `${u.stats.totalCoursesCount}+` : 'N/A'}</p>
+                              <p className="text-[10px] text-slate-400 transition-colors duration-300 uppercase font-bold tracking-widest">Courses</p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors duration-300">{u.stats?.totalCoursesCount ? `${u.stats.totalCoursesCount}+` : 'N/A'}</p>
                             </div>
                           </div>
                         </div>
-                        <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="w-8 h-8 bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-sm shadow-sm">
+                        <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="w-8 h-8 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center shadow-sm">
                             <ChevronRight className="w-5 h-5" />
                           </div>
                         </div>

@@ -41,6 +41,8 @@ export default function Universities() {
   const [reloadToken, setReloadToken] = useState(0);
   const [savedIds, setSavedIds] = useState([]);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [leadModalType, setLeadModalType] = useState('apply'); // 'apply' | 'brochure'
+  const [selectedUniForLead, setSelectedUniForLead] = useState(null);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('nirf'); // 'nirf' | 'rating' | 'name'
   const [showFilters, setShowFilters] = useState(false);
