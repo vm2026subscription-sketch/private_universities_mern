@@ -104,6 +104,66 @@ const sendViaSmtp = async ({ to, subject, html }) => {
   console.log(`Email sent via SMTP to ${to}`);
 };
 
+/**
+ * Delivery failures are tagged so callers can tell "we could not send the mail"
+ * apart from a genuine server fault. Login previously collapsed both into a bare
+ * 500, which made an email-provider outage indistinguishable from a broken API.
+ */
+const deliveryError = (message) => {
+  const error = new Error(message);
+  error.code = 'EMAIL_DELIVERY_FAILED';
+  return error;
+};
+
+/**
+ * Reports whether email can actually be delivered to arbitrary recipients.
+ * Surfaced at startup so a deploy missing SMTP credentials is visible in the
+ * logs immediately rather than at the first user's login attempt.
+ */
+const describeEmailConfig = () => {
+  const resendFrom = getResendFrom();
+  const resendUsable = hasResendConfig() && !isResendTestSender(resendFrom);
+  const smtpUsable = hasSmtpConfig();
+
+  const warnings = [];
+  if (hasResendConfig() && !resendUsable) {
+    warnings.push(
+      `RESEND_FROM is "${resendFrom}", Resend's shared test sender. It can only deliver to ` +
+      `${getAllowedResendTestRecipients().join(', ') || 'approved test inboxes'}, so signup and ` +
+      'login codes for real users fall through to SMTP. Verify a domain and set RESEND_FROM to it.'
+    );
+  }
+  if (!smtpUsable) {
+    warnings.push('SMTP_HOST / SMTP_USER / SMTP_PASS are not all set, so there is no fallback sender.');
+  }
+
+  // NOTE: `smtpUsable` reflects only that the variables are present. Whether
+  // they actually authenticate is a separate question — see
+  // verifySmtpCredentials() — because a wrong-but-present password is the more
+  // common failure and looks identical here.
+  return { canDeliverToAnyone: resendUsable || smtpUsable, resendUsable, smtpConfigured: smtpUsable, warnings };
+};
+
+/**
+ * Authenticates against the SMTP server without sending anything.
+ *
+ * Checking only that SMTP_HOST/USER/PASS are *present* is not enough: a Gmail
+ * app password is bound to the account that generated it, so pairing one with a
+ * different SMTP_USER passes every presence check and then fails at send time
+ * with `535-5.7.8`. Because the login OTP is delivered by email, that mismatch
+ * takes down sign-in for every user while the config looks correct.
+ */
+const verifySmtpCredentials = async () => {
+  if (!hasSmtpConfig()) return { ok: false, reason: 'SMTP is not configured.' };
+
+  try {
+    await getSmtpTransporter().verify();
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, reason: String(error.message || error).split('\n')[0] };
+  }
+};
+
 const sendEmail = async ({ to, subject, html }) => {
   const resendFrom = getResendFrom();
   const resendErrors = [];
@@ -142,7 +202,7 @@ const sendEmail = async ({ to, subject, html }) => {
       await sendViaSmtp({ to: recipient, subject, html });
       return;
     } catch (error) {
-      throw new Error(
+      throw deliveryError(
         [...resendErrors, `SMTP failed: ${error.message}`]
           .filter(Boolean)
           .join(' ')
@@ -151,12 +211,14 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 
   if (resendErrors.length) {
-    throw new Error(resendErrors.join(' '));
+    throw deliveryError(resendErrors.join(' '));
   }
 
-  throw new Error(
+  throw deliveryError(
     'Email not configured. Set SMTP credentials or configure Resend with a verified sender domain.'
   );
 };
 
 module.exports = sendEmail;
+module.exports.describeEmailConfig = describeEmailConfig;
+module.exports.verifySmtpCredentials = verifySmtpCredentials;

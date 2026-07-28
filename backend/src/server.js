@@ -110,6 +110,25 @@ const startServer = async () => {
       console.log(`[startup] Backend ready on http://localhost:${PORT}`);
       console.log(`[startup] Health check available at http://localhost:${PORT}/api/v1/health`);
     });
+
+    // Deliberately not awaited: a slow or unreachable mail host must not delay
+    // the server accepting traffic. Login still needs email to work, so the
+    // result is logged prominently.
+    const { verifySmtpCredentials } = require('./utils/sendEmail');
+    void verifySmtpCredentials().then(({ ok, reason }) => {
+      if (ok) {
+        console.log(`[startup] SMTP credentials verified for ${process.env.SMTP_USER}.`);
+      } else {
+        console.error(
+          `[startup] SMTP LOGIN CHECK FAILED for ${process.env.SMTP_USER || '(no SMTP_USER)'}: ${reason}`
+        );
+        console.error(
+          '[startup] Verification codes cannot be sent, so no user will be able to log in. ' +
+          'A Gmail app password only works with the exact account that generated it — ' +
+          'confirm SMTP_USER and SMTP_PASS belong to the same mailbox.'
+        );
+      }
+    });
   } catch (error) {
     console.error('[startup] Backend failed to start.');
     console.error(`[startup] ${error.message}`);

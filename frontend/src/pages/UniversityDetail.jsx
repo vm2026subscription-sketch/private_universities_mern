@@ -87,7 +87,9 @@ export default function UniversityDetail() {
   useEffect(() => {
     window.scrollTo(0, 0);
     setLoading(true);
-    setLogoFailed(false);
+    // Logo fallback state lives inside <UniversityLogo> now, so there is nothing
+    // to reset here. The call that used to do it outlived its useState and threw
+    // a ReferenceError on every visit to this page.
     api.get(`/universities/${slug}`)
       .then(({ data }) => {
         const u = data.data;

@@ -43,6 +43,9 @@ export default function Universities() {
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [leadModalType, setLeadModalType] = useState('apply'); // 'apply' | 'brochure'
   const [selectedUniForLead, setSelectedUniForLead] = useState(null);
+  // Which university's brochure is currently being generated. Building the PDF
+  // takes a moment, so the button needs to show progress and refuse re-entry.
+  const [downloadingId, setDownloadingId] = useState(null);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('nirf'); // 'nirf' | 'rating' | 'name'
   const [showFilters, setShowFilters] = useState(false);
@@ -295,10 +298,13 @@ export default function Universities() {
                       {/* Download Brochure — captures the student's details (lead) before download */}
                        <button
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedUniForLead(u); setLeadModalType('brochure'); setLeadModalOpen(true); }}
-                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-link hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90"
-                          title="Download University Brochure (PDF)"
+                          disabled={downloadingId === u._id}
+                          className="absolute bottom-[72px] right-5 z-30 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md text-slate-500 hover:text-link hover:bg-white flex items-center justify-center transition-all shadow-md active:scale-90 disabled:opacity-60 disabled:cursor-wait"
+                          title={downloadingId === u._id ? 'Preparing brochure…' : 'Download University Brochure (PDF)'}
                         >
-                          <Download className="w-4 h-4" />
+                          {downloadingId === u._id
+                            ? <RefreshCw className="w-4 h-4 animate-spin" />
+                            : <Download className="w-4 h-4" />}
                         </button>
 
                       <div className="relative w-full h-full [transform-style:preserve-3d]">

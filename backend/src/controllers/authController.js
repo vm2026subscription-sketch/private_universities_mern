@@ -395,6 +395,19 @@ exports.login = async (req, res) => {
     if (/too many otp requests/i.test(error.message)) {
       return fail(res, 429, 'Too many verification requests. Please try again later.');
     }
+
+    // The password factor succeeded; only the code delivery failed. Reporting
+    // that as a 500 made an email-provider outage look like a broken login API
+    // and gave the user no idea that retrying would not help.
+    if (error.code === 'EMAIL_DELIVERY_FAILED') {
+      console.error('[auth] login OTP delivery failed:', error.message);
+      return fail(
+        res,
+        503,
+        'We could not send your verification code by email right now. Please try again shortly.'
+      );
+    }
+
     console.error('[auth] login failed:', error);
     return fail(res, 500, 'Login failed. Please try again.');
   }

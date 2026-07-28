@@ -179,6 +179,26 @@ const getAuthConfig = () => {
 const validateEnvironment = () => {
   const config = getAuthConfig();
 
+  /**
+   * Email is not fatal to boot, but it IS fatal to every login: the second
+   * factor is delivered by email, so an unsendable mailer locks out every
+   * account. Warn loudly at startup rather than letting the first user discover
+   * it as a 500.
+   */
+  try {
+    const { describeEmailConfig } = require('../utils/sendEmail');
+    const email = describeEmailConfig();
+    email.warnings.forEach((warning) => console.warn(`[config] ${warning}`));
+    if (!email.canDeliverToAnyone) {
+      console.error(
+        '[config] No usable email sender is configured. Login OTPs and signup ' +
+        'verification codes CANNOT be delivered, so no user will be able to sign in.'
+      );
+    }
+  } catch (error) {
+    console.warn(`[config] Could not check email configuration: ${error.message}`);
+  }
+
   if (!isExplicitlyDevelopment()) {
     if (process.env.ALLOW_DEV_OTP_ECHO === 'true') {
       throw new Error(
