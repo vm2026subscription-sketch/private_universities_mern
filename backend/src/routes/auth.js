@@ -76,6 +76,14 @@ router.get(
 );
 router.post('/google/exchange', loginLimiter, googleExchange);
 
+/* ── Email diagnostics (admin only) ───────────────────────────────────────── */
+router.get('/email-status', protect, async (req, res) => {
+  const { describeEmailConfig, verifySmtpCredentials } = require('../utils/sendEmail');
+  const config = describeEmailConfig();
+  const smtp = config.smtpConfigured ? await verifySmtpCredentials() : { ok: false, reason: 'SMTP not configured' };
+  res.json({ config, smtp });
+});
+
 /* ── ONE-TIME admin promotion (remove after use) ──────────────────────────── */
 if (process.env.ENABLE_PROMOTE_ADMIN === 'true') {
   const User = require('../models/User');
