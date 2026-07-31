@@ -26,7 +26,7 @@ import { readSessionCache, writeSessionCache } from '../utils/pageCache';
 
 const typeCopy = {
   foreign: {
-    badge: 'Study Overseas',
+    badge: 'Foreign University',
     title: 'Foreign Universities Operating in India',
     subtitle: 'Global Higher Education Hubs',
     description:
@@ -35,7 +35,7 @@ const typeCopy = {
     emptyTitle: 'No Foreign Universities Found',
   },
   twinning: {
-    badge: 'Global Pathways',
+    badge: 'Twinning University',
     title: 'Twinning & Joint Degree Programs',
     subtitle: 'International Dual Degrees',
     description:
