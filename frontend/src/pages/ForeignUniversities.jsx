@@ -208,7 +208,7 @@ export default function ForeignUniversities() {
         <div className="grid gap-4 md:grid-cols-3 mb-10">
           <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm">
             <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Current Segment</div>
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">{copy.heading}</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{copy.badge}</div>
           </div>
           <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm">
             <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Records Loaded</div>
@@ -247,7 +247,7 @@ export default function ForeignUniversities() {
           <div className="flex items-start gap-3">
             <Sparkles className="w-5 h-5 text-link mt-0.5 shrink-0" />
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{copy.heading}</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{copy.title}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{copy.description}</p>
             </div>
           </div>
