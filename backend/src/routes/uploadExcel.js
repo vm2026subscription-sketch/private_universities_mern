@@ -1010,7 +1010,11 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const { mode = 'upsert' } = req.body;
+    const { mode = 'upsert', replaceCourses = 'false' } = req.body;
+    // When replaceCourses=true, delete ALL existing courses for each matched
+    // university before importing — so stale courses from prior uploads don't
+    // remain alongside the freshly imported ones.
+    const shouldReplaceCourses = replaceCourses === 'true';
 
     console.log(`\nExcel file loaded. Sheets found: ${workbook.SheetNames.join(', ')}`);
 
@@ -1085,6 +1089,24 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
         let matchedCount = 0;
         let unmatchedCount = 0;
         const unmatchedExamples = [];
+
+        // When replaceCourses is on, collect all unique university names from
+        // the courses sheet first so we can delete their old courses in one pass
+        // before inserting the fresh batch.
+        if (shouldReplaceCourses) {
+          const uniNamesInSheet = [...new Set(
+            dataRows.map(r => clean(r[idx.universityName])).filter(Boolean)
+          )];
+          let deletedTotal = 0;
+          for (const rawName of uniNamesInSheet) {
+            const m = registry.resolve(rawName);
+            if (m.uni) {
+              const { deletedCount } = await Course.deleteMany({ universityId: m.uni._id });
+              deletedTotal += deletedCount;
+            }
+          }
+          console.log(`   Replace mode: deleted ${deletedTotal} old courses for ${uniNamesInSheet.length} universities`);
+        }
 
         for (let i = 0; i < dataRows.length; i++) {
           try {
