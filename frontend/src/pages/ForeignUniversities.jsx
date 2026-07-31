@@ -83,7 +83,7 @@ export default function ForeignUniversities() {
       }
       setFetchErrors((prev) => ({ ...prev, [segment]: null }));
       try {
-        const { data } = await api.get(`/universities?type=${segment}&limit=100`);
+        const { data } = await api.get(`/universities?type=${segment}&limit=1000`);
         if (!active) return;
         const nextUniversities = Array.isArray(data.data) ? data.data : [];
         setUniversitiesByType((prev) => ({ ...prev, [segment]: nextUniversities }));
@@ -108,36 +108,39 @@ export default function ForeignUniversities() {
   }, [reloadTokens.foreign]);
 
   useEffect(() => {
-    if (activeTab === 'twinning' && !loadingByType.twinning && (!universitiesByType.twinning.length || reloadTokens.twinning > 0)) {
-      let active = true;
+    if (activeTab !== 'twinning') return;
 
-      const loadTwinning = async () => {
-        setLoadingByType((prev) => ({ ...prev, twinning: true }));
-        setFetchErrors((prev) => ({ ...prev, twinning: null }));
-        try {
-          const { data } = await api.get('/universities?type=twinning&limit=100');
-          if (!active) return;
-          setUniversitiesByType((prev) => ({ ...prev, twinning: data.data || [] }));
-        } catch (err) {
-          if (!active) return;
-          setFetchErrors((prev) => ({
-            ...prev,
-            twinning: err.response?.data?.message || 'Failed to load twinning programs. Please check your connection and try again.',
-          }));
-          setUniversitiesByType((prev) => ({ ...prev, twinning: [] }));
-        } finally {
-          if (active) {
-            setLoadingByType((prev) => ({ ...prev, twinning: false }));
-          }
-        }
-      };
-
-      loadTwinning();
-      return () => {
-        active = false;
-      };
+    const cached = readSessionCache(getForeignCacheKey('twinning'), FOREIGN_CACHE_TTL_MS) || [];
+    if (cached.length > 0 && reloadTokens.twinning === 0) {
+      setUniversitiesByType((prev) => ({ ...prev, twinning: cached }));
+      return;
     }
-  }, [activeTab, loadingByType.twinning, universitiesByType.twinning.length]);
+
+    let active = true;
+    const loadTwinning = async () => {
+      setLoadingByType((prev) => ({ ...prev, twinning: true }));
+      setFetchErrors((prev) => ({ ...prev, twinning: null }));
+      try {
+        const { data } = await api.get('/universities?type=twinning&limit=1000');
+        if (!active) return;
+        const list = data.data || [];
+        setUniversitiesByType((prev) => ({ ...prev, twinning: list }));
+        writeSessionCache(getForeignCacheKey('twinning'), list);
+      } catch (err) {
+        if (!active) return;
+        setFetchErrors((prev) => ({
+          ...prev,
+          twinning: err.response?.data?.message || 'Failed to load twinning programs. Please check your connection and try again.',
+        }));
+        setUniversitiesByType((prev) => ({ ...prev, twinning: [] }));
+      } finally {
+        if (active) setLoadingByType((prev) => ({ ...prev, twinning: false }));
+      }
+    };
+
+    loadTwinning();
+    return () => { active = false; };
+  }, [activeTab, reloadTokens.twinning]);
 
   const currentUniversities = universitiesByType[activeTab] || [];
   const loading = loadingByType[activeTab];
