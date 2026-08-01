@@ -9,6 +9,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import logo from '../../assets/logo.png';
+import AccessibilityWidget from './AccessibilityWidget';
 
 
 export default function Navbar() {
@@ -20,6 +21,7 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [activeMegaMenu, setActiveMegaMenu] = useState(null);
   const location = useLocation();
   
   const searchRef = useRef(null);

@@ -33,7 +33,17 @@ app.set('trust proxy', 1);
 app.use(compression());
 
 const BASE_ORIGINS = [
-  ...(!isProduction() ? ['http://localhost:5173', 'http://localhost:5174'] : []),
+  ...(!isProduction()
+    ? [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:5175',
+        'http://localhost:3000',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:5174',
+        'http://127.0.0.1:5175',
+      ]
+    : []),
   'https://privateuniversity.vidyarthimitra.org',
   'https://www.privateuniversity.vidyarthimitra.org',
   'https://university.vidyarthimitra.org',
@@ -54,9 +64,14 @@ const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (!isProduction() && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   optionsSuccessStatus: 200,
   // Cache CORS preflight (OPTIONS) responses in the browser for 24h so repeat
   // cross-origin requests skip the extra preflight round-trip.

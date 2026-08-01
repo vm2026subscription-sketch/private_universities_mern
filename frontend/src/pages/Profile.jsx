@@ -388,7 +388,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] dark:bg-dark-bg flex flex-col md:flex-row relative selection:bg-primary/30 pb-20 md:pb-0">
+    <div className="min-h-screen bg-[#FDFCFB] dark:bg-dark-bg flex flex-col md:flex-row items-start relative selection:bg-primary/30 pb-20 md:pb-0">
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
@@ -411,7 +411,7 @@ export default function Profile() {
       </AnimatePresence>
 
       <aside className={`
-        fixed md:sticky top-0 md:top-16 left-0 h-screen md:h-[calc(100vh-4rem)] w-72 bg-white dark:bg-dark-card border-r border-light-border dark:border-dark-border z-[70] transition-all duration-500 ease-in-out
+        fixed md:sticky top-0 md:top-20 left-0 inset-y-0 md:inset-y-auto h-full md:h-auto md:max-h-[calc(100vh-5rem)] overflow-y-auto w-72 bg-white dark:bg-dark-card border-r border-light-border dark:border-dark-border z-[70] md:z-30 self-start transition-all duration-500 ease-in-out shrink-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="h-full flex flex-col p-6">
@@ -471,7 +471,7 @@ export default function Profile() {
         </div>
       </aside>
 
-      <main className="flex-1 p-6 md:p-10 max-w-7xl w-full md:h-[calc(100vh-4rem)] md:overflow-y-auto">
+      <main className="flex-1 p-6 md:p-10 max-w-7xl w-full min-w-0">
         <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8">
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
             <div className="flex items-center gap-2 text-[10px] font-bold text-link uppercase tracking-[0.2em] mb-3">

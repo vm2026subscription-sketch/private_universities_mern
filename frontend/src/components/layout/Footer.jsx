@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Bell,
   Loader2,
+  MessageSquare,
 } from 'lucide-react';
 import { isValidEmail } from '../../utils/contactValidation';
 
@@ -44,6 +45,7 @@ const footerGroups = [
     links: [
       { label: 'About Us', to: '/about' },
       { label: 'Contact Us', to: '/contact' },
+      { label: 'Give Feedback', isFeedback: true },
       { label: 'Privacy Policy', to: '/privacy-policy' },
       { label: 'Terms and Conditions', to: '/terms-and-conditions' },
       { label: 'Refund Policy', to: '/refund-cancellation' },
@@ -62,6 +64,11 @@ export default function Footer() {
   const { openChat } = useAiChat();
   const [email, setEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
+
+  const handleOpenFeedback = (e) => {
+    if (e) e.preventDefault();
+    window.dispatchEvent(new Event('open-feedback-modal'));
+  };
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
@@ -113,14 +120,22 @@ export default function Footer() {
               <button
                 type="button"
                 onClick={openChat}
-                className="inline-flex items-center gap-2 rounded-2xl bg-accent px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-accent/20 hover:bg-accent-light"
+                className="inline-flex items-center gap-2 rounded-2xl bg-accent px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-accent/20 hover:bg-accent-light transition-all"
               >
                 Talk to AI
                 <ArrowRight className="w-4 h-4" />
               </button>
+              <button
+                type="button"
+                onClick={handleOpenFeedback}
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#FF6B00] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 hover:bg-[#E65A00] transition-all"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Give Feedback
+              </button>
               <Link
                 to="/contact"
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white hover:bg-white/10 transition-all"
               >
                 Contact Team
               </Link>
@@ -138,14 +153,26 @@ export default function Footer() {
                 </div>
                 <div className="space-y-3">
                   {group.links.map((link) => (
-                    <Link
-                      key={link.label}
-                      to={link.to}
-                      className="group flex items-center justify-between gap-3 text-sm text-white/78 hover:text-white transition-colors"
-                    >
-                      <span>{link.label}</span>
-                      <ArrowRight className="w-3.5 h-3.5 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
-                    </Link>
+                    link.isFeedback ? (
+                      <button
+                        key={link.label}
+                        type="button"
+                        onClick={handleOpenFeedback}
+                        className="group flex items-center justify-between gap-3 text-sm text-white/78 hover:text-white transition-colors w-full text-left"
+                      >
+                        <span>{link.label}</span>
+                        <ArrowRight className="w-3.5 h-3.5 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                      </button>
+                    ) : (
+                      <Link
+                        key={link.label}
+                        to={link.to}
+                        className="group flex items-center justify-between gap-3 text-sm text-white/78 hover:text-white transition-colors"
+                      >
+                        <span>{link.label}</span>
+                        <ArrowRight className="w-3.5 h-3.5 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                      </Link>
+                    )
                   ))}
                 </div>
               </div>
@@ -252,6 +279,13 @@ export default function Footer() {
             <Link to="/contact" className="hover:text-accent-light transition-colors">
               Contact
             </Link>
+            <button
+              type="button"
+              onClick={handleOpenFeedback}
+              className="hover:text-accent-light transition-colors cursor-pointer"
+            >
+              Feedback
+            </button>
           </div>
           <div className="text-left md:text-right">
             <p>© VidyarthiMitra.org {new Date().getFullYear()}</p>
