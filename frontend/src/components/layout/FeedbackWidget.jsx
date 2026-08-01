@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
@@ -16,6 +16,12 @@ export default function FeedbackWidget() {
     designation: '',
     feedback: '',
   });
+
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-feedback-modal', handleOpen);
+    return () => window.removeEventListener('open-feedback-modal', handleOpen);
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -78,18 +84,7 @@ export default function FeedbackWidget() {
   };
 
   return (
-    <>
-      {/* Floating Vertical Tab */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed left-0 top-1/2 -translate-y-1/2 z-[100] bg-[#FF6B00] hover:bg-[#E65A00] text-white font-bold tracking-widest text-sm py-4 px-2 rounded-r-xl shadow-lg transition-colors flex items-center justify-center writing-vertical-rl"
-        style={{ writingMode: 'vertical-rl', transform: 'translateY(-50%) rotate(180deg)' }}
-      >
-        FEEDBACK
-      </button>
-
-      {/* Modal */}
-      <AnimatePresence>
+    <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div
@@ -252,6 +247,5 @@ export default function FeedbackWidget() {
           </div>
         )}
       </AnimatePresence>
-    </>
   );
 }

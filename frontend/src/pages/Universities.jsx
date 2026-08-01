@@ -143,6 +143,7 @@ export default function Universities() {
     }).catch((err) => {
       setFetchError(err.response?.data?.message || 'Unable to load universities. Please check your connection and try again.');
     }).finally(() => setLoading(false));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [filters, sort, page, initialSearch, reloadToken]);
 
   const toggleFilter = (key, value) => {
