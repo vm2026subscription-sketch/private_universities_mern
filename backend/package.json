@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node scripts/seedData.js",
-    "reset:catalog": "node scripts/resetUniversityCatalog.js"
+    "reset:catalog": "node scripts/resetUniversityCatalog.js",
+    "check:email": "node scripts/checkEmail.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

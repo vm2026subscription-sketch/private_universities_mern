@@ -1010,7 +1010,11 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const { mode = 'upsert' } = req.body;
+    const { mode = 'upsert', replaceCourses = 'false' } = req.body;
+    // When replaceCourses=true, delete ALL existing courses for each matched
+    // university before importing — so stale courses from prior uploads don't
+    // remain alongside the freshly imported ones.
+    const shouldReplaceCourses = replaceCourses === 'true';
 
     console.log(`\nExcel file loaded. Sheets found: ${workbook.SheetNames.join(', ')}`);
 
@@ -1086,6 +1090,28 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
         let unmatchedCount = 0;
         const unmatchedExamples = [];
 
+        // When replaceCourses is on, delete all existing courses for matched
+        // universities in a SINGLE deleteMany($in) before the fresh batch insert.
+        const replaceTargetIds = [];
+        if (shouldReplaceCourses) {
+          const uniNamesInSheet = [...new Set(
+            dataRows.map(r => clean(r[idx.universityName])).filter(Boolean)
+          )];
+          for (const rawName of uniNamesInSheet) {
+            const m = registry.resolve(rawName);
+            if (m.uni) replaceTargetIds.push(m.uni._id);
+          }
+          if (replaceTargetIds.length) {
+            const { deletedCount } = await Course.deleteMany({ universityId: { $in: replaceTargetIds } });
+            console.log(`   Replace mode: deleted ${deletedCount} old courses for ${replaceTargetIds.length} universities`);
+          }
+        }
+
+        // In replace mode we already cleared old courses above, so we can
+        // collect all valid docs and insertMany in one shot — far fewer DB
+        // round-trips than the per-row create/findOne pair.
+        const batchDocs = shouldReplaceCourses ? [] : null;
+
         for (let i = 0; i < dataRows.length; i++) {
           try {
             const course = parseCourseRow(dataRows[i], idx);
@@ -1115,19 +1141,48 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
             }
 
             matchedCount++;
-            const { action, error } = await persistCourse(course, match.uni, mode);
-            if (action === 'created') {
-              results.courses.created++;
-              if (results.courses.created <= 10) console.log(`   "${course.name}" → ${match.uni.name}`);
-            } else if (action === 'updated') {
-              results.courses.updated++;
+
+            if (batchDocs) {
+              batchDocs.push({
+                universityId: match.uni._id,
+                name: course.name,
+                category: course.category,
+                stream: course.stream,
+                baseCourse: course.baseCourse,
+                specializationName: course.specializationName,
+                duration: course.duration,
+                totalSeats: course.totalSeats,
+                feesPerYear: course.feesPerYear,
+                entranceExams: course.entranceExams,
+                eligibility: course.eligibility,
+                specializations: course.specializations,
+              });
             } else {
-              results.courses.skipped++;
-              if (error) results.courses.errors.push({ row: i, error });
+              const { action, error } = await persistCourse(course, match.uni, mode);
+              if (action === 'created') {
+                results.courses.created++;
+                if (results.courses.created <= 10) console.log(`   "${course.name}" → ${match.uni.name}`);
+              } else if (action === 'updated') {
+                results.courses.updated++;
+              } else {
+                results.courses.skipped++;
+                if (error) results.courses.errors.push({ row: i, error });
+              }
             }
           } catch (err) {
             results.courses.errors.push({ row: i, error: err.message });
             results.courses.skipped++;
+          }
+        }
+
+        if (batchDocs && batchDocs.length) {
+          try {
+            await Course.insertMany(batchDocs, { ordered: false });
+            results.courses.created = batchDocs.length;
+            console.log(`   Batch inserted ${batchDocs.length} courses`);
+          } catch (err) {
+            console.error('insertMany error:', err.message);
+            results.courses.errors.push({ row: -1, error: `Batch insert failed: ${err.message}` });
           }
         }
 
@@ -1145,8 +1200,12 @@ router.post('/bulk', protect, admin, upload.single('file'), async (req, res) => 
     const universitiesWithCourses = await Course.aggregate([
       { $group: { _id: '$universityId', count: { $sum: 1 } } },
     ]);
-    for (const { _id, count } of universitiesWithCourses) {
-      await University.findByIdAndUpdate(_id, { 'stats.totalCoursesCount': count });
+    if (universitiesWithCourses.length > 0) {
+      await University.bulkWrite(
+        universitiesWithCourses.map(({ _id, count }) => ({
+          updateOne: { filter: { _id }, update: { $set: { 'stats.totalCoursesCount': count } } },
+        }))
+      );
     }
 
     // ========== 4. AUDIT LOG ==========

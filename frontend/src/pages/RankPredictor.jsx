@@ -40,8 +40,10 @@ export default function RankPredictor() {
           })));
         }
       })
-      .catch(() => {})
-      .finally(() => setExamsLoading(false));
+      // The exam list falls back to a bundled default, so a fetch failure is not
+      // worth surfacing. (A .finally here used to clear an examsLoading state
+      // that no longer exists, throwing a ReferenceError on every mount.)
+      .catch(() => {});
   }, []);
 
   const handlePredict = async () => {

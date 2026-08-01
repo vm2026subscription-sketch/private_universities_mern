@@ -32,6 +32,21 @@ router.post('/universities/:id/duplicate', adminCtrl.duplicateUniversity);
 router.put('/universities/:id', adminCtrl.updateUniversity);
 router.delete('/universities/:id', superadmin, adminCtrl.deleteUniversity);
 
+// Bulk delete all universities of a given segment and their courses
+router.delete('/universities/segment/:segment', async (req, res) => {
+  const { segment } = req.params;
+  if (!['foreign', 'twinning', 'normal'].includes(segment)) {
+    return res.status(400).json({ success: false, message: 'Invalid segment. Use: foreign, twinning, normal' });
+  }
+  const University = require('../models/University');
+  const Course = require('../models/Course');
+  const unis = await University.find({ segment }, '_id');
+  const ids = unis.map(u => u._id);
+  const { deletedCount: coursesDel } = await Course.deleteMany({ universityId: { $in: ids } });
+  const { deletedCount: unisDel } = await University.deleteMany({ segment });
+  res.json({ success: true, message: `Deleted ${unisDel} universities and ${coursesDel} courses for segment: ${segment}` });
+});
+
 // Courses
 router.post('/courses', adminCtrl.createCourse);
 router.put('/courses/:id', adminCtrl.updateCourse);

@@ -27,7 +27,6 @@ export default function Navbar() {
   const searchRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const dropdownRef = useRef(null);
-  const megaMenuRef = useRef(null);
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -69,7 +68,6 @@ export default function Navbar() {
       const inMobileSearch = mobileSearchRef.current && mobileSearchRef.current.contains(e.target);
       if (!inDesktopSearch && !inMobileSearch) setShowSearch(false);
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false);
-      if (megaMenuRef.current && !megaMenuRef.current.contains(e.target)) setActiveMegaMenu(null);
     };
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
@@ -80,7 +78,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-[100] bg-white/95 dark:bg-dark-bg/95 backdrop-blur border-b border-light-border dark:border-dark-border" onMouseLeave={() => setActiveMegaMenu(null)}>
+    <nav className="sticky top-0 z-[100] bg-white/95 dark:bg-dark-bg/95 backdrop-blur border-b border-light-border dark:border-dark-border">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2 shrink-0">

@@ -26,7 +26,7 @@ import { readSessionCache, writeSessionCache } from '../utils/pageCache';
 
 const typeCopy = {
   foreign: {
-    badge: 'Study Overseas',
+    badge: 'Foreign University',
     title: 'Foreign Universities Operating in India',
     subtitle: 'Global Higher Education Hubs',
     description:
@@ -35,7 +35,7 @@ const typeCopy = {
     emptyTitle: 'No Foreign Universities Found',
   },
   twinning: {
-    badge: 'Global Pathways',
+    badge: 'Twinning University',
     title: 'Twinning & Joint Degree Programs',
     subtitle: 'International Dual Degrees',
     description:
@@ -83,7 +83,7 @@ export default function ForeignUniversities() {
       }
       setFetchErrors((prev) => ({ ...prev, [segment]: null }));
       try {
-        const { data } = await api.get(`/universities?type=${segment}&limit=100`);
+        const { data } = await api.get(`/universities?type=${segment}&limit=1000`);
         if (!active) return;
         const nextUniversities = Array.isArray(data.data) ? data.data : [];
         setUniversitiesByType((prev) => ({ ...prev, [segment]: nextUniversities }));
@@ -108,36 +108,39 @@ export default function ForeignUniversities() {
   }, [reloadTokens.foreign]);
 
   useEffect(() => {
-    if (activeTab === 'twinning' && !loadingByType.twinning && (!universitiesByType.twinning.length || reloadTokens.twinning > 0)) {
-      let active = true;
+    if (activeTab !== 'twinning') return;
 
-      const loadTwinning = async () => {
-        setLoadingByType((prev) => ({ ...prev, twinning: true }));
-        setFetchErrors((prev) => ({ ...prev, twinning: null }));
-        try {
-          const { data } = await api.get('/universities?type=twinning&limit=100');
-          if (!active) return;
-          setUniversitiesByType((prev) => ({ ...prev, twinning: data.data || [] }));
-        } catch (err) {
-          if (!active) return;
-          setFetchErrors((prev) => ({
-            ...prev,
-            twinning: err.response?.data?.message || 'Failed to load twinning programs. Please check your connection and try again.',
-          }));
-          setUniversitiesByType((prev) => ({ ...prev, twinning: [] }));
-        } finally {
-          if (active) {
-            setLoadingByType((prev) => ({ ...prev, twinning: false }));
-          }
-        }
-      };
-
-      loadTwinning();
-      return () => {
-        active = false;
-      };
+    const cached = readSessionCache(getForeignCacheKey('twinning'), FOREIGN_CACHE_TTL_MS) || [];
+    if (cached.length > 0 && reloadTokens.twinning === 0) {
+      setUniversitiesByType((prev) => ({ ...prev, twinning: cached }));
+      return;
     }
-  }, [activeTab, loadingByType.twinning, universitiesByType.twinning.length]);
+
+    let active = true;
+    const loadTwinning = async () => {
+      setLoadingByType((prev) => ({ ...prev, twinning: true }));
+      setFetchErrors((prev) => ({ ...prev, twinning: null }));
+      try {
+        const { data } = await api.get('/universities?type=twinning&limit=1000');
+        if (!active) return;
+        const list = data.data || [];
+        setUniversitiesByType((prev) => ({ ...prev, twinning: list }));
+        writeSessionCache(getForeignCacheKey('twinning'), list);
+      } catch (err) {
+        if (!active) return;
+        setFetchErrors((prev) => ({
+          ...prev,
+          twinning: err.response?.data?.message || 'Failed to load twinning programs. Please check your connection and try again.',
+        }));
+        setUniversitiesByType((prev) => ({ ...prev, twinning: [] }));
+      } finally {
+        if (active) setLoadingByType((prev) => ({ ...prev, twinning: false }));
+      }
+    };
+
+    loadTwinning();
+    return () => { active = false; };
+  }, [activeTab, reloadTokens.twinning]);
 
   const currentUniversities = universitiesByType[activeTab] || [];
   const loading = loadingByType[activeTab];
@@ -208,7 +211,7 @@ export default function ForeignUniversities() {
         <div className="grid gap-4 md:grid-cols-3 mb-10">
           <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm">
             <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Current Segment</div>
-            <div className="text-2xl font-bold text-slate-900 dark:text-white">{copy.heading}</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{copy.badge}</div>
           </div>
           <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm">
             <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Records Loaded</div>
@@ -247,7 +250,7 @@ export default function ForeignUniversities() {
           <div className="flex items-start gap-3">
             <Sparkles className="w-5 h-5 text-link mt-0.5 shrink-0" />
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{copy.heading}</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{copy.title}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{copy.description}</p>
             </div>
           </div>

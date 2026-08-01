@@ -9,6 +9,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
   const [step, setStep] = useState('upload'); // upload, preview, confirm
   const [previewData, setPreviewData] = useState(null);
   const [uploadMode, setUploadMode] = useState('upsert');
+  const [replaceCourses, setReplaceCourses] = useState(false);
   const [progress, setProgress] = useState(0);
   const [useBulkMode, setUseBulkMode] = useState(true); // NEW: Use bulk upload (both sheets)
   const [sheetNames, setSheetNames] = useState([]);
@@ -115,6 +116,7 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
     const formData = new FormData();
     formData.append('file', fileToUpload);
     formData.append('mode', uploadMode);
+    formData.append('replaceCourses', replaceCourses ? 'true' : 'false');
 
     try {
       const response = await api.post('/admin/upload/bulk', formData, {
@@ -359,11 +361,26 @@ const ExcelUploader = ({ onUploadComplete, type = 'universities' }) => {
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            {useBulkMode 
+            {useBulkMode
               ? 'Upload one file with both "Universities" and "Courses" sheets - they will be linked automatically'
               : 'Upload a single sheet (Universities OR Courses) from your Excel file'}
           </p>
         </div>
+
+        {useBulkMode && (
+          <div className="mb-4 flex items-center gap-3 p-3 rounded-lg border border-orange-200 bg-orange-50">
+            <input
+              type="checkbox"
+              id="replaceCourses"
+              checked={replaceCourses}
+              onChange={e => setReplaceCourses(e.target.checked)}
+              className="w-4 h-4 accent-orange-500"
+            />
+            <label htmlFor="replaceCourses" className="text-sm font-medium text-orange-800 cursor-pointer select-none">
+              Replace existing courses (delete old courses before importing new ones)
+            </label>
+          </div>
+        )}
 
         {step === 'upload' && (
           <>
