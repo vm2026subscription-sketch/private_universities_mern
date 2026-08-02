@@ -31,6 +31,12 @@ const {
   stripPlatformControlledFields,
 } = require('../src/middleware/universityTenancy');
 const { removeTeamMember } = require('../src/controllers/universityPortalController');
+const {
+  updateMyUniversity,
+  addGalleryImages,
+  approveChanges,
+} = require('../src/controllers/universityProfileController');
+const { classifyUpdate } = require('../src/config/universityEditPolicy');
 
 /* ── Harness ──────────────────────────────────────────────────────────────── */
 
@@ -241,7 +247,114 @@ const run_scenarios = async ({ uniA, uniB, ownerA, memberA, ownerB, applicant, s
     'exact matching prevents an admin being treated as a tenant'
   );
 
-  console.log('\n── 8. Revocation takes effect immediately ─────────────────────');
+  console.log('\n── 8. Edit policy classification ──────────────────────────────');
+
+  const split = classifyUpdate({
+    description: 'We are a great university',
+    vision: 'To lead',
+    campus: { hostelDetails: 'AC rooms' },
+    stats: { avgPackageLPA: 99, placementPercentage: 100, rating: 5 },
+    naacGrade: 'A++',
+    isSponsored: true,
+    slug: 'hijacked-slug',
+  });
+
+  check(
+    'Narrative fields go live immediately',
+    ['description', 'vision', 'campus.hostelDetails'].every((f) => f in split.selfServe)
+  );
+  check(
+    'Placement and accreditation claims are held for review',
+    ['stats.avgPackageLPA', 'stats.placementPercentage', 'naacGrade'].every((f) => f in split.review),
+    'a university cannot publish its own placement numbers unchecked'
+  );
+  check(
+    'Sponsorship and slug are refused outright',
+    split.rejected.includes('isSponsored') && split.rejected.includes('slug')
+  );
+  check(
+    'Student-owned rating is not editable by the university',
+    split.rejected.includes('stats.rating')
+  );
+  check(
+    'Unknown fields fail closed rather than passing through',
+    classifyUpdate({ somethingNewInTheSchema: 'x' }).rejected.includes('somethingNewInTheSchema')
+  );
+
+  console.log('\n── 9. Editing writes only to the caller\'s own record ──────────');
+
+  const editRes = mockRes();
+  await updateMyUniversity(
+    {
+      user: ownerA,
+      university: await University.findById(uniA._id),
+      body: { description: 'Edited by A', stats: { avgPackageLPA: 42 } },
+    },
+    editRes
+  );
+
+  const afterA = await University.findById(uniA._id);
+  const afterB = await University.findById(uniB._id);
+
+  check('A\'s self-serve edit applied to A', afterA.description === 'Edited by A');
+  check('B is completely untouched by A\'s edit', afterB.description !== 'Edited by A');
+  check(
+    'A\'s placement claim did NOT go live',
+    afterA.stats?.avgPackageLPA !== 42,
+    'queued instead of published'
+  );
+  check(
+    'A\'s placement claim is queued for review',
+    afterA.pendingChanges?.data?.['stats.avgPackageLPA'] === 42
+  );
+  check(
+    'Public visibility is unaffected by a pending review',
+    afterA.status !== 'needs_review',
+    'status stays as-is, so the public page is never pulled from listings'
+  );
+
+  console.log('\n── 10. Moderation ─────────────────────────────────────────────');
+
+  const approveRes = mockRes();
+  await approveChanges(
+    { user: { _id: ownerB._id, role: 'admin' }, params: { id: String(uniA._id) }, body: {} },
+    approveRes
+  );
+
+  const approved = await University.findById(uniA._id);
+  check('Approving publishes the queued value', approved.stats?.avgPackageLPA === 42);
+  check('Queue is emptied after approval', !approved.pendingChanges?.data);
+
+  console.log('\n── 11. Gallery is per-tenant ──────────────────────────────────');
+
+  const galleryRes = mockRes();
+  await addGalleryImages(
+    {
+      user: ownerA,
+      university: await University.findById(uniA._id),
+      body: { images: ['https://res.cloudinary.com/x/a1.jpg', 'https://res.cloudinary.com/x/a1.jpg'] },
+    },
+    galleryRes
+  );
+
+  const galleryA = await University.findById(uniA._id);
+  const galleryB = await University.findById(uniB._id);
+  check('Gallery image saved to A', (galleryA.campus?.galleryImages || []).length === 1);
+  check('Duplicate submission does not double up', (galleryA.campus?.galleryImages || []).length === 1);
+  check('B\'s gallery stays empty', (galleryB.campus?.galleryImages || []).length === 0);
+
+  const badUrlRes = mockRes();
+  await addGalleryImages(
+    {
+      user: ownerA,
+      university: await University.findById(uniA._id),
+      body: { images: ['javascript:alert(1)'] },
+    },
+    badUrlRes
+  );
+  check('Non-https image URLs are refused', badUrlRes.statusCode === 400);
+
+  console.log('\n── 12. Revocation takes effect immediately ────────────────────');
 
   ownerB.universityId = undefined;
   ownerB.universityRole = undefined;

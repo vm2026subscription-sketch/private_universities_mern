@@ -1,8 +1,18 @@
 const router = require('express').Router();
-const { protect, admin } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
+const { allowAdminOrUniversity, scopeUploadFolder } = require('../middleware/universityTenancy');
 const { upload, uploadToCloudinary } = require('../utils/imageUpload');
 
-router.post('/', protect, admin, upload.single('image'), async (req, res) => {
+/**
+ * University accounts need this endpoint for their logo, cover image and
+ * gallery. It was admin-only, which left the dashboard's image features with no
+ * way to obtain a URL. scopeUploadFolder pins tenants to their own folder so
+ * widening access does not let them write among the platform's assets.
+ */
+// scopeUploadFolder runs AFTER multer: multipart fields are not on req.body
+// until multer has parsed the request, so scoping first would be overwritten by
+// whatever folder the client sent.
+router.post('/', protect, allowAdminOrUniversity, upload.single('image'), scopeUploadFolder, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No image file provided' });
@@ -27,7 +37,9 @@ router.post('/', protect, admin, upload.single('image'), async (req, res) => {
   }
 });
 
-router.post('/url', protect, admin, async (req, res) => {
+// JSON body, so express.json has already populated req.body and the folder can
+// be scoped before the handler runs.
+router.post('/url', protect, allowAdminOrUniversity, scopeUploadFolder, async (req, res) => {
   try {
     const { source, folder } = req.body;
     if (!source) {

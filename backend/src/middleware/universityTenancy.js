@@ -146,4 +146,41 @@ exports.stripPlatformControlledFields = (req, res, next) => {
   return next();
 };
 
+/**
+ * Permits admins and tenancy-holding university accounts through the same door.
+ *
+ * Used by the image upload endpoint, which both need: an admin editing any
+ * university, and a university uploading its own logo or gallery. The upload
+ * route was admin-only, which would have left the dashboard's logo, cover and
+ * gallery features with no way to produce a URL to save.
+ *
+ * Callers must still scope what the upload is attached to — this grants the
+ * ability to store a file, not the ability to point it at someone else's record.
+ */
+exports.allowAdminOrUniversity = (req, res, next) => {
+  const role = req.user?.role;
+  if (!role) return deny(res, 401, 'Not authorized');
+
+  if (role === 'admin' || role === 'superadmin') return next();
+
+  if (role === 'university' && req.user.universityId) return next();
+
+  return deny(res, 403, 'You do not have permission to upload files');
+};
+
+/**
+ * Confines a university's uploads to its own Cloudinary folder.
+ *
+ * Without this a tenant could pass `folder: 'banners'` and drop files among the
+ * platform's own assets. Admins keep free choice of folder; tenants get exactly
+ * one, derived from the session rather than the request.
+ */
+exports.scopeUploadFolder = (req, res, next) => {
+  if (req.user?.role === 'university') {
+    req.body = req.body || {};
+    req.body.folder = `universities/${req.user.universityId}`;
+  }
+  return next();
+};
+
 exports.TENANT_FORBIDDEN_FIELDS = TENANT_FORBIDDEN_FIELDS;

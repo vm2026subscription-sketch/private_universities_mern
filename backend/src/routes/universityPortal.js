@@ -24,11 +24,22 @@ const {
   removeTeamMember,
 } = require('../controllers/universityPortalController');
 
+const {
+  getMyUniversity,
+  updateMyUniversity,
+  addGalleryImages,
+  removeGalleryImage,
+  listPendingReviews,
+  approveChanges,
+  rejectChanges,
+} = require('../controllers/universityProfileController');
+
 const { protect, requireRole } = require('../middleware/auth');
 const {
   requireUniversityAccess,
   requireUniversityOwner,
   rejectUniversityIdInPayload,
+  stripPlatformControlledFields,
 } = require('../middleware/universityTenancy');
 const { registerLimiter, passwordResetLimiter, otpSendLimiter } = require('../middleware/rateLimiters');
 
@@ -55,6 +66,34 @@ router.get('/me', protect, getMyStatus);
 
 /* ── Tenant (authenticated + approved) ────────────────────────────────────── */
 
+/**
+ * The guard chain every tenant route shares.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * PERSON B — INSERT `requireActiveSubscription` AS THE LAST ENTRY OF `tenantWrite`
+ * ────────────────────────────────────────────────────────────────────────────
+ * Reads (`tenantRead`) must stay ungated: a university whose subscription has
+ * lapsed still needs to sign in, see its dashboard and reach the renew button.
+ * Only WRITES pay. And note that nothing here touches the public university
+ * page — an expired subscription locks editing, never publication.
+ */
+const tenantRead = [protect, universityOnly, requireUniversityAccess];
+const tenantWrite = [
+  ...tenantRead,
+  rejectUniversityIdInPayload,
+  stripPlatformControlledFields,
+  // requireActiveSubscription,  ← Person B
+];
+
+/* Profile */
+router.get('/my-university', ...tenantRead, getMyUniversity);
+router.put('/my-university', ...tenantWrite, updateMyUniversity);
+
+/* Gallery */
+router.post('/my-university/gallery', ...tenantWrite, addGalleryImages);
+router.delete('/my-university/gallery', ...tenantWrite, removeGalleryImage);
+
+/* Team */
 router.get('/team', protect, universityOnly, requireUniversityAccess, listTeam);
 
 router.post(
@@ -92,5 +131,11 @@ router.post('/claims/:id/approve', protect, requireRole('admin'), approveClaim);
 
 /** Withdrawing access outright is superadmin-only — it has no claim to appeal. */
 router.delete('/access/:userId', protect, requireRole('superadmin'), revokeAccess);
+
+/* ── Admin moderation of profile edits ────────────────────────────────────── */
+
+router.get('/reviews', protect, requireRole('admin'), listPendingReviews);
+router.post('/reviews/:id/approve', protect, requireRole('admin'), approveChanges);
+router.post('/reviews/:id/reject', protect, requireRole('admin'), rejectChanges);
 
 module.exports = router;
