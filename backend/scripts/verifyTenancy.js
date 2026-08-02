@@ -37,10 +37,17 @@ const {
   approveChanges,
 } = require('../src/controllers/universityProfileController');
 const { classifyUpdate } = require('../src/config/universityEditPolicy');
+const {
+  createMyCourse,
+  updateMyCourse,
+  deleteMyCourse,
+  listMyCourses,
+} = require('../src/controllers/universityCourseController');
+const Course = require('../src/models/Course');
 
 /* ── Harness ──────────────────────────────────────────────────────────────── */
 
-const created = { users: [], universities: [], claims: [] };
+const created = { users: [], universities: [], claims: [], courses: [] };
 const results = [];
 const RUN = crypto.randomBytes(4).toString('hex');
 
@@ -354,7 +361,121 @@ const run_scenarios = async ({ uniA, uniB, ownerA, memberA, ownerB, applicant, s
   );
   check('Non-https image URLs are refused', badUrlRes.statusCode === 400);
 
-  console.log('\n── 12. Revocation takes effect immediately ────────────────────');
+  console.log('\n── 12. Scholarships + campus content ──────────────────────────');
+
+  const contentRes = mockRes();
+  await updateMyUniversity(
+    {
+      user: ownerA,
+      university: await University.findById(uniA._id),
+      body: {
+        scholarships: [
+          { name: 'Merit Scholarship', eligibility: '90%+ in 12th', amount: '50% fee waiver' },
+          { name: 'Sports Quota', eligibility: 'State level', amount: 'INR 50,000' },
+        ],
+        campus: {
+          overview: 'Green 40-acre campus',
+          hostelDetails: 'Separate AC hostels',
+          libraryDetails: '50,000 books',
+          sportsDetails: 'Olympic pool',
+          wifiAvailable: true,
+        },
+        facilities: ['Gym', 'Cafeteria', 'Auditorium'],
+        faculty: [{ name: 'Dr. A Sharma', designation: 'HOD', department: 'CSE' }],
+      },
+    },
+    contentRes
+  );
+
+  const content = await University.findById(uniA._id);
+  check('Scholarships saved', (content.scholarships || []).length === 2, `${content.scholarships?.length} entries`);
+  check('Scholarship detail persisted', content.scholarships?.[0]?.name === 'Merit Scholarship');
+  check('Campus text saved', content.campus?.hostelDetails === 'Separate AC hostels');
+  check('Campus boolean saved', content.campus?.wifiAvailable === true);
+  check('Facilities saved', (content.facilities || []).length === 3);
+  check('Faculty saved', content.faculty?.[0]?.name === 'Dr. A Sharma');
+  check(
+    'All of it went live — none needed review',
+    (contentRes.body?.awaitingReview || []).length === 0,
+    'self-descriptive content should never sit in a queue'
+  );
+
+  console.log('\n── 13. Courses are per-tenant ─────────────────────────────────');
+
+  const createRes = mockRes();
+  await createMyCourse(
+    {
+      user: ownerA,
+      university: await University.findById(uniA._id),
+      body: {
+        name: `ZZ B.Tech Tenancy ${RUN}`,
+        category: 'Engineering',
+        duration: '4 Years',
+        feesPerYear: 150000,
+        // Should be ignored — tenancy comes from the session.
+        universityId: String(uniB._id),
+      },
+    },
+    createRes
+  );
+
+  const courseId = createRes.body?.course?._id;
+  if (courseId) created.courses.push(courseId);
+
+  check('Course created', createRes.statusCode === 201, createRes.body?.message);
+  check(
+    'universityId in the body was ignored',
+    String(createRes.body?.course?.universityId) === String(uniA._id),
+    'course belongs to A, not the B id that was sent'
+  );
+
+  const uniAfterCourse = await University.findById(uniA._id);
+  check('University.courses[] updated', (uniAfterCourse.courses || []).length === 1);
+  check('totalCoursesCount synced', uniAfterCourse.stats?.totalCoursesCount === 1);
+
+  // Owner B tries to edit A's course.
+  const crossEditRes = mockRes();
+  await updateMyCourse(
+    {
+      user: ownerB,
+      university: await University.findById(uniB._id),
+      params: { courseId: String(courseId) },
+      body: { feesPerYear: 1 },
+    },
+    crossEditRes
+  );
+  check(
+    'Owner B cannot edit A\'s course',
+    crossEditRes.statusCode === 404,
+    `status ${crossEditRes.statusCode} — scoped lookup returns nothing`
+  );
+
+  const untouched = await Course.findById(courseId);
+  check('A\'s course fee is unchanged', untouched.feesPerYear === 150000);
+
+  // Owner B tries to delete A's course.
+  const crossDeleteRes = mockRes();
+  await deleteMyCourse(
+    {
+      user: ownerB,
+      university: await University.findById(uniB._id),
+      params: { courseId: String(courseId) },
+    },
+    crossDeleteRes
+  );
+  check('Owner B cannot delete A\'s course', crossDeleteRes.statusCode === 404);
+  check('A\'s course still exists', Boolean(await Course.findById(courseId)));
+
+  // B's listing must not include A's course.
+  const listBRes = mockRes();
+  await listMyCourses({ user: ownerB, university: await University.findById(uniB._id) }, listBRes);
+  check('B\'s course list is empty', listBRes.body?.total === 0);
+
+  const listARes = mockRes();
+  await listMyCourses({ user: ownerA, university: await University.findById(uniA._id) }, listARes);
+  check('A sees exactly its own course', listARes.body?.total === 1);
+
+  console.log('\n── 14. Revocation takes effect immediately ────────────────────');
 
   ownerB.universityId = undefined;
   ownerB.universityRole = undefined;
@@ -376,6 +497,7 @@ const run_scenarios = async ({ uniA, uniB, ownerA, memberA, ownerB, applicant, s
 const cleanup = async () => {
   // Strictly by the ids this run created. No filters, no regex, no deleteMany
   // over a query that could match anything pre-existing.
+  if (created.courses.length) await Course.deleteMany({ _id: { $in: created.courses } });
   if (created.claims.length) await UniversityClaim.deleteMany({ _id: { $in: created.claims } });
   if (created.users.length) await User.deleteMany({ _id: { $in: created.users } });
   if (created.universities.length) await University.deleteMany({ _id: { $in: created.universities } });

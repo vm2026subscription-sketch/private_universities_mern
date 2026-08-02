@@ -34,6 +34,13 @@ const {
   rejectChanges,
 } = require('../controllers/universityProfileController');
 
+const {
+  listMyCourses,
+  createMyCourse,
+  updateMyCourse,
+  deleteMyCourse,
+} = require('../controllers/universityCourseController');
+
 const { protect, requireRole } = require('../middleware/auth');
 const {
   requireUniversityAccess,
@@ -92,6 +99,12 @@ router.put('/my-university', ...tenantWrite, updateMyUniversity);
 /* Gallery */
 router.post('/my-university/gallery', ...tenantWrite, addGalleryImages);
 router.delete('/my-university/gallery', ...tenantWrite, removeGalleryImage);
+
+/* Courses — the id in the path is always re-scoped to the caller's university */
+router.get('/my-university/courses', ...tenantRead, listMyCourses);
+router.post('/my-university/courses', ...tenantWrite, createMyCourse);
+router.put('/my-university/courses/:courseId', ...tenantWrite, updateMyCourse);
+router.delete('/my-university/courses/:courseId', ...tenantWrite, deleteMyCourse);
 
 /* Team */
 router.get('/team', protect, universityOnly, requireUniversityAccess, listTeam);
