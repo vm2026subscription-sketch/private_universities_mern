@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, Accessibility, X } from 'lucide-react';
-import { Volume2, Accessibility, X, MessageSquarePlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api';
 import { toast } from 'react-hot-toast';
