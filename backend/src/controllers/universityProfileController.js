@@ -79,7 +79,13 @@ exports.getMyUniversity = async (req, res) => {
 exports.updateMyUniversity = async (req, res) => {
   try {
     const university = req.university;
-    const { selfServe, review, rejected } = classifyUpdate(req.body);
+    const { selfServe, review, rejected: unknownFields } = classifyUpdate(req.body);
+
+    // Platform-controlled fields were already removed by
+    // stripPlatformControlledFields, so classifyUpdate never sees them. Merging
+    // them back in here keeps the response honest about everything that did not
+    // save, whichever layer refused it.
+    const rejected = [...(req.strippedFields || []), ...unknownFields];
 
     if (!Object.keys(selfServe).length && !Object.keys(review).length) {
       return fail(res, 400, 'No editable fields were supplied.', { rejected });
