@@ -185,6 +185,22 @@ const clearRefreshCookie = (res) => {
 exports.setRefreshCookie = setRefreshCookie;
 exports.REFRESH_COOKIE = REFRESH_COOKIE;
 
+/**
+ * Account-creation rules, shared with the university portal controller.
+ *
+ * Exported rather than copied so there is one definition of "is this password
+ * acceptable" and "is this a valid address". A duplicated copy would drift, and
+ * the weaker of the two would silently become the real policy for whichever
+ * signup path used it.
+ */
+exports.accountRules = {
+  normalizeEmail,
+  isValidEmail,
+  validatePassword,
+  setVerificationCode,
+  sendVerificationEmail,
+};
+
 const auditAuthEvent = (user, action, description, req) =>
   logAction({
     userId: user._id,
@@ -359,6 +375,26 @@ exports.login = async (req, res) => {
     }
     if (!user.isEmailVerified) {
       return fail(res, 403, 'Please verify your email before logging in');
+    }
+
+    /**
+     * A `university` account exists from the moment someone applies — they need
+     * one to verify their email and to check on their request. Tenancy, though,
+     * is granted only when an admin approves the claim, and an unset
+     * `universityId` is what "not approved yet" looks like.
+     *
+     * Refusing the session here is the enforcement point for that review. The
+     * tenancy middleware would independently block every write even if a session
+     * were somehow obtained, so this is the outer of two layers rather than the
+     * only one.
+     */
+    if (user.role === 'university' && !user.universityId) {
+      return res.status(403).json({
+        success: false,
+        code: 'CLAIM_NOT_APPROVED',
+        message:
+          'Your university access request is still under review. We will email you as soon as it is approved.',
+      });
     }
 
     // Transparently upgrade the stored hash when the configured cost factor has

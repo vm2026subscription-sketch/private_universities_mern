@@ -30,6 +30,16 @@ const getSafeUser = (user) => {
     phone: source.phone,
     countryCode: source.countryCode,
     role: source.role,
+
+    /**
+     * Tenancy, exposed so the client can route a university account to its
+     * dashboard instead of the student area. Presentation only — the server
+     * re-reads both values from the database on every request and never trusts
+     * what the client believes about them.
+     */
+    universityId: source.universityId || null,
+    universityRole: source.universityRole || null,
+
     avatar: source.avatar,
     isEmailVerified: source.isEmailVerified,
     isPhoneVerified: source.isPhoneVerified,
