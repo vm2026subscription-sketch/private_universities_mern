@@ -19,26 +19,30 @@ router.post('/', protect, allowAdminOrUniversity, upload.single('image'), scopeU
     }
 
     const folder = req.body.folder || 'general';
-    let url;
-    let publicId = '';
 
-    try {
-      const result = await uploadToCloudinary(req.file.buffer, {
-        folder: `vidyarthi-mitra/${folder}`,
-      });
-      url = result.url;
-      publicId = result.publicId;
-    } catch (err) {
-      console.warn('[upload] Cloudinary upload failed or unconfigured, using dev base64 fallback:', err.message);
-      url = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    }
+    /**
+     * A failed upload must fail, not degrade.
+     *
+     * The previous fallback returned the whole image as a `data:` URL when
+     * Cloudinary was unreachable. Callers save whatever URL they get back, so a
+     * transient outage would have written multi-megabyte base64 strings into
+     * University documents — permanently, and invisibly, since the response
+     * still said `success: true`.
+     */
+    const result = await uploadToCloudinary(req.file.buffer, {
+      folder: `vidyarthi-mitra/${folder}`,
+    });
 
     res.json({
       success: true,
-      url,
+      // Duplicated at the top level for clients that read `res.data.url`
+      // directly; `data` remains the canonical shape.
+      url: result.url,
       data: {
-        url,
-        publicId,
+        url: result.url,
+        publicId: result.publicId,
+        width: result.width,
+        height: result.height,
       },
     });
   } catch (error) {

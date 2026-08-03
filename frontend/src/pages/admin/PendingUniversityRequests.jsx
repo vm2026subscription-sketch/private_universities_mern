@@ -38,7 +38,7 @@ export default function PendingUniversityRequests() {
 
   const handleApprove = async (id) => {
     try {
-      const { data } = await api.post(`/claims/${id}/approve`);
+      const { data } = await api.post(`/university-portal/claims/${id}/approve`);
       if (data?.success) {
         setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
         toast.success(data.message || `Request ${id} approved! University added to portal listings.`);
@@ -60,7 +60,7 @@ export default function PendingUniversityRequests() {
       return;
     }
     try {
-      const { data } = await api.post(`/claims/${rejectModalId}/reject`, { reason: rejectReason.trim() });
+      const { data } = await api.post(`/university-portal/claims/${rejectModalId}/reject`, { reason: rejectReason.trim() });
       if (data?.success) {
         setRequests(prev => prev.map(r => r.id === rejectModalId ? { ...r, status: 'Rejected', rejectionReason: rejectReason } : r));
         toast.error(`Request ${rejectModalId} rejected.`);

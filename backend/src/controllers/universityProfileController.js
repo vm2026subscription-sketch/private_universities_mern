@@ -168,7 +168,13 @@ exports.updateMyUniversity = async (req, res) => {
  */
 exports.addGalleryImages = async (req, res) => {
   try {
-    const incoming = Array.isArray(req.body.images) ? req.body.images : [req.body.imageUrl];
+    // Accepts a batch (`images`) or a single image under either key. `url` is
+    // supported because the dashboard uploads one file at a time and names it
+    // that; rejecting it would be a naming argument, not a safety one.
+    const incoming = Array.isArray(req.body.images)
+      ? req.body.images
+      : [req.body.imageUrl ?? req.body.url];
+
     const urls = incoming.map((u) => String(u || '').trim()).filter(Boolean);
 
     if (!urls.length) return fail(res, 400, 'No image URLs supplied.');

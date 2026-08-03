@@ -23,7 +23,6 @@ const publicRoutes = require('./routes/public');
 const uploadRoutes = require('./routes/upload');
 const bhashiniRoutes = require('./routes/bhashini');
 const sitemapRoutes = require('./routes/sitemap');
-const universityPortalRoutes = require('./routes/universityPortal');
 
 const errorHandler = require('./middleware/errorHandler');
 const { isProduction } = require('./config/env');
@@ -173,7 +172,10 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/university-portal', universityPortalRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
-app.use('/api/v1', universityPortalRoutes);
+// Mounted at exactly one prefix. A second mount at '/api/v1' put tenant routes
+// like /api/v1/my-university and /api/v1/claims into the same namespace as
+// publicRoutes, where the first matching handler wins — an ordering dependency
+// nobody would notice until one of them started shadowing the other.
 app.use('/api/v1', publicRoutes);
 app.use('/api/v1/admin/upload', uploadExcelRoutes);
 

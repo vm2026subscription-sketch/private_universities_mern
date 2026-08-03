@@ -19,9 +19,17 @@ const userSchema = new mongoose.Schema({
   password: { type: String, select: false },
   googleId: String,
   avatar: String,
+  // Role is assigned only by an existing superadmin (or the guarded
+  // scripts/grantRole.js bootstrap CLI). It is never derived from the email
+  // address — see the removal of ensureAdminRole in authController.
+  //
+  // NOTE: `universityId` is declared once, further down. A second declaration
+  // here is not an error Mongoose reports — it silently keeps one of them — so
+  // the duplicate has to be caught by reading. `claimStatus` was removed for the
+  // same reason it should never have existed: UniversityClaim.status already
+  // records where a claim stands, and a copy on the user drifts the moment one
+  // is written without the other.
   role: { type: String, enum: ROLES, default: 'user' },
-  universityId: { type: mongoose.Schema.Types.ObjectId, ref: 'University', index: true },
-  claimStatus: { type: String, enum: ['none', 'pending', 'approved', 'rejected'], default: 'none' },
 
   /**
    * Tenancy link for `university` accounts — THE single source of truth for

@@ -1,5 +1,11 @@
 /**
  * University self-service portal routes.
+ *
+ * Note what is absent: there is no `/:universityId` on any tenant route. A
+ * university account's target is derived from its session by
+ * requireUniversityAccess, so there is no identifier in the request for a caller
+ * to tamper with. Admin routes do take ids, which is correct — admins act on
+ * universities they do not own.
  */
 
 const router = require('express').Router();
@@ -16,13 +22,6 @@ const {
   inviteTeamMember,
   acceptInvite,
   removeTeamMember,
-  getMyUniversity: portalGetMyUniversity,
-  updateMyUniversity: portalUpdateMyUniversity,
-  uploadGalleryImage: portalUploadGalleryImage,
-  getCourses: portalGetCourses,
-  createCourse: portalCreateCourse,
-  updateCourse: portalUpdateCourse,
-  deleteCourse: portalDeleteCourse
 } = require('../controllers/universityPortalController');
 
 const {
@@ -42,7 +41,7 @@ const {
   deleteMyCourse,
 } = require('../controllers/universityCourseController');
 
-const { protect, admin, requireRole } = require('../middleware/auth');
+const { protect, requireRole } = require('../middleware/auth');
 const {
   requireUniversityAccess,
   requireUniversityOwner,
@@ -51,69 +50,105 @@ const {
 } = require('../middleware/universityTenancy');
 const { registerLimiter, passwordResetLimiter, otpSendLimiter } = require('../middleware/rateLimiters');
 
+/**
+ * `{ exact: true }` is load-bearing on every tenant route below.
+ *
+ * Without it, requireRole falls back to rank comparison, and because
+ * `university` is deliberately absent from ROLE_HIERARCHY its rank is -1 — the
+ * check would then behave in ways nobody reading the route intended. Exact
+ * matching states the requirement literally: this role, nothing else.
+ */
 const universityOnly = requireRole('university', { exact: true });
-const allowUniversityOrAdmin = requireRole('university', 'admin', 'superadmin');
 
 /* ── Public ───────────────────────────────────────────────────────────────── */
+
 router.post('/signup', registerLimiter, signup);
 router.post('/team/accept-invite', passwordResetLimiter, acceptInvite);
 
-/* ── Applicant ────────────────────────────────────────────────────────────── */
+/* ── Applicant (authenticated, tenancy not yet required) ──────────────────── */
+
+// Reachable before approval on purpose: this is how an applicant discovers
+// whether their claim was approved or rejected.
 router.get('/me', protect, getMyStatus);
 
-/* ── University Portal / Tenant Endpoints ──────────────────────────────────── */
-const handleGetUniversity = (req, res, next) => {
-  if (req.user?.role === 'admin' || req.user?.role === 'superadmin' || !req.university) {
-    return portalGetMyUniversity(req, res, next);
-  }
-  return getMyUniversity(req, res, next);
-};
+/* ── Tenant (authenticated + approved) ────────────────────────────────────── */
 
-const handleUpdateUniversity = (req, res, next) => {
-  if (req.user?.role === 'admin' || req.user?.role === 'superadmin' || !req.university) {
-    return portalUpdateMyUniversity(req, res, next);
-  }
-  return updateMyUniversity(req, res, next);
-};
+/**
+ * The guard chain every tenant route shares.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * PERSON B — INSERT `requireActiveSubscription` AS THE LAST ENTRY OF `tenantWrite`
+ * ────────────────────────────────────────────────────────────────────────────
+ * Reads (`tenantRead`) must stay ungated: a university whose subscription has
+ * lapsed still needs to sign in, see its dashboard and reach the renew button.
+ * Only WRITES pay. And note that nothing here touches the public university
+ * page — an expired subscription locks editing, never publication.
+ */
+const tenantRead = [protect, universityOnly, requireUniversityAccess];
+const tenantWrite = [
+  ...tenantRead,
+  rejectUniversityIdInPayload,
+  stripPlatformControlledFields,
+  // requireActiveSubscription,  ← Person B
+];
 
-/* Direct & Prefixed Profile Routes */
-router.get('/my-university', protect, allowUniversityOrAdmin, handleGetUniversity);
-router.put('/my-university', protect, allowUniversityOrAdmin, handleUpdateUniversity);
-router.get('/university-portal/my-university', protect, allowUniversityOrAdmin, portalGetMyUniversity);
-router.put('/university-portal/my-university', protect, allowUniversityOrAdmin, portalUpdateMyUniversity);
+/* Profile */
+router.get('/my-university', ...tenantRead, getMyUniversity);
+router.put('/my-university', ...tenantWrite, updateMyUniversity);
 
 /* Gallery */
-router.post('/my-university/gallery', protect, allowUniversityOrAdmin, portalUploadGalleryImage);
-router.post('/university-portal/my-university/gallery', protect, allowUniversityOrAdmin, portalUploadGalleryImage);
-router.delete('/my-university/gallery', protect, allowUniversityOrAdmin, removeGalleryImage);
+router.post('/my-university/gallery', ...tenantWrite, addGalleryImages);
+router.delete('/my-university/gallery', ...tenantWrite, removeGalleryImage);
 
-/* Courses */
-router.get('/my-university/courses', protect, allowUniversityOrAdmin, portalGetCourses);
-router.post('/my-university/courses', protect, allowUniversityOrAdmin, portalCreateCourse);
-router.put('/my-university/courses/:courseId', protect, allowUniversityOrAdmin, portalUpdateCourse);
-router.delete('/my-university/courses/:courseId', protect, allowUniversityOrAdmin, portalDeleteCourse);
-
-router.get('/university-portal/my-university/courses', protect, allowUniversityOrAdmin, portalGetCourses);
-router.post('/university-portal/my-university/courses', protect, allowUniversityOrAdmin, portalCreateCourse);
-router.put('/university-portal/my-university/courses/:id', protect, allowUniversityOrAdmin, portalUpdateCourse);
-router.delete('/university-portal/my-university/courses/:id', protect, allowUniversityOrAdmin, portalDeleteCourse);
+/* Courses — the id in the path is always re-scoped to the caller's university */
+router.get('/my-university/courses', ...tenantRead, listMyCourses);
+router.post('/my-university/courses', ...tenantWrite, createMyCourse);
+router.put('/my-university/courses/:courseId', ...tenantWrite, updateMyCourse);
+router.delete('/my-university/courses/:courseId', ...tenantWrite, deleteMyCourse);
 
 /* Team */
 router.get('/team', protect, universityOnly, requireUniversityAccess, listTeam);
-router.post('/team/invite', protect, universityOnly, requireUniversityAccess, requireUniversityOwner, otpSendLimiter, rejectUniversityIdInPayload, inviteTeamMember);
-router.delete('/team/:userId', protect, universityOnly, requireUniversityAccess, requireUniversityOwner, removeTeamMember);
 
-/* ── Admin Claims Endpoints ───────────────────────────────────────────────── */
-router.get('/university-portal/claims', protect, admin, listClaims);
-router.get('/claims', protect, admin, listClaims);
-router.get('/claims/:id', protect, admin, getClaim);
-router.post('/claims/:id/approve', protect, admin, approveClaim);
-router.post('/claims/:id/reject', protect, admin, rejectClaim);
+router.post(
+  '/team/invite',
+  protect,
+  universityOnly,
+  requireUniversityAccess,
+  requireUniversityOwner,
+  otpSendLimiter, // sends an outbound email — same abuse surface as OTP dispatch
+  rejectUniversityIdInPayload,
+  inviteTeamMember
+);
+
+router.delete(
+  '/team/:userId',
+  protect,
+  universityOnly,
+  requireUniversityAccess,
+  requireUniversityOwner,
+  removeTeamMember
+);
+
+/* ── Admin review ─────────────────────────────────────────────────────────── */
+
+router.get('/claims', protect, requireRole('admin'), listClaims);
+router.get('/claims/:id', protect, requireRole('admin'), getClaim);
+router.post('/claims/:id/reject', protect, requireRole('admin'), rejectClaim);
+
+/**
+ * Approval accepts an ordinary admin. When the target university already has an
+ * owner the controller escalates the requirement to superadmin, because that
+ * approval would revoke a live account's access rather than grant a fresh one.
+ */
+router.post('/claims/:id/approve', protect, requireRole('admin'), approveClaim);
+
+/** Withdrawing access outright is superadmin-only — it has no claim to appeal. */
 router.delete('/access/:userId', protect, requireRole('superadmin'), revokeAccess);
 
-/* ── Admin Moderation Reviews ─────────────────────────────────────────────── */
-router.get('/reviews', protect, admin, listPendingReviews);
-router.post('/reviews/:id/approve', protect, admin, approveChanges);
-router.post('/reviews/:id/reject', protect, admin, rejectChanges);
+/* ── Admin moderation of profile edits ────────────────────────────────────── */
+
+router.get('/reviews', protect, requireRole('admin'), listPendingReviews);
+router.post('/reviews/:id/approve', protect, requireRole('admin'), approveChanges);
+router.post('/reviews/:id/reject', protect, requireRole('admin'), rejectChanges);
 
 module.exports = router;

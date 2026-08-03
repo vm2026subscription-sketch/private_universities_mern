@@ -122,7 +122,6 @@ const universitySchema = new mongoose.Schema({
   address: String,
   phone: String,
   email: String,
-  placementReviewStatus: { type: String, enum: ['approved', 'under_review'], default: 'approved' },
   isSponsored: { type: Boolean, default: false },
   sponsorTier: { type: String, enum: ['bronze', 'silver', 'gold', 'platinum', 'none'], default: 'none' },
   sponsorPriority: { type: Number, default: 0 },
