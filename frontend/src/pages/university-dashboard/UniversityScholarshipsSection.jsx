@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
   Award, Plus, Edit3, Trash2, CheckCircle2, AlertCircle,
   Sparkles, DollarSign, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 
 const INITIAL_SCHOLARSHIPS = [
   { id: 1, title: 'Merit Academic Excellence Award', type: 'Merit Based', amount: 'Up to 100% Tuition Fee Waiver', criteria: '90%+ in 10+2 or top 1000 JEE Main rank', status: 'Active' },
@@ -13,14 +15,50 @@ const INITIAL_SCHOLARSHIPS = [
 ];
 
 export default function UniversityScholarshipsSection() {
+  const context = useOutletContext();
+  const uni = context?.uni;
+  const refreshUni = context?.refreshUni;
+
   const [scholarships, setScholarships] = useState(INITIAL_SCHOLARSHIPS);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
 
+  useEffect(() => {
+    if (uni?.scholarships?.length) {
+      const formatted = uni.scholarships.map((s, idx) => ({
+        id: s._id || idx + 1,
+        title: s.name || s.title || 'Scholarship Scheme',
+        type: 'Merit Based',
+        amount: s.amount || 'Tuition Fee Waiver',
+        criteria: s.eligibility || s.criteria || 'Eligible candidates',
+        status: 'Active'
+      }));
+      setScholarships(formatted);
+    }
+  }, [uni]);
+
   const [formData, setFormData] = useState({
     title: '', type: 'Merit Based', amount: '', criteria: '', status: 'Active'
   });
+
+  const saveScholarshipsToApi = async (newList) => {
+    try {
+      const payload = {
+        scholarships: newList.map(s => ({
+          name: s.title,
+          eligibility: s.criteria,
+          amount: s.amount,
+          description: `${s.type} scholarship`
+        }))
+      };
+      await api.put('/university-portal/my-university', payload);
+      if (refreshUni) refreshUni();
+    } catch (error) {
+      console.error('Error saving scholarships:', error);
+      toast.error('Failed to sync scholarship changes with server');
+    }
+  };
 
   const handleOpenAdd = () => {
     setEditingItem(null);
@@ -34,28 +72,34 @@ export default function UniversityScholarshipsSection() {
     setModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.amount) {
       toast.error('Please enter scholarship title and reward amount');
       return;
     }
 
+    let newList;
     if (editingItem) {
-      setScholarships(prev => prev.map(s => s.id === editingItem.id ? { ...s, ...formData } : s));
-      toast.success('Scholarship updated successfully!');
+      newList = scholarships.map(s => s.id === editingItem.id ? { ...s, ...formData } : s);
+      toast.success('Scholarship updated & live on portal!');
     } else {
       const newItem = { id: Date.now(), ...formData };
-      setScholarships(prev => [newItem, ...prev]);
-      toast.success('New scholarship scheme published!');
+      newList = [newItem, ...scholarships];
+      toast.success('New scholarship scheme published live!');
     }
+
+    setScholarships(newList);
     setModalOpen(false);
+    await saveScholarshipsToApi(newList);
   };
 
-  const handleDelete = (id) => {
-    setScholarships(prev => prev.filter(s => s.id !== id));
+  const handleDelete = async (id) => {
+    const newList = scholarships.filter(s => s.id !== id);
+    setScholarships(newList);
     setDeleteId(null);
     toast.success('Scholarship removed');
+    await saveScholarshipsToApi(newList);
   };
 
   return (

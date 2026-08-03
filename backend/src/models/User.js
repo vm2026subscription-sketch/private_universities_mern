@@ -19,10 +19,9 @@ const userSchema = new mongoose.Schema({
   password: { type: String, select: false },
   googleId: String,
   avatar: String,
-  // Role is assigned only by an existing superadmin (or the guarded
-  // scripts/grantRole.js bootstrap CLI). It is never derived from the email
-  // address — see the removal of ensureAdminRole in authController.
   role: { type: String, enum: ROLES, default: 'user' },
+  universityId: { type: mongoose.Schema.Types.ObjectId, ref: 'University', index: true },
+  claimStatus: { type: String, enum: ['none', 'pending', 'approved', 'rejected'], default: 'none' },
 
   /**
    * Tenancy link for `university` accounts — THE single source of truth for

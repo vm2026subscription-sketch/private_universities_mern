@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, Image as ImageIcon, BookOpen,
@@ -6,6 +6,7 @@ import {
   Bell, ExternalLink, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/api';
 
 const navItems = [
   { label: 'Overview', icon: LayoutDashboard, path: '/university/dashboard' },
@@ -20,9 +21,29 @@ const navItems = [
 export default function UniversityDashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [university, setUniversity] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const fetchUniversity = useCallback(async () => {
+    try {
+      const { data } = await api.get('/university-portal/my-university');
+      if (data?.success && data?.data) {
+        setUniversity(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch university details:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUniversity();
+  }, [fetchUniversity]);
 
   const handleLogout = async () => {
     await logout();
@@ -46,7 +67,9 @@ export default function UniversityDashboardLayout() {
           </div>
           {sidebarOpen && (
             <div className="min-w-0">
-              <h2 className="font-bold text-sm text-light-text dark:text-dark-text truncate">UniPortal</h2>
+              <h2 className="font-bold text-sm text-light-text dark:text-dark-text truncate">
+                {university?.name || user?.name || 'UniPortal'}
+              </h2>
               <p className="text-[11px] text-light-muted dark:text-dark-muted font-medium truncate">University Console</p>
             </div>
           )}
@@ -92,12 +115,14 @@ export default function UniversityDashboardLayout() {
         {sidebarOpen && (
           <div className="flex items-center gap-3 p-2.5 rounded-xl bg-primary/10 border border-primary/20">
             <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs">
-              {user?.name?.[0] || 'U'}
+              {(university?.name || user?.name || 'U')[0]}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-light-text dark:text-dark-text truncate">{user?.name || 'Partner University'}</p>
+              <p className="text-xs font-bold text-light-text dark:text-dark-text truncate">
+                {university?.name || user?.name || 'Partner University'}
+              </p>
               <p className="text-[10px] text-link font-medium flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-500" /> Gold Partner
+                <Sparkles className="w-3 h-3 text-amber-500" /> {university?.sponsorTier && university.sponsorTier !== 'none' ? `${university.sponsorTier.toUpperCase()} Partner` : 'Gold Partner'}
               </p>
             </div>
           </div>
@@ -168,7 +193,7 @@ export default function UniversityDashboardLayout() {
 
         {/* Dynamic Section Render */}
         <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto space-y-6">
-          <Outlet />
+          <Outlet context={{ uni: university, loading, refreshUni: fetchUniversity }} />
         </main>
       </div>
     </div>

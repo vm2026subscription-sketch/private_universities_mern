@@ -1,60 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Building2, CheckCircle2, XCircle, Eye, Search, Filter,
   Clock, ShieldAlert, Mail, Phone, MapPin, FileText, Check, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-const INITIAL_PENDING_REQUESTS = [
-  {
-    id: 'REQ-101',
-    name: 'Glacier Valley Institute of Technology',
-    city: 'Dehradun',
-    state: 'Uttarakhand',
-    contactPerson: 'Dr. Ramesh Sharma (Registrar)',
-    email: 'registrar@gvit.edu.in',
-    phone: '+91 98112 34567',
-    requestedTier: 'Gold Partner',
-    appliedDate: '2026-07-28',
-    status: 'Pending',
-    documentsUrl: '#',
-    accreditation: 'NAAC A+ Accredited',
-    website: 'https://gvit.edu.in'
-  },
-  {
-    id: 'REQ-102',
-    name: 'Royal Heritage University',
-    city: 'Jaipur',
-    state: 'Rajasthan',
-    contactPerson: 'Prof. Anita Verma (Director Admissions)',
-    email: 'admissions@royalheritage.edu.in',
-    phone: '+91 94140 88990',
-    requestedTier: 'Platinum Partner',
-    appliedDate: '2026-07-30',
-    status: 'Pending',
-    documentsUrl: '#',
-    accreditation: 'UGC Recognized, AICTE Approved',
-    website: 'https://royalheritage.edu.in'
-  },
-  {
-    id: 'REQ-103',
-    name: 'Vanguard Medical & Health Sciences College',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    contactPerson: 'Dr. K. S. Reddy',
-    email: 'info@vanguardhealth.edu.in',
-    phone: '+91 99001 22334',
-    requestedTier: 'Silver Partner',
-    appliedDate: '2026-08-01',
-    status: 'Pending',
-    documentsUrl: '#',
-    accreditation: 'NMC & NAAC Approved',
-    website: 'https://vanguardhealth.edu.in'
-  }
-];
+import api from '../../utils/api';
 
 export default function PendingUniversityRequests() {
-  const [requests, setRequests] = useState(INITIAL_PENDING_REQUESTS);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedReq, setSelectedReq] = useState(null);
@@ -63,10 +17,36 @@ export default function PendingUniversityRequests() {
   const [rejectModalId, setRejectModalId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  const handleApprove = (id) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
-    toast.success(`Request ${id} approved! University added to portal listings.`);
-    if (selectedReq?.id === id) setSelectedReq(null);
+  const fetchClaims = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get('/university-portal/claims?status=pending');
+      if (data?.success) {
+        setRequests(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching claims:', error);
+      toast.error(error.response?.data?.message || 'Failed to load claims');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClaims();
+  }, []);
+
+  const handleApprove = async (id) => {
+    try {
+      const { data } = await api.post(`/claims/${id}/approve`);
+      if (data?.success) {
+        setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+        toast.success(data.message || `Request ${id} approved! University added to portal listings.`);
+        if (selectedReq?.id === id) setSelectedReq(null);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Approval failed');
+    }
   };
 
   const handleOpenReject = (id) => {
@@ -74,15 +54,22 @@ export default function PendingUniversityRequests() {
     setRejectReason('');
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
     if (!rejectReason.trim()) {
       toast.error('Please specify a rejection reason for the applicant');
       return;
     }
-    setRequests(prev => prev.map(r => r.id === rejectModalId ? { ...r, status: 'Rejected', rejectionReason: rejectReason } : r));
-    toast.error(`Request ${rejectModalId} rejected. Notification email sent to applicant.`);
-    setRejectModalId(null);
-    if (selectedReq?.id === rejectModalId) setSelectedReq(null);
+    try {
+      const { data } = await api.post(`/claims/${rejectModalId}/reject`, { reason: rejectReason.trim() });
+      if (data?.success) {
+        setRequests(prev => prev.map(r => r.id === rejectModalId ? { ...r, status: 'Rejected', rejectionReason: rejectReason } : r));
+        toast.error(`Request ${rejectModalId} rejected.`);
+        setRejectModalId(null);
+        if (selectedReq?.id === rejectModalId) setSelectedReq(null);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Rejection failed');
+    }
   };
 
   const filteredRequests = requests.filter(r => {

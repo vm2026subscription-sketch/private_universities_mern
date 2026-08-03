@@ -370,6 +370,13 @@ exports.login = async (req, res) => {
 
     // Status and verification are checked only AFTER the password is proven, so
     // an attacker cannot probe account state without valid credentials.
+    if (user.claimStatus === 'pending') {
+      return res.status(403).json({
+        success: false,
+        code: 'CLAIM_NOT_APPROVED',
+        message: 'Your university claim is pending approval. Please wait for admin approval before logging in.',
+      });
+    }
     if (!isAccountUsable(user)) {
       return fail(res, 403, 'This account is not able to sign in. Please contact support.');
     }
@@ -475,6 +482,13 @@ exports.verifyLoginOtp = async (req, res) => {
 
     const user = await User.findById(challenge.sub);
     if (!user) return fail(res, 401, 'Your sign-in session has expired. Please enter your password again.');
+    if (user.claimStatus === 'pending') {
+      return res.status(403).json({
+        success: false,
+        code: 'CLAIM_NOT_APPROVED',
+        message: 'Your university claim is pending approval. Please wait for admin approval before logging in.',
+      });
+    }
     if (!isAccountUsable(user)) {
       return fail(res, 403, 'This account is not able to sign in. Please contact support.');
     }

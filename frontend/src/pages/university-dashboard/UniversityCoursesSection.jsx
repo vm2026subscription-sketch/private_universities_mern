@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
   BookOpen, Plus, Edit3, Trash2, Search, Filter, CheckCircle2,
   DollarSign, Clock, GraduationCap, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 
 const INITIAL_COURSES = [
   { id: 1, name: 'B.Tech Computer Science & Engineering', degree: 'Undergraduate', duration: '4 Years', fee: '₹2,40,000 / yr', seats: 180, eligibility: '10+2 with 60% in PCM + JEE Main' },
@@ -15,25 +16,42 @@ const INITIAL_COURSES = [
 ];
 
 export default function UniversityCoursesSection() {
-  const location = useLocation();
-  const uni = location.state?.university;
+  const context = useOutletContext();
+  const uni = context?.uni;
+  const refreshUni = context?.refreshUni;
 
-  const initialList = uni?.courses?.length ? uni.courses.map((c, i) => ({
-    id: c._id || i + 1,
-    name: c.baseCourse ? `${c.baseCourse} ${c.specializationName || ''}`.trim() : c.name || 'Course',
-    degree: c.category === 'UG' ? 'Undergraduate' : c.category === 'PG' ? 'Postgraduate' : 'Diploma/PhD',
-    duration: c.duration ? `${c.duration} Years` : '4 Years',
-    fee: c.feesPerYear ? `₹${c.feesPerYear} / yr` : '₹2,40,000 / yr',
-    seats: c.totalSeats || 60,
-    eligibility: c.eligibility || '10+2 with 60% aggregate'
-  })) : INITIAL_COURSES;
-
-  const [courses, setCourses] = useState(initialList);
+  const [courses, setCourses] = useState(INITIAL_COURSES);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [filterDegree, setFilterDegree] = useState('All');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  const fetchCourses = async () => {
+    try {
+      const { data } = await api.get('/university-portal/my-university/courses');
+      if (data?.success && data?.data) {
+        const formatted = data.data.map((c) => ({
+          id: c._id,
+          _id: c._id,
+          name: c.name || c.baseCourse || 'Course',
+          degree: c.degree || (c.category === 'UG' ? 'Undergraduate' : c.category === 'PG' ? 'Postgraduate' : 'Diploma'),
+          duration: c.duration ? `${c.duration} Years` : '4 Years',
+          fee: c.feesPerYear ? `₹${c.feesPerYear} / yr` : '₹1,00,000 / yr',
+          seats: c.totalSeats || 60,
+          eligibility: c.eligibility || '10+2 with 60% aggregate'
+        }));
+        if (formatted.length > 0) setCourses(formatted);
+      }
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, [uni]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -59,28 +77,47 @@ export default function UniversityCoursesSection() {
     setModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.fee) {
       toast.error('Please enter course name and annual fee!');
       return;
     }
 
-    if (editingCourse) {
-      setCourses(prev => prev.map(c => c.id === editingCourse.id ? { ...c, ...formData } : c));
-      toast.success('Course updated successfully!');
-    } else {
-      const newCourse = { id: Date.now(), ...formData };
-      setCourses(prev => [newCourse, ...prev]);
-      toast.success('New course added successfully!');
+    try {
+      if (editingCourse?._id || (typeof editingCourse?.id === 'string' && editingCourse?.id?.length > 10)) {
+        const targetId = editingCourse._id || editingCourse.id;
+        const { data } = await api.put(`/university-portal/my-university/courses/${targetId}`, formData);
+        if (data?.success) {
+          toast.success('Course updated successfully!');
+        }
+      } else {
+        const { data } = await api.post('/university-portal/my-university/courses', formData);
+        if (data?.success) {
+          toast.success('New course added successfully!');
+        }
+      }
+      setModalOpen(false);
+      fetchCourses();
+      if (refreshUni) refreshUni();
+    } catch (error) {
+      console.error('Error saving course:', error);
+      toast.error(error.response?.data?.message || 'Failed to save course');
     }
-    setModalOpen(false);
   };
 
-  const handleDelete = (id) => {
-    setCourses(prev => prev.filter(c => c.id !== id));
-    setDeleteConfirmId(null);
-    toast.success('Course deleted from list');
+  const handleDelete = async (id) => {
+    try {
+      if (typeof id === 'string' && id.length > 10) {
+        await api.delete(`/university-portal/my-university/courses/${id}`);
+      }
+      setCourses(prev => prev.filter(c => c.id !== id));
+      setDeleteConfirmId(null);
+      toast.success('Course deleted');
+      if (refreshUni) refreshUni();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete course');
+    }
   };
 
   const filteredCourses = courses.filter(c => {

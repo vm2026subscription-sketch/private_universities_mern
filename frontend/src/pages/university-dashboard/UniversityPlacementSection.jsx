@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
   GraduationCap, TrendingUp, Award, Building2, Plus, Trash2,
-  Save, CheckCircle2, DollarSign, Sparkles
+  Save, CheckCircle2, DollarSign, Sparkles, Clock, AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 
 const INITIAL_RECRUITERS = [
   { id: 1, name: 'Google', category: 'Tech Giant' },
@@ -16,22 +17,43 @@ const INITIAL_RECRUITERS = [
 ];
 
 export default function UniversityPlacementSection() {
-  const location = useLocation();
-  const uni = location.state?.university;
+  const context = useOutletContext();
+  const uni = context?.uni;
+  const refreshUni = context?.refreshUni;
 
   const [placementStats, setPlacementStats] = useState({
-    highestPackage: uni?.stats?.highestPackageLPA || '48.5',
-    averagePackage: uni?.stats?.avgPackageLPA || '8.8',
+    highestPackage: '48.5',
+    averagePackage: '8.8',
     medianPackage: '7.2',
-    placementPercentage: uni?.stats?.placementPercentage || '94.5',
+    placementPercentage: '94.5',
     totalOffers: '640+',
     topRecruiterCount: '120+'
   });
 
+  const [reviewStatus, setReviewStatus] = useState('approved');
   const [recruiters, setRecruiters] = useState(INITIAL_RECRUITERS);
   const [newRecruiterName, setNewRecruiterName] = useState('');
   const [newRecruiterCat, setNewRecruiterCat] = useState('Tech Giant');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (uni) {
+      setPlacementStats({
+        highestPackage: uni.stats?.highestPackageLPA ? String(uni.stats.highestPackageLPA) : '48.5',
+        averagePackage: uni.stats?.avgPackageLPA ? String(uni.stats.avgPackageLPA) : '8.8',
+        medianPackage: '7.2',
+        placementPercentage: uni.stats?.placementPercentage ? String(uni.stats.placementPercentage) : '94.5',
+        totalOffers: '640+',
+        topRecruiterCount: '120+'
+      });
+      if (uni.placementReviewStatus) {
+        setReviewStatus(uni.placementReviewStatus);
+      }
+      if (uni.topRecruiters?.length) {
+        setRecruiters(uni.topRecruiters.map((r, i) => ({ id: i + 1, name: r, category: 'Top Recruiter' })));
+      }
+    }
+  }, [uni]);
 
   const handleStatsChange = (field, val) => {
     setPlacementStats(prev => ({ ...prev, [field]: val }));
@@ -55,17 +77,54 @@ export default function UniversityPlacementSection() {
     toast.success('Recruiter removed');
   };
 
-  const handleSaveStats = (e) => {
+  const handleSaveStats = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const payload = {
+        isPlacementUpdate: true,
+        stats: {
+          highestPackage: parseFloat(placementStats.highestPackage) || 48.5,
+          averagePackage: parseFloat(placementStats.averagePackage) || 8.8,
+          placementPercentage: parseFloat(placementStats.placementPercentage) || 94.5
+        },
+        topRecruiters: recruiters.map(r => r.name)
+      };
+
+      const { data } = await api.put('/university-portal/my-university', payload);
+      if (data?.success) {
+        setReviewStatus('under_review');
+        toast.success('Placement details submitted! Changes are pending admin review.', { duration: 4000 });
+        if (refreshUni) refreshUni();
+      }
+    } catch (error) {
+      console.error('Error saving placement stats:', error);
+      toast.error(error.response?.data?.message || 'Failed to save placement metrics');
+    } finally {
       setSaving(false);
-      toast.success('Placement statistics updated successfully!');
-    }, 700);
+    }
   };
 
   return (
     <div className="space-y-8">
+      {/* Review Status Banner */}
+      {reviewStatus === 'under_review' && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-amber-700 dark:text-amber-300">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-amber-500 shrink-0 animate-pulse" />
+            <div>
+              <p className="font-extrabold text-sm flex items-center gap-2">
+                Placement Updates Pending Review
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white uppercase tracking-wider">
+                  Under Review
+                </span>
+              </p>
+              <p className="text-xs opacity-90">Your placement changes have been submitted to portal moderators and will be reflected publicly once verified.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overview Stats Edit Form */}
       <form onSubmit={handleSaveStats} className="p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-light-border dark:border-dark-border pb-4">
