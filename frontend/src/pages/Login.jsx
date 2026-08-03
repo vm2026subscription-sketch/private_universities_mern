@@ -16,7 +16,16 @@ export default function Login() {
   const [mfaToken, setMfaToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, verifyLoginOtp, continueWithGoogle } = useAuth();
+  /**
+   * Set when the server refuses the password because the address was never
+   * verified. Without this the response was a red toast and nothing else — the
+   * account is real, the password is right, and there is no route forward from
+   * the login screen. Signup is the only place that ever showed a code field,
+   * and it refuses an address that already has an account.
+   */
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [verifyCode, setVerifyCode] = useState('');
+  const { login, verifyLoginOtp, continueWithGoogle, verifyEmail, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
 
   const landingPathFor = (role) =>
@@ -37,10 +46,21 @@ export default function Login() {
       setOtpSent(true);
       toast.success('OTP sent to your email');
     } catch (error) {
-      if (error.response?.data?.code === 'CLAIM_NOT_APPROVED' || (error.response?.status === 403 && error.response?.data?.message?.includes('claim'))) {
-        toast.error(error.response?.data?.message || 'Your university claim request is pending approval by admin.', { duration: 5000 });
+      const message = error.response?.data?.message || '';
+
+      if (error.response?.data?.code === 'CLAIM_NOT_APPROVED' || (error.response?.status === 403 && message.includes('claim'))) {
+        toast.error(message || 'Your university claim request is pending approval by admin.', { duration: 5000 });
+      } else if (/verify your email/i.test(message)) {
+        // Recoverable, so offer the recovery instead of just reporting it.
+        setNeedsVerification(true);
+        try {
+          await resendVerificationEmail(email);
+          toast('We sent a verification code to your email', { icon: '📧' });
+        } catch {
+          toast.error('Could not send a verification code. Please try again shortly.');
+        }
       } else {
-        toast.error(error.response?.data?.message || 'Login failed');
+        toast.error(message || 'Login failed');
       }
     } finally {
       setLoading(false);
@@ -68,6 +88,23 @@ export default function Login() {
     }
   };
 
+  const handleVerifyEmail = async (event) => {
+    event.preventDefault();
+    if (verifyCode.length !== 6) return toast.error('Enter a valid 6-digit code');
+
+    setLoading(true);
+    try {
+      await verifyEmail(email, verifyCode);
+      setNeedsVerification(false);
+      setVerifyCode('');
+      toast.success('Email verified. Please sign in.');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetStep = () => {
     setOtpSent(false);
     setOtp('');
@@ -90,7 +127,54 @@ export default function Login() {
           </p>
         </div>
 
-        {!otpSent ? (
+        {needsVerification ? (
+          <form onSubmit={handleVerifyEmail} className="space-y-4">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
+              <p className="font-bold mb-1">Verify your email first</p>
+              <p className="text-xs leading-relaxed">
+                Your account exists but the address was never confirmed. Enter the code we just sent
+                to <span className="font-semibold break-all">{email}</span>.
+              </p>
+            </div>
+
+            <div className="relative">
+              <ShieldCheck className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-light-muted" />
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Enter 6-digit code"
+                value={verifyCode}
+                onChange={(event) => setVerifyCode(event.target.value.replace(/\D/g, ''))}
+                className="input-field pl-11 text-center text-lg tracking-[0.3em] font-mono"
+                maxLength={6}
+                autoFocus
+              />
+            </div>
+
+            <button type="submit" disabled={loading} className="btn-primary w-full">
+              {loading ? 'Verifying...' : 'Verify Email'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => resendVerificationEmail(email).then(
+                () => toast.success('Code resent'),
+                () => toast.error('Could not resend the code')
+              )}
+              className="text-sm text-light-muted hover:text-link block text-center w-full"
+            >
+              Resend code
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setNeedsVerification(false); setVerifyCode(''); }}
+              className="text-sm text-link hover:underline block text-center w-full"
+            >
+              Back to sign in
+            </button>
+          </form>
+        ) : !otpSent ? (
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
               <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-light-muted" />

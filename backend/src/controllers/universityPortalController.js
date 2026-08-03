@@ -440,6 +440,26 @@ exports.approveClaim = async (req, res) => {
     const applicant = await User.findById(claim.user._id || claim.user);
     if (!applicant) return fail(res, 404, 'The applicant account no longer exists.');
 
+    /**
+     * Approving before the applicant has verified their email produces an
+     * account that is granted access and then permanently refused at login,
+     * because the login path checks verification first. The result looks like a
+     * broken sign-in rather than an unfinished signup, and nothing on either
+     * screen explains it.
+     *
+     * It is also the wrong order on its merits: verification proves the person
+     * controls the address the claim was made from, which is the one fact
+     * approval should never be granted without.
+     */
+    if (!applicant.isEmailVerified) {
+      return fail(
+        res,
+        409,
+        `${applicant.email} has not verified their email address yet. Ask them to complete verification, then approve — approving now would grant access they cannot sign in to use.`,
+        'APPLICANT_EMAIL_UNVERIFIED'
+      );
+    }
+
     const existingOwner = await User.findOne({
       universityId: university._id,
       universityRole: 'owner',

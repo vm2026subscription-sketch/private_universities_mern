@@ -3,7 +3,7 @@ import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, Image as ImageIcon, BookOpen,
   GraduationCap, Award, CreditCard, Menu, ChevronLeft, LogOut,
-  Bell, ExternalLink, Sparkles
+  Bell, ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
@@ -62,8 +62,8 @@ export default function UniversityDashboardLayout() {
       {/* Brand Header */}
       <div className="flex items-center justify-between p-4 border-b border-light-border dark:border-dark-border">
         <Link to="/university/dashboard" className="flex items-center gap-3 overflow-hidden">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-primary/20 shrink-0">
-            <Building2 className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-lg bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border flex items-center justify-center shrink-0">
+            <Building2 className="w-4.5 h-4.5 text-light-muted dark:text-dark-muted" />
           </div>
           {sidebarOpen && (
             <div className="min-w-0">
@@ -93,18 +93,19 @@ export default function UniversityDashboardLayout() {
               key={item.path}
               to={item.path}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
+              /* A tinted row with a left rule marks the current page. The solid
+                 orange fill plus a pulsing dot made the sidebar the loudest
+                 thing on screen, competing with the content it navigates to. */
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors relative ${
                 active
-                  ? 'bg-primary text-white shadow-lg shadow-primary/25 font-semibold'
-                  : 'text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-card dark:hover:bg-dark-border'
+                  ? 'bg-primary/8 text-light-text dark:text-dark-text font-semibold'
+                  : 'text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg font-medium'
               }`}
               title={!sidebarOpen ? item.label : undefined}
             >
-              <Icon className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${active ? 'text-white' : 'text-primary/70 dark:text-primary-light'}`} />
+              {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-primary" />}
+              <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-primary' : ''}`} />
               {sidebarOpen && <span className="truncate">{item.label}</span>}
-              {active && sidebarOpen && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              )}
             </Link>
           );
         })}
@@ -113,16 +114,18 @@ export default function UniversityDashboardLayout() {
       {/* Footer Profile & Logout */}
       <div className="p-3 border-t border-light-border dark:border-dark-border space-y-2 bg-light-bg/40 dark:bg-dark-bg/40">
         {sidebarOpen && (
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-            <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs">
+          <div className="flex items-center gap-3 p-2.5 rounded-lg">
+            <div className="w-8 h-8 rounded-lg bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border flex items-center justify-center font-semibold text-xs text-light-muted">
               {(university?.name || user?.name || 'U')[0]}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-light-text dark:text-dark-text truncate">
-                {university?.name || user?.name || 'Partner University'}
+              <p className="text-xs font-semibold text-light-text dark:text-dark-text truncate">
+                {university?.name || user?.name || 'Your University'}
               </p>
-              <p className="text-[10px] text-link font-medium flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-500" /> {university?.sponsorTier && university.sponsorTier !== 'none' ? `${university.sponsorTier.toUpperCase()} Partner` : 'Gold Partner'}
+              {/* Was "Gold Partner" with a sparkle, shown to everyone regardless
+                  of any actual plan — a tier the product does not sell yet. */}
+              <p className="text-[11px] text-light-muted dark:text-dark-muted truncate">
+                {user?.email}
               </p>
             </div>
           </div>
