@@ -2,7 +2,16 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { getAuthConfig } = require('../config/env');
 
-const ROLES = ['user', 'admin', 'superadmin'];
+/**
+ * `university` is deliberately NOT part of the privilege ladder in
+ * middleware/auth.js (ROLE_HIERARCHY). It is a lateral account type, not a rank:
+ * a university representative is not "a more powerful student". Keeping it out
+ * of the ladder means roleRank() returns -1 for it, so every `requireRole(...)`
+ * check written for the student/admin ladder denies it by default — which is the
+ * correct failure direction. University routes opt in explicitly with
+ * `requireRole('university', { exact: true })`.
+ */
+const ROLES = ['user', 'university', 'admin', 'superadmin'];
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
@@ -14,6 +23,28 @@ const userSchema = new mongoose.Schema({
   // scripts/grantRole.js bootstrap CLI). It is never derived from the email
   // address — see the removal of ensureAdminRole in authController.
   role: { type: String, enum: ROLES, default: 'user' },
+
+  /**
+   * Tenancy link for `university` accounts — THE single source of truth for
+   * "which university may this account edit".
+   *
+   * Deliberately not mirrored onto the University document. Storing ownership in
+   * two places guarantees they eventually disagree, and at that point there is
+   * no way to tell which one is right. "Is this university claimed?" is answered
+   * by querying users, which is a cheap indexed lookup.
+   *
+   * Set ONLY when a claim is approved (or an invite is accepted). An unset value
+   * on a `university` account means "approved access not granted yet", and the
+   * login path refuses the session on that basis.
+   */
+  universityId: { type: mongoose.Schema.Types.ObjectId, ref: 'University', index: true },
+
+  /**
+   * Within a university, `owner` is the representative whose claim admin
+   * approved. Only an owner may invite teammates; members cannot invite further
+   * members, so the account graph cannot grow without an admin-approved root.
+   */
+  universityRole: { type: String, enum: ['owner', 'member'] },
 
   // Multi-provider auth
   phone: { type: String, unique: true, sparse: true },
@@ -99,6 +130,21 @@ const userSchema = new mongoose.Schema({
   resetPasswordToken: String,
   resetPasswordExpiry: Date
 }, { timestamps: true });
+
+// Answers "who owns this university?" and "is it claimed?" without denormalising
+// ownership onto the University document.
+userSchema.index({ universityId: 1, universityRole: 1 });
+
+/**
+ * True when this account has been granted tenancy over a university.
+ *
+ * Both conditions matter: the role alone is not enough, because a university
+ * account exists (and can verify its email) from the moment it signs up, long
+ * before an admin approves the claim.
+ */
+userSchema.methods.hasUniversityAccess = function() {
+  return this.role === 'university' && Boolean(this.universityId);
+};
 
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password') || !this.password) return next();

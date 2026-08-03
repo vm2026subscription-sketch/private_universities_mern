@@ -26,6 +26,12 @@ const universitySchema = new mongoose.Schema({
   naacGrade: String,
   nirfRank: Number,
   description: String,
+
+  // Self-authored positioning statements, editable by the university itself.
+  vision: String,
+  mission: String,
+  history: String,
+
   logoUrl: String,
   website: String,
   latitude: Number,
@@ -59,6 +65,16 @@ const universitySchema = new mongoose.Schema({
   highlights: [String],
   topRecruiters: [String],
   facilities: [String],
+
+  faculty: [{
+    name: String,
+    designation: String,
+    department: String,
+    qualification: String,
+    experienceYears: Number,
+    imageUrl: String,
+    profileLink: String,
+  }],
   links: {
     admissionLink: String,
     brochureLink: String,
@@ -121,8 +137,36 @@ const universitySchema = new mongoose.Schema({
     ogDescription: String,
     ogImage: String,
     indexStatus: { type: String, enum: ['index', 'noindex'], default: 'index' }
-  }
+  },
+
+  /**
+   * Edits a university submitted that an admin has not accepted yet.
+   *
+   * Only credibility-bearing fields land here — placement figures, NAAC grade,
+   * NIRF rank, regulatory approvals. Everything else a tenant may edit is
+   * written straight to the document, because gating gallery images and contact
+   * details behind review would make the portal useless without protecting
+   * anything that matters.
+   *
+   * Deliberately NOT modelled by flipping `status` to 'needs_review', even
+   * though that value exists: universityController lists only
+   * `status: 'published'`, so using it would pull the university's public page
+   * off the site the moment it edited its own placement stats — losing the
+   * traffic and the SEO the university is paying for. Review state has to be
+   * orthogonal to publication state, so it lives in its own field.
+   *
+   * `data` is keyed by dot-path (e.g. 'stats.avgPackageLPA') so an approval can
+   * be applied with a single $set and a rejection is simply a discard.
+   */
+  pendingChanges: {
+    data: { type: mongoose.Schema.Types.Mixed, default: undefined },
+    submittedAt: Date,
+    submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  },
 }, { timestamps: true });
+
+// The admin moderation queue: universities with something awaiting review.
+universitySchema.index({ 'pendingChanges.submittedAt': -1 });
 
 universitySchema.pre('validate', function(next) {
   const classification = normalizeUniversityClassification(this);
