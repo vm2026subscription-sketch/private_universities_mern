@@ -31,8 +31,12 @@ export default function UniversityDashboardLayout() {
   const fetchUniversity = useCallback(async () => {
     try {
       const { data } = await api.get('/university-portal/my-university');
-      if (data?.success && data?.data) {
-        setUniversity(data.data);
+      // The endpoint returns `university`. Reading `data` meant this never set,
+      // so every child section saw `uni === null` and fell through to its own
+      // sample defaults — which is why the whole dashboard looked hardcoded even
+      // after the sections were wired up.
+      if (data?.success && data?.university) {
+        setUniversity(data.university);
       }
     } catch (error) {
       console.error('Failed to fetch university details:', error);
@@ -152,7 +156,7 @@ export default function UniversityDashboardLayout() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-dark-card shadow-2xl z-50">
+          <aside className="fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-dark-card shadow-lg z-50">
             <SidebarContent />
           </aside>
         </div>

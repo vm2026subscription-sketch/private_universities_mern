@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   GraduationCap, TrendingUp, Award, Building2, Plus, Trash2,
-  Save, CheckCircle2, DollarSign, Sparkles, Clock, AlertTriangle
+  Save, CheckCircle2, DollarSign, Clock, AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -14,12 +14,12 @@ export default function UniversityPlacementSection() {
   const refreshUni = context?.refreshUni;
 
   const [placementStats, setPlacementStats] = useState({
-    highestPackage: '48.5',
-    averagePackage: '8.8',
-    medianPackage: '7.2',
-    placementPercentage: '94.5',
-    totalOffers: '640+',
-    topRecruiterCount: '120+'
+    highestPackage: '',
+    averagePackage: '',
+    medianPackage: '',
+    placementPercentage: '',
+    totalOffers: '',
+    topRecruiterCount: '',
   });
 
   const [reviewStatus, setReviewStatus] = useState('approved');
@@ -33,13 +33,22 @@ export default function UniversityPlacementSection() {
 
   useEffect(() => {
     if (uni) {
+      /**
+       * Blank when unset — never a sample figure.
+       *
+       * These defaulted to 48.5 / 8.8 / 94.5 LPA. The form publishes what it
+       * shows, so a university that had never entered placement data would find
+       * it already filled in and press Save, putting invented packages on a page
+       * students use to choose where to study. This is exactly the claim the
+       * review queue exists to check, arriving pre-answered.
+       */
       setPlacementStats({
-        highestPackage: uni.stats?.highestPackageLPA ? String(uni.stats.highestPackageLPA) : '48.5',
-        averagePackage: uni.stats?.avgPackageLPA ? String(uni.stats.avgPackageLPA) : '8.8',
-        medianPackage: '7.2',
-        placementPercentage: uni.stats?.placementPercentage ? String(uni.stats.placementPercentage) : '94.5',
-        totalOffers: '640+',
-        topRecruiterCount: '120+'
+        highestPackage: uni.stats?.highestPackageLPA != null ? String(uni.stats.highestPackageLPA) : '',
+        averagePackage: uni.stats?.avgPackageLPA != null ? String(uni.stats.avgPackageLPA) : '',
+        medianPackage: '',
+        placementPercentage: uni.stats?.placementPercentage != null ? String(uni.stats.placementPercentage) : '',
+        totalOffers: '',
+        topRecruiterCount: '',
       });
       if (uni.placementReviewStatus) {
         setReviewStatus(uni.placementReviewStatus);
@@ -76,20 +85,44 @@ export default function UniversityPlacementSection() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = {
-        isPlacementUpdate: true,
-        stats: {
-          highestPackage: parseFloat(placementStats.highestPackage) || 48.5,
-          averagePackage: parseFloat(placementStats.averagePackage) || 8.8,
-          placementPercentage: parseFloat(placementStats.placementPercentage) || 94.5
-        },
-        topRecruiters: recruiters.map(r => r.name)
+      /**
+       * Field names must match the server's schema paths, and blanks must stay
+       * blank.
+       *
+       * This previously sent stats.highestPackage / averagePackage — names the
+       * edit policy does not recognise — so every placement figure was silently
+       * discarded while the UI reported success. Worse, empty inputs fell back to
+       * `|| 48.5`, `|| 8.8`, `|| 94.5`, meaning a university that opened this
+       * page and pressed Save published invented packages under its own name.
+       *
+       * Only fields the user actually filled in are sent; the rest are left
+       * untouched rather than overwritten with a guess.
+       */
+      const stats = {};
+      const num = (value) => {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
       };
+
+      if (num(placementStats.highestPackage) !== undefined) stats.highestPackageLPA = num(placementStats.highestPackage);
+      if (num(placementStats.averagePackage) !== undefined) stats.avgPackageLPA = num(placementStats.averagePackage);
+      if (num(placementStats.placementPercentage) !== undefined) stats.placementPercentage = num(placementStats.placementPercentage);
+
+      const payload = { topRecruiters: recruiters.map((r) => r.name) };
+      if (Object.keys(stats).length) payload.stats = stats;
 
       const { data } = await api.put('/university-portal/my-university', payload);
       if (data?.success) {
-        setReviewStatus('under_review');
-        toast.success('Placement details submitted! Changes are pending admin review.', { duration: 4000 });
+        // Driven by what the server actually queued, not assumed.
+        if (data.awaitingReview?.length) {
+          setReviewStatus('under_review');
+          toast.success('Submitted. Placement figures are pending verification.', { duration: 4000 });
+        } else {
+          toast.success('Saved.');
+        }
+        if (data.rejected?.length) {
+          toast.error(`Not saved: ${data.rejected.join(', ')}`);
+        }
         if (refreshUni) refreshUni();
       }
     } catch (error) {
@@ -142,55 +175,55 @@ export default function UniversityPlacementSection() {
 
         {/* Highlighted Stat Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Highest Package</span>
+          <div className="p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-light-muted dark:text-dark-muted">Highest Package</span>
             <div className="flex items-center gap-1">
               <span className="text-xl font-extrabold text-light-text dark:text-dark-text">₹</span>
               <input
                 type="text"
                 value={placementStats.highestPackage}
                 onChange={(e) => handleStatsChange('highestPackage', e.target.value)}
-                className="w-24 px-2 py-1 rounded-lg border border-emerald-500/30 bg-white dark:bg-dark-card font-extrabold text-lg text-emerald-600"
+                className="w-24 px-2 py-1 rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card font-semibold text-lg text-light-text dark:text-dark-text"
               />
               <span className="text-xs font-bold text-light-muted">LPA</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Average Package</span>
+          <div className="p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-light-muted dark:text-dark-muted">Average Package</span>
             <div className="flex items-center gap-1">
               <span className="text-xl font-extrabold text-light-text dark:text-dark-text">₹</span>
               <input
                 type="text"
                 value={placementStats.averagePackage}
                 onChange={(e) => handleStatsChange('averagePackage', e.target.value)}
-                className="w-24 px-2 py-1 rounded-lg border border-blue-500/30 bg-white dark:bg-dark-card font-extrabold text-lg text-blue-600"
+                className="w-24 px-2 py-1 rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card font-semibold text-lg text-light-text dark:text-dark-text"
               />
               <span className="text-xs font-bold text-light-muted">LPA</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">Placement % Rate</span>
+          <div className="p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-light-muted dark:text-dark-muted">Placement % Rate</span>
             <div className="flex items-center gap-1">
               <input
                 type="text"
                 value={placementStats.placementPercentage}
                 onChange={(e) => handleStatsChange('placementPercentage', e.target.value)}
-                className="w-24 px-2 py-1 rounded-lg border border-amber-500/30 bg-white dark:bg-dark-card font-extrabold text-lg text-amber-600"
+                className="w-24 px-2 py-1 rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card font-semibold text-lg text-light-text dark:text-dark-text"
               />
               <span className="text-xs font-bold text-light-muted">% Placed</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 space-y-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Total Job Offers</span>
+          <div className="p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-light-muted dark:text-dark-muted">Total Job Offers</span>
             <div className="flex items-center gap-1">
               <input
                 type="text"
                 value={placementStats.totalOffers}
                 onChange={(e) => handleStatsChange('totalOffers', e.target.value)}
-                className="w-24 px-2 py-1 rounded-lg border border-purple-500/30 bg-white dark:bg-dark-card font-extrabold text-lg text-purple-600"
+                className="w-24 px-2 py-1 rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card font-semibold text-lg text-light-text dark:text-dark-text"
               />
               <span className="text-xs font-bold text-light-muted">Offers</span>
             </div>

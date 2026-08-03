@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   Building2, Globe, MapPin, Phone, Mail, Upload, CheckCircle,
-  Save, Eye, Image as ImageIcon, Sparkles, Shield
+  Save, Eye, Image as ImageIcon, Shield
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -12,44 +12,42 @@ export default function UniversityProfileSection() {
   const uni = context?.uni;
   const refreshUni = context?.refreshUni;
 
-  const [profile, setProfile] = useState({
-    name: 'Apex Technical University',
-    tagline: 'Empowering Next-Gen Technologists & Engineers',
-    about: 'Apex Technical University is a premier institution accredited with NAAC A++ Grade.',
-    vision: 'To be a globally recognized institution of educational excellence.',
-    mission: 'Delivering industry-relevant curriculum and hands-on skillsets.',
-    email: 'admissions@apexuniv.edu.in',
-    phone: '+91 98765 43210',
-    website: 'https://www.apexuniv.edu.in',
-    address: 'Sector 62, Institutional Area, Knowledge Park Phase III',
-    city: 'Noida',
-    state: 'Uttar Pradesh',
-    pincode: '201309',
-    establishedYear: '1998',
-    accreditation: 'NAAC A++ Grade, AICTE Approved',
-    logoUrl: 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?auto=format&fit=crop&w=200&q=80',
-    coverUrl: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80'
-  });
+  /**
+   * Empty, never sample text.
+   *
+   * These fields were pre-filled with another university's copy — a tagline, a
+   * vision, a mission, a NAAC A++ grade, even stock campus photography. The form
+   * saves what it shows, so a university that filled in its phone number and
+   * pressed Save would have published all of it as its own. Placeholder prose in
+   * an editable field is not a placeholder; it is a draft nobody wrote.
+   */
+  const emptyProfile = {
+    name: '', tagline: '', about: '', vision: '', mission: '',
+    email: '', phone: '', website: '', address: '', city: '', state: '',
+    pincode: '', establishedYear: '', accreditation: '', logoUrl: '', coverUrl: '',
+  };
+
+  const [profile, setProfile] = useState(emptyProfile);
 
   useEffect(() => {
     if (uni) {
       setProfile({
         name: uni.name || '',
-        tagline: uni.tagline || 'Empowering Next-Gen Technologists & Engineers',
+        tagline: uni.tagline || '',
         about: uni.description || '',
-        vision: uni.vision || 'To be a globally recognized institution of educational excellence.',
-        mission: uni.mission || 'Delivering industry-relevant curriculum and hands-on skillsets.',
+        vision: uni.vision || '',
+        mission: uni.mission || '',
         email: uni.email || '',
         phone: uni.phone || '',
         website: uni.website || '',
         address: uni.address || '',
         city: uni.city || '',
         state: uni.state || '',
-        pincode: uni.pincode || '201309',
-        establishedYear: uni.establishedYear ? String(uni.establishedYear) : '1998',
-        accreditation: uni.naacGrade ? `NAAC ${uni.naacGrade} Grade, UGC Approved` : 'NAAC A++ Grade, AICTE Approved',
-        logoUrl: uni.logoUrl || 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?auto=format&fit=crop&w=200&q=80',
-        coverUrl: uni.bannerImageUrl || 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80'
+        pincode: uni.pincode || '',
+        establishedYear: uni.establishedYear ? String(uni.establishedYear) : '',
+        accreditation: uni.naacGrade ? `NAAC ${uni.naacGrade}` : '',
+        logoUrl: uni.logoUrl || '',
+        coverUrl: uni.bannerImageUrl || '',
       });
     }
   }, [uni]);
@@ -110,22 +108,41 @@ export default function UniversityProfileSection() {
     e.preventDefault();
     setSaving(true);
     try {
+      /**
+       * Sends only what this form owns, and only what was filled in.
+       *
+       * `establishedYear` defaulted to `|| 1998` — a founding year invented for
+       * any university that left the field blank. `city` and `state` are set by
+       * the platform and were silently refused on every save. Vision and mission
+       * are edited on this screen but were never sent at all, so they could not
+       * be saved.
+       */
       const payload = {
-        name: profile.name,
         description: profile.about,
+        vision: profile.vision,
+        mission: profile.mission,
         email: profile.email,
         phone: profile.phone,
         website: profile.website,
         address: profile.address,
-        city: profile.city,
-        state: profile.state,
-        establishedYear: parseInt(profile.establishedYear) || 1998,
         logoUrl: profile.logoUrl,
-        bannerImageUrl: profile.coverUrl
+        bannerImageUrl: profile.coverUrl,
       };
+
+      const year = parseInt(profile.establishedYear, 10);
+      if (Number.isFinite(year)) payload.establishedYear = year;
+
       const { data } = await api.put('/university-portal/my-university', payload);
       if (data?.success) {
-        toast.success('University profile saved to server successfully!');
+        // The server reports three outcomes; reporting only "saved" hid the fact
+        // that some fields went to a review queue instead of going live.
+        if (data.applied?.length) toast.success('Saved.');
+        if (data.awaitingReview?.length) {
+          toast('Some changes need verification before they appear publicly.', { icon: 'ℹ️' });
+        }
+        if (data.rejected?.length) {
+          toast.error(`Not saved: ${data.rejected.join(', ')}`);
+        }
         if (refreshUni) refreshUni();
       }
     } catch (error) {
@@ -170,11 +187,16 @@ export default function UniversityProfileSection() {
             </div>
 
             <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                <Shield className="w-3.5 h-3.5" /> Verified University
-              </span>
-              <h2 className="text-xl md:text-2xl font-extrabold text-light-text dark:text-dark-text">{profile.name}</h2>
-              <p className="text-xs text-light-muted dark:text-dark-muted font-medium">{profile.accreditation} • Estd. {profile.establishedYear}</p>
+              {/* "Verified University" was shown to every account unconditionally.
+                  Nothing verifies it, and a badge that is always on says nothing. */}
+              <h2 className="text-xl md:text-2xl font-bold text-light-text dark:text-dark-text">
+                {profile.name || 'Your University'}
+              </h2>
+              <p className="text-xs text-light-muted dark:text-dark-muted font-medium">
+                {[profile.accreditation, profile.establishedYear && `Estd. ${profile.establishedYear}`]
+                  .filter(Boolean)
+                  .join(' • ')}
+              </p>
             </div>
           </div>
 
@@ -237,8 +259,7 @@ export default function UniversityProfileSection() {
 
           {/* Vision & Mission */}
           <div className="p-6 rounded-2xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm space-y-5">
-            <h3 className="font-bold text-base text-light-text dark:text-dark-text flex items-center gap-2 border-b border-light-border dark:border-dark-border pb-3">
-              <Sparkles className="w-5 h-5 text-amber-500" /> Vision & Mission Statements
+            <h3 className="font-bold text-base text-light-text dark:text-dark-text flex items-center gap-2 border-b border-light-border dark:border-dark-border pb-3"> Vision & Mission Statements
             </h3>
 
             <div>

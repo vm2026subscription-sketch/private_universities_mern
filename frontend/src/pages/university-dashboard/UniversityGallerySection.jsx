@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
-  Image as ImageIcon, Upload, Trash2, Plus, Sparkles, Filter,
+  Image as ImageIcon, Upload, Trash2, Plus, Filter,
   Maximize2, X, CheckCircle2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -212,7 +212,7 @@ export default function UniversityGallerySection() {
       {/* Lightbox Preview Modal */}
       {previewImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative max-w-4xl w-full rounded-3xl overflow-hidden bg-white dark:bg-dark-card shadow-2xl">
+          <div className="relative max-w-4xl w-full rounded-3xl overflow-hidden bg-white dark:bg-dark-card shadow-lg">
             <button
               onClick={() => setPreviewImage(null)}
               className="absolute top-4 right-4 p-2.5 rounded-full bg-black/60 text-white hover:bg-black transition-colors z-10"
@@ -233,7 +233,7 @@ export default function UniversityGallerySection() {
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-2xl space-y-4">
+          <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg space-y-4">
             <h3 className="font-bold text-lg text-light-text dark:text-dark-text">Delete Photo?</h3>
             <p className="text-xs text-light-muted dark:text-dark-muted">
               Are you sure you want to delete this photo from your university gallery? This action cannot be undone.

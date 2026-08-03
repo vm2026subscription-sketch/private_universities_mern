@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
-  Award, Plus, Edit3, Trash2, CheckCircle2, AlertCircle,
-  Sparkles, DollarSign, X
+  Award, Plus, Edit3, Trash2, CheckCircle2, AlertCircle, DollarSign, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -136,8 +135,7 @@ export default function UniversityScholarshipsSection() {
                 </span>
               </div>
               <h3 className="font-extrabold text-base text-light-text dark:text-dark-text">{s.title}</h3>
-              <p className="text-sm font-bold text-primary flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" /> {s.amount}
+              <p className="text-sm font-bold text-primary flex items-center gap-1.5"> {s.amount}
               </p>
             </div>
 
@@ -167,7 +165,7 @@ export default function UniversityScholarshipsSection() {
       {/* Add / Edit Scholarship Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-lg w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-2xl space-y-5">
+          <div className="max-w-lg w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg space-y-5">
             <div className="flex items-center justify-between border-b border-light-border dark:border-dark-border pb-3">
               <h3 className="font-bold text-base text-light-text dark:text-dark-text">
                 {editingItem ? 'Edit Scholarship Scheme' : 'Add New Scholarship'}
@@ -260,7 +258,7 @@ export default function UniversityScholarshipsSection() {
       {/* Delete Confirmation Modal */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-2xl space-y-4">
+          <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg space-y-4">
             <h3 className="font-bold text-lg text-light-text dark:text-dark-text">Remove Scholarship?</h3>
             <p className="text-xs text-light-muted dark:text-dark-muted">
               Are you sure you want to remove this scholarship offering?

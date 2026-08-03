@@ -27,18 +27,25 @@ export default function UniversityCoursesSection() {
   const fetchCourses = async () => {
     try {
       const { data } = await api.get('/university-portal/my-university/courses');
-      if (data?.success && data?.data) {
-        const formatted = data.data.map((c) => ({
+      // The endpoint returns `courses`; reading `data` meant the list was always
+      // empty and the fallbacks below were all anyone ever saw.
+      if (data?.success) {
+        const formatted = (data.courses || []).map((c) => ({
           id: c._id,
           _id: c._id,
-          name: c.name || c.baseCourse || 'Course',
-          degree: c.degree || (c.category === 'UG' ? 'Undergraduate' : c.category === 'PG' ? 'Postgraduate' : 'Diploma'),
-          duration: c.duration ? `${c.duration} Years` : '4 Years',
-          fee: c.feesPerYear ? `₹${c.feesPerYear} / yr` : '₹1,00,000 / yr',
-          seats: c.totalSeats || 60,
-          eligibility: c.eligibility || '10+2 with 60% aggregate'
+          name: c.name || c.baseCourse || 'Untitled course',
+          degree: c.category || '',
+          // Dashes, not invented values. "₹1,00,000 / yr" and "10+2 with 60%
+          // aggregate" are specific claims a student would act on, and they were
+          // shown for courses whose fee and eligibility nobody had entered.
+          duration: c.duration || '—',
+          fee: c.feesPerYear ? `₹${Number(c.feesPerYear).toLocaleString('en-IN')} / yr` : '—',
+          seats: c.totalSeats ?? '—',
+          eligibility: c.eligibility || '—',
         }));
-        if (formatted.length > 0) setCourses(formatted);
+        // Assigned unconditionally, so deleting the last course empties the list
+        // instead of leaving the previous one on screen.
+        setCourses(formatted);
       }
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -233,7 +240,7 @@ export default function UniversityCoursesSection() {
       {/* Add/Edit Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-lg w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-2xl space-y-5">
+          <div className="max-w-lg w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg space-y-5">
             <div className="flex items-center justify-between border-b border-light-border dark:border-dark-border pb-3">
               <h3 className="font-bold text-base text-light-text dark:text-dark-text">
                 {editingCourse ? 'Edit Course Details' : 'Add New Course'}
@@ -351,7 +358,7 @@ export default function UniversityCoursesSection() {
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-2xl space-y-4">
+          <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg space-y-4">
             <h3 className="font-bold text-lg text-light-text dark:text-dark-text">Delete Course?</h3>
             <p className="text-xs text-light-muted dark:text-dark-muted">
               Are you sure you want to remove this course from your catalog?
