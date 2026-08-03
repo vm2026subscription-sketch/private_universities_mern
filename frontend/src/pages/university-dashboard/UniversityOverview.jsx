@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
+import api from '../../utils/api';
 import {
   Eye, Users, BookOpen, GraduationCap, Award, CreditCard,
   ArrowUpRight, CheckCircle2, AlertCircle, Sparkles, TrendingUp,
@@ -10,17 +11,50 @@ export default function UniversityOverview() {
   const context = useOutletContext();
   const uni = context?.uni;
 
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { data: payload } = await api.get('/university-portal/my-university/overview');
+        if (!cancelled) setData(payload);
+      } catch {
+        if (!cancelled) setData(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
+
+  /**
+   * Placeholders are dashes, never numbers.
+   *
+   * Every figure below previously had an invented fallback — profile views
+   * derived from student count, "384 leads", a 92% completion score. They looked
+   * like measurements, so a university would have quoted them upward. A dash is
+   * unmistakably "we don't have this yet".
+   */
+  const dash = (value) => (value === null || value === undefined ? '—' : value);
+
   const stats = {
-    name: uni?.name || 'Apex Technical University',
-    profileViews: uni?.stats?.totalStudents ? Number(uni.stats.totalStudents) * 3 : 14280,
-    totalLeads: uni?.stats?.totalStudents ? Math.round(Number(uni.stats.totalStudents) / 10) : 384,
-    activeCourses: uni?.courses?.length || 28,
-    placementRate: uni?.stats?.placementPercentage || 94.5,
-    highestPackage: uni?.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : '₹48.5 LPA',
-    averagePackage: uni?.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : '₹8.8 LPA',
-    completionRate: uni ? 92 : 85,
-    subscriptionPlan: uni?.sponsorTier && uni.sponsorTier !== 'none' ? `${uni.sponsorTier.toUpperCase()} Partner` : 'Gold Partner',
-    daysRemaining: 142
+    name: data?.university?.name || uni?.name || 'Your University',
+    profileViews: data?.profileViews ?? null,
+    totalLeads: data?.leads?.total ?? null,
+    applyLeads: data?.leads?.apply ?? 0,
+    brochureLeads: data?.leads?.brochure ?? 0,
+    activeCourses: data?.courses ?? null,
+    placementRate: data?.placement?.placementPercentage ?? null,
+    highestPackage: data?.placement?.highestPackageLPA,
+    completionRate: data?.completeness?.percent ?? 0,
+    missing: data?.completeness?.missing || [],
+    completed: data?.completeness?.completed ?? 0,
+    totalChecks: data?.completeness?.total ?? 0,
+    pendingReview: data?.pendingReview || [],
   };
 
   return (
@@ -63,10 +97,13 @@ export default function UniversityOverview() {
         <div className="p-5 rounded-2xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted">Profile Views</p>
-            <h3 className="text-2xl font-extrabold text-light-text dark:text-dark-text mt-1">{stats.profileViews.toLocaleString()}</h3>
-            <p className="text-xs text-emerald-500 font-semibold mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> +18% this month
-            </p>
+            <h3 className="text-2xl font-extrabold text-light-text dark:text-dark-text mt-1">
+              {loading ? '…' : dash(stats.profileViews?.toLocaleString())}
+            </h3>
+            {/* No trend line: nothing records a per-month baseline yet, and an
+                invented "+18%" is the kind of number that ends up in a board
+                deck. */}
+            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">Since listing</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
             <Eye className="w-6 h-6" />
@@ -76,9 +113,11 @@ export default function UniversityOverview() {
         <div className="p-5 rounded-2xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted">Student Leads</p>
-            <h3 className="text-2xl font-extrabold text-light-text dark:text-dark-text mt-1">{stats.totalLeads}</h3>
-            <p className="text-xs text-emerald-500 font-semibold mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> +12 new today
+            <h3 className="text-2xl font-extrabold text-light-text dark:text-dark-text mt-1">
+              {loading ? '…' : dash(stats.totalLeads)}
+            </h3>
+            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
+              {stats.applyLeads} applications · {stats.brochureLeads} brochures
             </p>
           </div>
           <div className="p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
@@ -89,8 +128,10 @@ export default function UniversityOverview() {
         <div className="p-5 rounded-2xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted">Active Courses</p>
-            <h3 className="text-2xl font-extrabold text-light-text dark:text-dark-text mt-1">{stats.activeCourses}</h3>
-            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">Across 6 departments</p>
+            <h3 className="text-2xl font-extrabold text-light-text dark:text-dark-text mt-1">
+              {loading ? '…' : dash(stats.activeCourses)}
+            </h3>
+            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">Listed on your page</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
             <BookOpen className="w-6 h-6" />
@@ -100,8 +141,12 @@ export default function UniversityOverview() {
         <div className="p-5 rounded-2xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted">Placement %</p>
-            <h3 className="text-2xl font-extrabold text-light-text dark:text-dark-text mt-1">{stats.placementRate}%</h3>
-            <p className="text-xs text-amber-500 font-semibold mt-1">Highest: {stats.highestPackage}</p>
+            <h3 className="text-2xl font-extrabold text-light-text dark:text-dark-text mt-1">
+              {loading ? '…' : stats.placementRate === null ? 'Not set' : `${stats.placementRate}%`}
+            </h3>
+            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
+              {stats.highestPackage ? `Highest: ₹${stats.highestPackage} LPA` : 'Add your placement data'}
+            </p>
           </div>
           <div className="p-3.5 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
             <GraduationCap className="w-6 h-6" />
@@ -133,20 +178,38 @@ export default function UniversityOverview() {
               />
             </div>
 
+            {/* Driven by what is actually filled in. The previous version listed
+                three green ticks and one amber warning regardless of the
+                university's real state, so it congratulated an empty profile. */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> Campus Photos & Gallery Uploaded
-              </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> Courses & Fees Details Updated
-              </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> Placement Records Added
-              </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 p-2.5 rounded-xl">
-                <AlertCircle className="w-4 h-4 shrink-0" /> Add Active Scholarships (Pending)
-              </div>
+              {loading ? (
+                <p className="text-xs text-light-muted">Checking your profile…</p>
+              ) : stats.missing.length === 0 ? (
+                <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl sm:col-span-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  Everything is filled in — {stats.completed} of {stats.totalChecks} sections complete
+                </div>
+              ) : (
+                stats.missing.map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 p-2.5 rounded-xl"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0" /> Add {item}
+                  </div>
+                ))
+              )}
             </div>
+
+            {stats.pendingReview.length > 0 && (
+              <div className="flex items-start gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 p-3 rounded-xl">
+                <FileCheck className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  {stats.pendingReview.length} change(s) awaiting our team's verification before they
+                  appear publicly.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Quick Action Navigation Grid */}
@@ -191,26 +254,19 @@ export default function UniversityOverview() {
           {/* Subscription Widget Card */}
           <div className="p-6 rounded-2xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-light-border dark:border-dark-border pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted">Active Subscription</span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                {stats.subscriptionPlan}
+              <span className="text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted">Subscription</span>
+              <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-light-bg dark:bg-dark-bg text-light-muted border border-light-border dark:border-dark-border">
+                Coming soon
               </span>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-light-muted dark:text-dark-muted">Plan Status:</span>
-                <span className="font-bold text-emerald-500">Active</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-light-muted dark:text-dark-muted">Days Remaining:</span>
-                <span className="font-bold text-light-text dark:text-dark-text">{stats.daysRemaining} days</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-light-muted dark:text-dark-muted">Listing Priority:</span>
-                <span className="font-bold text-primary">Top 3 Search Rank</span>
-              </div>
-            </div>
+            {/* Subscriptions are not built yet. Showing "Gold Partner · Active ·
+                142 days remaining · Top 3 Search Rank" described a product that
+                does not exist and a plan nobody has paid for. */}
+            <p className="text-xs text-light-muted dark:text-dark-muted leading-relaxed">
+              Subscription plans are not live yet. Your profile stays fully editable in the meantime —
+              we will email you before anything changes.
+            </p>
 
             <Link
               to="/university/dashboard/subscription"

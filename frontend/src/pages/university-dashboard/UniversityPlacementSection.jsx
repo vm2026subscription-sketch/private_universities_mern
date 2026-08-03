@@ -7,14 +7,6 @@ import {
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 
-const INITIAL_RECRUITERS = [
-  { id: 1, name: 'Google', category: 'Tech Giant' },
-  { id: 2, name: 'Microsoft', category: 'Product Tech' },
-  { id: 3, name: 'Amazon', category: 'Cloud & E-Commerce' },
-  { id: 4, name: 'TCS Digital', category: 'IT Services' },
-  { id: 5, name: 'Deloitte', category: 'Consulting' },
-  { id: 6, name: 'Goldman Sachs', category: 'Finance & Banking' },
-];
 
 export default function UniversityPlacementSection() {
   const context = useOutletContext();
@@ -31,7 +23,10 @@ export default function UniversityPlacementSection() {
   });
 
   const [reviewStatus, setReviewStatus] = useState('approved');
-  const [recruiters, setRecruiters] = useState(INITIAL_RECRUITERS);
+    // Starts empty and fills from the API. Seeding this with sample rows meant a
+  // university opened its dashboard to somebody else's courses, photos and
+  // recruiters, and a failed request left that fiction on screen looking real.
+  const [recruiters, setRecruiters] = useState([]);
   const [newRecruiterName, setNewRecruiterName] = useState('');
   const [newRecruiterCat, setNewRecruiterCat] = useState('Tech Giant');
   const [saving, setSaving] = useState(false);

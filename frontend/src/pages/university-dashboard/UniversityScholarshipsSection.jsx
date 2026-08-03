@@ -7,19 +7,16 @@ import {
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 
-const INITIAL_SCHOLARSHIPS = [
-  { id: 1, title: 'Merit Academic Excellence Award', type: 'Merit Based', amount: 'Up to 100% Tuition Fee Waiver', criteria: '90%+ in 10+2 or top 1000 JEE Main rank', status: 'Active' },
-  { id: 2, title: 'National Sports Star Scholarship', type: 'Sports & Arts', amount: '50% Fee Waiver', criteria: 'State or National level sports representation', status: 'Active' },
-  { id: 3, title: 'Need-Based Financial Assistance', type: 'Financial Need', amount: 'Up to ₹1,00,000 / year', criteria: 'Annual family income below ₹4.5 LPA', status: 'Active' },
-  { id: 4, title: 'Women in STEM Leadership Grant', type: 'Special Category', amount: '35% Fee Concession', criteria: 'Female candidates enrolling in CSE / AI branches', status: 'Active' },
-];
 
 export default function UniversityScholarshipsSection() {
   const context = useOutletContext();
   const uni = context?.uni;
   const refreshUni = context?.refreshUni;
 
-  const [scholarships, setScholarships] = useState(INITIAL_SCHOLARSHIPS);
+    // Starts empty and fills from the API. Seeding this with sample rows meant a
+  // university opened its dashboard to somebody else's courses, photos and
+  // recruiters, and a failed request left that fiction on screen looking real.
+  const [scholarships, setScholarships] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteId, setDeleteId] = useState(null);

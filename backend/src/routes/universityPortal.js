@@ -25,6 +25,7 @@ const {
 } = require('../controllers/universityPortalController');
 
 const {
+  getOverview,
   getMyUniversity,
   updateMyUniversity,
   addGalleryImages,
@@ -91,6 +92,9 @@ const tenantWrite = [
   stripPlatformControlledFields,
   // requireActiveSubscription,  ← Person B
 ];
+
+/* Dashboard summary */
+router.get('/my-university/overview', ...tenantRead, getOverview);
 
 /* Profile */
 router.get('/my-university', ...tenantRead, getMyUniversity);

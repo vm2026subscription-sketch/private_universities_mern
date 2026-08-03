@@ -7,14 +7,6 @@ import {
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 
-const INITIAL_IMAGES = [
-  { id: 1, title: 'Main Academic Block', category: 'Campus', url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=800&q=80' },
-  { id: 2, title: 'Advanced Robotics Lab', category: 'Labs', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80' },
-  { id: 3, title: 'Central Library & Reading Hall', category: 'Infrastructure', url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=80' },
-  { id: 4, title: 'Student Sports Complex', category: 'Events', url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80' },
-  { id: 5, title: 'Hostel & Residential Wing', category: 'Hostel', url: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80' },
-  { id: 6, title: 'Annual Tech Fest Convocation', category: 'Events', url: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=800&q=80' }
-];
 
 const CATEGORIES = ['All', 'Campus', 'Labs', 'Infrastructure', 'Hostel', 'Events'];
 
@@ -23,7 +15,10 @@ export default function UniversityGallerySection() {
   const uni = context?.uni;
   const refreshUni = context?.refreshUni;
 
-  const [images, setImages] = useState(INITIAL_IMAGES);
+    // Starts empty and fills from the API. Seeding this with sample rows meant a
+  // university opened its dashboard to somebody else's courses, photos and
+  // recruiters, and a failed request left that fiction on screen looking real.
+  const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [previewImage, setPreviewImage] = useState(null);

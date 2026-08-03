@@ -7,20 +7,16 @@ import {
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 
-const INITIAL_COURSES = [
-  { id: 1, name: 'B.Tech Computer Science & Engineering', degree: 'Undergraduate', duration: '4 Years', fee: '₹2,40,000 / yr', seats: 180, eligibility: '10+2 with 60% in PCM + JEE Main' },
-  { id: 2, name: 'B.Tech Artificial Intelligence & ML', degree: 'Undergraduate', duration: '4 Years', fee: '₹2,60,000 / yr', seats: 120, eligibility: '10+2 with 65% in PCM' },
-  { id: 3, name: 'MBA Business Analytics', degree: 'Postgraduate', duration: '2 Years', fee: '₹3,50,000 / yr', seats: 60, eligibility: 'Graduation with 50% + CAT/MAT/CUET' },
-  { id: 4, name: 'B.Sc Data Science & AI', degree: 'Undergraduate', duration: '3 Years', fee: '₹1,50,000 / yr', seats: 90, eligibility: '10+2 in any stream with Maths' },
-  { id: 5, name: 'M.Tech Cybersecurity & Networking', degree: 'Postgraduate', duration: '2 Years', fee: '₹1,80,000 / yr', seats: 30, eligibility: 'B.E./B.Tech CSE/IT + GATE' },
-];
 
 export default function UniversityCoursesSection() {
   const context = useOutletContext();
   const uni = context?.uni;
   const refreshUni = context?.refreshUni;
 
-  const [courses, setCourses] = useState(INITIAL_COURSES);
+    // Starts empty and fills from the API. Seeding this with sample rows meant a
+  // university opened its dashboard to somebody else's courses, photos and
+  // recruiters, and a failed request left that fiction on screen looking real.
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [filterDegree, setFilterDegree] = useState('All');
