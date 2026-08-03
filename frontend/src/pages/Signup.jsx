@@ -241,6 +241,9 @@ export default function Signup() {
         <p className="text-center text-sm mt-6 text-light-muted">
           Already have an account? <Link to="/login" className="text-link font-medium">Login</Link>
         </p>
+        <p className="text-center text-sm mt-2 text-light-muted">
+          Representing a university? <Link to="/university/signup" className="text-link font-medium">Register your university</Link>
+        </p>
       </div>
     </div>
   );

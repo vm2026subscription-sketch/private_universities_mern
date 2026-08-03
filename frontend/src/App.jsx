@@ -24,6 +24,8 @@
   const UniversityComparison = lazy(() => import('./pages/UniversityComparison'));
   const Login = lazy(() => import('./pages/Login'));
   const Signup = lazy(() => import('./pages/Signup'));
+  const UniversitySignup = lazy(() => import('./pages/UniversitySignup'));
+  const UniversityPending = lazy(() => import('./pages/UniversityPending'));
   const AuthCallback = lazy(() => import('./pages/AuthCallback'));
   const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
   const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
@@ -139,6 +141,11 @@
           <Route path="/ask" element={<OpenChatRoute />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          {/* Public: an applicant has no account yet. The pending screen stays
+              reachable after login too, which is where ProtectedRoute sends an
+              approved-pending university account. */}
+          <Route path="/university/signup" element={<UniversitySignup />} />
+          <Route path="/university/pending" element={<UniversityPending />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

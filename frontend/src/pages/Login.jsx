@@ -183,6 +183,9 @@ export default function Login() {
         <p className="text-center text-sm mt-6 text-light-muted">
           Don&apos;t have an account? <Link to="/signup" className="text-link font-medium">Sign Up</Link>
         </p>
+        <p className="text-center text-sm mt-2 text-light-muted">
+          Representing a university? <Link to="/university/signup" className="text-link font-medium">Register your university</Link>
+        </p>
       </div>
     </div>
   );
