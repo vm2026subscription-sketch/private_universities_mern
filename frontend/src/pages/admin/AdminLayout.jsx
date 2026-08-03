@@ -5,17 +5,22 @@ import {
   LayoutDashboard, Building2, BookOpen, FileText, Newspaper,
   Users, Image, MessageSquareQuote, FileEdit, HelpCircle,
   Mail, Bell, Send, Settings, Shield, Menu, ChevronLeft, FileSpreadsheet, BarChart3,
-  Star, Wrench
+  Star, Wrench, Clock, CreditCard, DollarSign
 } from 'lucide-react';
 
 const navItems = [
   { label: 'Overview', icon: LayoutDashboard, path: '/admin' },
+  { label: 'Pending Requests', icon: Clock, path: '/admin/pending-requests' },
   { label: 'Universities', icon: Building2, path: '/admin/universities' },
+  { label: 'University Dashboard', icon: Building2, path: '/university/dashboard' },
   { label: 'Courses', icon: BookOpen, path: '/admin/courses' },
   { label: 'Exams', icon: FileText, path: '/admin/exams' },
   { label: 'News', icon: Newspaper, path: '/admin/news' },
   { label: 'Users', icon: Users, path: '/admin/users', superadminOnly: true },
   { label: 'Leads', icon: MessageSquareQuote, path: '/admin/leads' },
+  { divider: true, label: 'Subscriptions & Revenue' },
+  { label: 'Subscription List', icon: CreditCard, path: '/admin/subscriptions' },
+  { label: 'Revenue Dashboard', icon: DollarSign, path: '/admin/revenue' },
   { divider: true, label: 'Advertising' },
   { label: 'Banners', icon: Image, path: '/admin/banners' },
   { label: 'Ad Analytics', icon: BarChart3, path: '/admin/banner-analytics' },

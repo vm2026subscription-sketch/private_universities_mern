@@ -57,6 +57,20 @@
   const AuditLogViewer = lazy(() => import('./pages/admin/AuditLogViewer'));
   const PartnerDashboard = lazy(() => import('./pages/admin/PartnerDashboard'));
   const ExcelUploader = lazy(() => import('./pages/admin/ExcelUploader'));
+  const PendingUniversityRequests = lazy(() => import('./pages/admin/PendingUniversityRequests'));
+  const SubscriptionsManager = lazy(() => import('./pages/admin/SubscriptionsManager'));
+  const RevenueDashboard = lazy(() => import('./pages/admin/RevenueDashboard'));
+
+  // University Dashboard Lazy Imports
+  const UniversityDashboardLayout = lazy(() => import('./pages/university-dashboard/UniversityDashboardLayout'));
+  const UniversityOverview = lazy(() => import('./pages/university-dashboard/UniversityOverview'));
+  const UniversityProfileSection = lazy(() => import('./pages/university-dashboard/UniversityProfileSection'));
+  const UniversityGallerySection = lazy(() => import('./pages/university-dashboard/UniversityGallerySection'));
+  const UniversityCoursesSection = lazy(() => import('./pages/university-dashboard/UniversityCoursesSection'));
+  const UniversityPlacementSection = lazy(() => import('./pages/university-dashboard/UniversityPlacementSection'));
+  const UniversityScholarshipsSection = lazy(() => import('./pages/university-dashboard/UniversityScholarshipsSection'));
+  const UniversitySubscriptionSection = lazy(() => import('./pages/university-dashboard/UniversitySubscriptionSection'));
+
   const AiChatWidget = lazy(() => import('./components/common/AiChatWidget'));
 
   function PageLoader() {
@@ -179,9 +193,23 @@
               />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
+                  {/* University Dashboard Routes */}
+                  <Route path="/university/dashboard" element={<UniversityDashboardLayout />}>
+                    <Route index element={<UniversityOverview />} />
+                    <Route path="profile" element={<UniversityProfileSection />} />
+                    <Route path="gallery" element={<UniversityGallerySection />} />
+                    <Route path="courses" element={<UniversityCoursesSection />} />
+                    <Route path="placement" element={<UniversityPlacementSection />} />
+                    <Route path="scholarships" element={<UniversityScholarshipsSection />} />
+                    <Route path="subscription" element={<UniversitySubscriptionSection />} />
+                  </Route>
 
+                  {/* Admin Panel Routes */}
                   <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
                     <Route index element={<AdminOverview />} />
+                    <Route path="pending-requests" element={<PendingUniversityRequests />} />
+                    <Route path="subscriptions" element={<SubscriptionsManager />} />
+                    <Route path="revenue" element={<RevenueDashboard />} />
                     <Route path="universities" element={<UniversitiesManager />} />
                     <Route path="leads" element={<LeadsManager />} />
                     <Route path="courses" element={<CoursesManager />} />
