@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Pencil,
   Trash2,
@@ -17,6 +18,8 @@ import {
   Crown,
   Medal,
   Zap,
+  LayoutDashboard,
+  ExternalLink,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
@@ -779,16 +782,29 @@ export default function UniversitiesManager() {
       label: 'University',
       render: (university) => (
         <div className="flex items-center gap-3 min-w-[220px]">
-          <div className="h-11 w-11 rounded-2xl border border-light-border dark:border-dark-border bg-white dark:bg-dark-bg flex items-center justify-center overflow-hidden shrink-0">
+          <Link
+            to="/university/dashboard"
+            state={{ university }}
+            className="h-11 w-11 rounded-2xl border border-light-border dark:border-dark-border bg-white dark:bg-dark-bg flex items-center justify-center overflow-hidden shrink-0 group hover:border-primary transition-all shadow-sm"
+            title="Open University Dashboard"
+          >
             {university.logoUrl ? (
-              <img src={university.logoUrl} alt={university.name} className="h-full w-full object-contain p-1.5" />
+              <img src={university.logoUrl} alt={university.name} className="h-full w-full object-contain p-1.5 group-hover:scale-110 transition-transform" />
             ) : (
               <span className="text-sm font-bold text-link">{university.name?.slice(0, 2)?.toUpperCase()}</span>
             )}
-          </div>
+          </Link>
           <div>
-            <p className="font-semibold text-light-text dark:text-dark-text">{university.name}</p>
-            <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              to="/university/dashboard"
+              state={{ university }}
+              className="font-bold text-light-text dark:text-dark-text hover:text-primary transition-colors flex items-center gap-1.5 group"
+              title="Open University Dashboard"
+            >
+              <span className="group-hover:underline">{university.name}</span>
+              <ExternalLink className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+            <div className="flex items-center gap-2 flex-wrap mt-0.5">
               <p className="text-xs text-light-muted">{university.universityCode || 'No code set'}</p>
               {university.isSponsored && (
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
@@ -1648,10 +1664,19 @@ export default function UniversitiesManager() {
           }}
           actions={(university) => (
             <>
+              <Link
+                to="/university/dashboard"
+                state={{ university }}
+                className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 text-xs font-bold shadow-sm shrink-0"
+                title="Open University Dashboard"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </Link>
               <button onClick={() => duplicateUniversity(university._id)} className="p-2 rounded-xl hover:bg-primary/10 text-link" title="Duplicate as draft">
                 <Copy className="w-4 h-4" />
               </button>
-              <button onClick={() => edit(university)} className="p-2 rounded-xl hover:bg-light-card dark:hover:bg-dark-card">
+              <button onClick={() => edit(university)} className="p-2 rounded-xl hover:bg-light-card dark:hover:bg-dark-card" title="Edit Details">
                 <Pencil className="w-4 h-4" />
               </button>
               {isSuperAdmin && (
@@ -1666,7 +1691,7 @@ export default function UniversitiesManager() {
                 </button>
               )}
               {canDelete && (
-                <button onClick={() => del(university._id)} className="p-2 rounded-xl hover:bg-red-50 text-red-500">
+                <button onClick={() => del(university._id)} className="p-2 rounded-xl hover:bg-red-50 text-red-500" title="Delete University">
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
