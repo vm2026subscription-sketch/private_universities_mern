@@ -129,6 +129,24 @@ const startServer = async () => {
         );
       }
     });
+
+    // Same reasoning as the SMTP check: without it, a mismatched cloud name is
+    // discovered by a university trying to add photos, as "Invalid cloud_name".
+    const { verifyCloudinaryCredentials } = require('./config/cloudinary');
+    void verifyCloudinaryCredentials().then(({ ok, reason }) => {
+      if (ok) {
+        console.log(`[startup] Cloudinary verified for cloud "${process.env.CLOUDINARY_CLOUD_NAME}".`);
+      } else {
+        console.error(
+          `[startup] CLOUDINARY CHECK FAILED for cloud "${process.env.CLOUDINARY_CLOUD_NAME || '(not set)'}": ${reason}`
+        );
+        console.error(
+          '[startup] Image uploads will fail — logos, cover images and gallery photos. ' +
+          '"cloud_name mismatch" means the API key belongs to a different cloud than the name; ' +
+          'copy all three values from the same Cloudinary dashboard.'
+        );
+      }
+    });
   } catch (error) {
     console.error('[startup] Backend failed to start.');
     console.error(`[startup] ${error.message}`);
