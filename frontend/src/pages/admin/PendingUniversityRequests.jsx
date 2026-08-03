@@ -17,12 +17,40 @@ export default function PendingUniversityRequests() {
   const [rejectModalId, setRejectModalId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
+  /**
+   * The API returns claims under `claims`, with its own field names and
+   * lowercase statuses. This normalises them into the shape the table below
+   * renders, so the two can evolve without every cell needing to know both.
+   */
+  const normalizeClaim = (claim) => ({
+    id: claim.id,
+    name: claim.universityName || 'Not listed yet',
+    city: claim.city || '',
+    state: claim.state || '',
+    contactPerson: claim.contactPerson,
+    designation: claim.designation,
+    email: claim.officialEmail,
+    phone: claim.phone,
+    website: claim.website,
+    appliedDate: claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : '—',
+    // 'pending' → 'Pending'. The table compares against capitalised labels.
+    status: claim.status ? claim.status[0].toUpperCase() + claim.status.slice(1) : 'Pending',
+    documentsUrl: claim.authorizationLetterUrl || '',
+    emailSignal: claim.emailSignal,
+    emailDomain: claim.emailDomain,
+    // Whether the applicant's email domain matches the university they claim.
+    // This replaces the mock's "tier" — an applicant does not choose a tier, and
+    // the signal is what a reviewer actually needs to see at a glance.
+    needsExtraScrutiny: claim.needsExtraScrutiny,
+    isEmailVerified: claim.applicant?.isEmailVerified,
+  });
+
   const fetchClaims = async () => {
     setLoading(true);
     try {
       const { data } = await api.get('/university-portal/claims?status=pending');
       if (data?.success) {
-        setRequests(data.data || []);
+        setRequests((data.claims || []).map(normalizeClaim));
       }
     } catch (error) {
       console.error('Error fetching claims:', error);
@@ -73,7 +101,13 @@ export default function PendingUniversityRequests() {
   };
 
   const filteredRequests = requests.filter(r => {
-    const matchesSearch = r.name.toLowerCase().includes(search.toLowerCase()) || r.city.toLowerCase().includes(search.toLowerCase());
+    // Guarded: a claim for an unlisted university has no city, and an
+    // unguarded .toLowerCase() on it threw before a single row could render.
+    const term = search.toLowerCase();
+    const matchesSearch =
+      (r.name || '').toLowerCase().includes(term) ||
+      (r.city || '').toLowerCase().includes(term) ||
+      (r.contactPerson || '').toLowerCase().includes(term);
     const matchesStatus = statusFilter === 'All' || r.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -136,7 +170,7 @@ export default function PendingUniversityRequests() {
               <tr>
                 <th className="p-4 pl-6">University & Location</th>
                 <th className="p-4">Contact Officer</th>
-                <th className="p-4">Requested Tier</th>
+                <th className="p-4">Email Signal</th>
                 <th className="p-4">Applied Date</th>
                 <th className="p-4">Status</th>
                 <th className="p-4 pr-6 text-right">Approve / Reject Action</th>
@@ -153,12 +187,26 @@ export default function PendingUniversityRequests() {
                   </td>
                   <td className="p-4">
                     <p className="font-semibold text-light-text dark:text-dark-text">{r.contactPerson}</p>
+                    <p className="text-light-muted text-[11px]">{r.designation}</p>
                     <p className="text-light-muted text-[11px]">{r.email}</p>
                   </td>
                   <td className="p-4">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-primary/10 text-primary border border-primary/20">
-                      {r.requestedTier}
+                    {/* Green only for an address on the university's own domain.
+                        Everything else is amber — including .edu.in addresses
+                        that belong to a different institution. */}
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${
+                        r.emailSignal === 'official'
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}
+                      title={r.emailDomain || ''}
+                    >
+                      {r.emailSignal || 'unknown'}
                     </span>
+                    {r.needsExtraScrutiny && (
+                      <p className="text-[10px] text-amber-600 mt-1 font-semibold">Verify by phone</p>
+                    )}
                   </td>
                   <td className="p-4 text-light-muted">
                     {r.appliedDate}
@@ -233,11 +281,13 @@ export default function PendingUniversityRequests() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <span className="font-bold text-light-muted uppercase text-[10px]">Location:</span>
-                  <p className="font-semibold">{selectedReq.city}, {selectedReq.state}</p>
+                  <p className="font-semibold">
+                    {[selectedReq.city, selectedReq.state].filter(Boolean).join(', ') || '—'}
+                  </p>
                 </div>
                 <div>
-                  <span className="font-bold text-light-muted uppercase text-[10px]">Accreditation:</span>
-                  <p className="font-semibold">{selectedReq.accreditation}</p>
+                  <span className="font-bold text-light-muted uppercase text-[10px]">Designation:</span>
+                  <p className="font-semibold">{selectedReq.designation || '—'}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

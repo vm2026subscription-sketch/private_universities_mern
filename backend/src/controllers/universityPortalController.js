@@ -69,6 +69,10 @@ const serializeClaim = (claim) => ({
   status: claim.status,
   universityId: claim.university?._id || claim.university || null,
   universityName: claim.university?.name || claim.requestedUniversityName || null,
+  // Location helps a reviewer tell apart similarly named institutions before
+  // opening the full record.
+  city: claim.university?.city || null,
+  state: claim.university?.state || null,
   contactPerson: claim.contactPerson,
   designation: claim.designation,
   officialEmail: claim.officialEmail,
@@ -295,7 +299,7 @@ exports.getMyStatus = async (req, res) => {
 
     const claim = await UniversityClaim.findOne({ user: req.user._id })
       .sort({ createdAt: -1 })
-      .populate('university', 'name slug website');
+      .populate('university', 'name slug website city state');
 
     const university = req.user.universityId
       ? await University.findById(req.user.universityId).select('name slug logoUrl website status')
@@ -337,7 +341,7 @@ exports.listClaims = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate('university', 'name slug website')
+        .populate('university', 'name slug website city state')
         .populate('user', 'name email isEmailVerified universityId')
         .populate('reviewedBy', 'name'),
       UniversityClaim.countDocuments(filter),
