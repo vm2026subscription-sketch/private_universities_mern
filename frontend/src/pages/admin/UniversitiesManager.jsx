@@ -783,10 +783,9 @@ export default function UniversitiesManager() {
       render: (university) => (
         <div className="flex items-center gap-3 min-w-[220px]">
           <Link
-            to="/university/dashboard"
-            state={{ university }}
+            to={`/universities/${university.slug || university._id}`}
             className="h-11 w-11 rounded-2xl border border-light-border dark:border-dark-border bg-white dark:bg-dark-bg flex items-center justify-center overflow-hidden shrink-0 group hover:border-primary transition-all shadow-sm"
-            title="Open University Dashboard"
+            title="View public page"
           >
             {university.logoUrl ? (
               <img src={university.logoUrl} alt={university.name} className="h-full w-full object-contain p-1.5 group-hover:scale-110 transition-transform" />
@@ -796,10 +795,9 @@ export default function UniversitiesManager() {
           </Link>
           <div>
             <Link
-              to="/university/dashboard"
-              state={{ university }}
+              to={`/universities/${university.slug || university._id}`}
               className="font-bold text-light-text dark:text-dark-text hover:text-primary transition-colors flex items-center gap-1.5 group"
-              title="Open University Dashboard"
+              title="View public page"
             >
               <span className="group-hover:underline">{university.name}</span>
               <ExternalLink className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -1665,13 +1663,12 @@ export default function UniversitiesManager() {
           actions={(university) => (
             <>
               <Link
-                to="/university/dashboard"
-                state={{ university }}
+                to={`/universities/${university.slug || university._id}`}
                 className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 text-xs font-bold shadow-sm shrink-0"
-                title="Open University Dashboard"
+                title="View public page"
               >
                 <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden sm:inline">Dashboard</span>
+                <span className="hidden sm:inline">View</span>
               </Link>
               <button onClick={() => duplicateUniversity(university._id)} className="p-2 rounded-xl hover:bg-primary/10 text-link" title="Duplicate as draft">
                 <Copy className="w-4 h-4" />

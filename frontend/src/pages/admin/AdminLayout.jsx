@@ -12,7 +12,15 @@ const navItems = [
   { label: 'Overview', icon: LayoutDashboard, path: '/admin' },
   { label: 'Pending Requests', icon: Clock, path: '/admin/pending-requests' },
   { label: 'Universities', icon: Building2, path: '/admin/universities' },
-  { label: 'University Dashboard', icon: Building2, path: '/university/dashboard' },
+  /**
+   * No link to /university/dashboard.
+   *
+   * That dashboard belongs to a university account and resolves its target from
+   * the session, so an admin — who has no universityId — has nothing for it to
+   * show. Admins edit any university from /admin/universities, by id. Serving
+   * both roles from one screen is what previously required a fallback that
+   * picked an arbitrary university out of the collection.
+   */
   { label: 'Courses', icon: BookOpen, path: '/admin/courses' },
   { label: 'Exams', icon: FileText, path: '/admin/exams' },
   { label: 'News', icon: Newspaper, path: '/admin/news' },
