@@ -4,6 +4,29 @@ const { allowAdminOrUniversity, scopeUploadFolder } = require('../middleware/uni
 const { upload, uploadToCloudinary } = require('../utils/imageUpload');
 
 /**
+ * Turns a provider error into something the uploader can act on.
+ *
+ * A university trying to add a campus photo was shown
+ * "Upload failed: Invalid cloud_name vm-private-universiti" — our deployment
+ * configuration, verbatim, to a customer who can neither fix nor understand it,
+ * and who would reasonably conclude their file was the problem. The detail
+ * belongs in the server log, where whoever set the credentials will see it.
+ */
+const uploadFailure = (error, req) => {
+  const detail = error?.message || String(error);
+  console.error(`[upload] failed for user ${req.user?._id}: ${detail}`);
+
+  const isConfigProblem = /cloud_name|api_key|api_secret|Must supply/i.test(detail);
+
+  return {
+    success: false,
+    message: isConfigProblem
+      ? 'Image uploads are temporarily unavailable. Our team has been notified — please try again later.'
+      : 'Could not upload that image. Please check the file and try again.',
+  };
+};
+
+/**
  * University accounts need this endpoint for their logo, cover image and
  * gallery. It was admin-only, which left the dashboard's image features with no
  * way to obtain a URL. scopeUploadFolder pins tenants to their own folder so
@@ -46,7 +69,7 @@ router.post('/', protect, allowAdminOrUniversity, upload.single('image'), scopeU
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: `Upload failed: ${error.message}` });
+    res.status(500).json(uploadFailure(error, req));
   }
 });
 
@@ -63,9 +86,9 @@ router.post('/url', protect, allowAdminOrUniversity, scopeUploadFolder, async (r
       folder: `vidyarthi-mitra/${folder || 'general'}`,
     });
 
-    res.json({ success: true, data: { url: result.url, publicId: result.publicId } });
+    res.json({ success: true, url: result.url, data: { url: result.url, publicId: result.publicId } });
   } catch (error) {
-    res.status(500).json({ success: false, message: `Upload failed: ${error.message}` });
+    res.status(500).json(uploadFailure(error, req));
   }
 });
 
