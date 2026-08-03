@@ -1,280 +1,339 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import {
-  Award, Plus, Edit3, Trash2, CheckCircle2, AlertCircle, DollarSign, X
-} from 'lucide-react';
+import { Award, Plus, Edit3, Trash2, X, ExternalLink, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 
+const EMPTY_FORM = { name: '', amount: '', eligibility: '', deadline: '', link: '', description: '' };
 
+/**
+ * Scholarships offered by the university.
+ *
+ * Edits the fields the record actually has — name, amount, eligibility,
+ * deadline, link, description. The earlier version invented a "type" (always
+ * "Merit Based") and a "status" (always "Active") that were displayed as though
+ * the university had chosen them, then wrote the type back into the description
+ * field as "Merit Based scholarship". It also had no inputs for deadline or
+ * link, so two fields students care about most — when to apply and where — could
+ * not be filled in at all.
+ *
+ * The whole list is saved on every change because the record stores an array;
+ * that is also why deleting works here, where the gallery needed its own
+ * endpoint.
+ */
 export default function UniversityScholarshipsSection() {
   const context = useOutletContext();
   const uni = context?.uni;
   const refreshUni = context?.refreshUni;
 
-    // Starts empty and fills from the API. Seeding this with sample rows meant a
-  // university opened its dashboard to somebody else's courses, photos and
-  // recruiters, and a failed request left that fiction on screen looking real.
   const [scholarships, setScholarships] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [deleteId, setDeleteId] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [deleteIndex, setDeleteIndex] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (uni?.scholarships?.length) {
-      const formatted = uni.scholarships.map((s, idx) => ({
-        id: s._id || idx + 1,
-        title: s.name || s.title || 'Scholarship Scheme',
-        type: 'Merit Based',
-        amount: s.amount || 'Tuition Fee Waiver',
-        criteria: s.eligibility || s.criteria || 'Eligible candidates',
-        status: 'Active'
-      }));
-      setScholarships(formatted);
-    }
+    setScholarships(
+      (uni?.scholarships || []).map((s) => ({
+        name: s.name || '',
+        amount: s.amount || '',
+        eligibility: s.eligibility || '',
+        // Stored as a Date; the input needs YYYY-MM-DD.
+        deadline: s.deadline ? new Date(s.deadline).toISOString().slice(0, 10) : '',
+        link: s.link || '',
+        description: s.description || '',
+      }))
+    );
   }, [uni]);
 
-  const [formData, setFormData] = useState({
-    title: '', type: 'Merit Based', amount: '', criteria: '', status: 'Active'
-  });
-
-  const saveScholarshipsToApi = async (newList) => {
+  const persist = async (list) => {
+    setSaving(true);
     try {
-      const payload = {
-        scholarships: newList.map(s => ({
-          name: s.title,
-          eligibility: s.criteria,
-          amount: s.amount,
-          description: `${s.type} scholarship`
-        }))
-      };
-      await api.put('/university-portal/my-university', payload);
-      if (refreshUni) refreshUni();
+      const { data } = await api.put('/university-portal/my-university', {
+        scholarships: list.map((s) => ({
+          name: s.name,
+          amount: s.amount || undefined,
+          eligibility: s.eligibility || undefined,
+          deadline: s.deadline || undefined,
+          link: s.link || undefined,
+          description: s.description || undefined,
+        })),
+      });
+
+      if (data?.success) {
+        setScholarships(list);
+        if (data.rejected?.length) toast.error(`Not saved: ${data.rejected.join(', ')}`);
+        else toast.success('Saved.');
+        if (refreshUni) refreshUni();
+        return true;
+      }
+      return false;
     } catch (error) {
-      console.error('Error saving scholarships:', error);
-      toast.error('Failed to sync scholarship changes with server');
+      toast.error(error.response?.data?.message || 'Could not save scholarships');
+      return false;
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleOpenAdd = () => {
-    setEditingItem(null);
-    setFormData({ title: '', type: 'Merit Based', amount: '', criteria: '', status: 'Active' });
+  const openAdd = () => {
+    setEditingIndex(null);
+    setForm(EMPTY_FORM);
     setModalOpen(true);
   };
 
-  const handleOpenEdit = (item) => {
-    setEditingItem(item);
-    setFormData({ title: item.title, type: item.type, amount: item.amount, criteria: item.criteria, status: item.status });
+  const openEdit = (index) => {
+    setEditingIndex(index);
+    setForm(scholarships[index]);
     setModalOpen(true);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.title || !formData.amount) {
-      toast.error('Please enter scholarship title and reward amount');
-      return;
-    }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!form.name.trim()) return toast.error('Scholarship name is required');
 
-    let newList;
-    if (editingItem) {
-      newList = scholarships.map(s => s.id === editingItem.id ? { ...s, ...formData } : s);
-      toast.success('Scholarship updated & live on portal!');
-    } else {
-      const newItem = { id: Date.now(), ...formData };
-      newList = [newItem, ...scholarships];
-      toast.success('New scholarship scheme published live!');
-    }
+    const list =
+      editingIndex === null
+        ? [...scholarships, form]
+        : scholarships.map((s, i) => (i === editingIndex ? form : s));
 
-    setScholarships(newList);
-    setModalOpen(false);
-    await saveScholarshipsToApi(newList);
+    if (await persist(list)) {
+      setModalOpen(false);
+      setForm(EMPTY_FORM);
+      setEditingIndex(null);
+    }
   };
 
-  const handleDelete = async (id) => {
-    const newList = scholarships.filter(s => s.id !== id);
-    setScholarships(newList);
-    setDeleteId(null);
-    toast.success('Scholarship removed');
-    await saveScholarshipsToApi(newList);
+  const handleDelete = async () => {
+    if (await persist(scholarships.filter((_, i) => i !== deleteIndex))) {
+      setDeleteIndex(null);
+    }
   };
+
+  const field = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <div className="space-y-8">
-      {/* Header & Add Button */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-light-text dark:text-dark-text flex items-center gap-2">
-            <Award className="w-6 h-6 text-amber-500" /> Scholarships & Financial Grants
-          </h2>
-          <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
-            Offer merit and need-based tuition fee concessions to attract high-ranking students.
+          <h1 className="text-xl font-bold text-light-text dark:text-dark-text">Scholarships</h1>
+          <p className="text-sm text-light-muted dark:text-dark-muted mt-1">
+            Financial aid students can apply for. Published immediately.
           </p>
         </div>
         <button
-          onClick={handleOpenAdd}
-          className="px-5 py-3 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 transition-all shadow-md shadow-primary/20 flex items-center gap-2"
+          onClick={openAdd}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
-          <Plus className="w-4 h-4" /> Add Scholarship Scheme
+          <Plus className="w-4 h-4" /> Add scholarship
         </button>
       </div>
 
-      {/* Scholarship Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {scholarships.map((s) => (
-          <div
-            key={s.id}
-            className="p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm hover:border-primary transition-all space-y-4 relative flex flex-col justify-between"
-          >
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  {s.type}
-                </span>
-                <span className="text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                  {s.status}
-                </span>
-              </div>
-              <h3 className="font-extrabold text-base text-light-text dark:text-dark-text">{s.title}</h3>
-              <p className="text-sm font-bold text-primary flex items-center gap-1.5"> {s.amount}
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-xs space-y-1">
-              <span className="font-bold text-light-muted uppercase tracking-wider text-[10px]">Eligibility Criteria:</span>
-              <p className="text-light-text dark:text-dark-text font-medium">{s.criteria}</p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-light-border dark:border-dark-border">
-              <button
-                onClick={() => handleOpenEdit(s)}
-                className="px-3 py-1.5 rounded-xl border border-light-border dark:border-dark-border text-xs font-semibold hover:bg-primary hover:text-white transition-colors flex items-center gap-1"
-              >
-                <Edit3 className="w-3.5 h-3.5" /> Edit
-              </button>
-              <button
-                onClick={() => setDeleteId(s.id)}
-                className="px-3 py-1.5 rounded-xl border border-light-border dark:border-dark-border text-xs font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
-              </button>
-            </div>
+      {scholarships.length === 0 ? (
+        <div className="p-12 rounded-xl bg-white dark:bg-dark-card border border-dashed border-light-border dark:border-dark-border text-center">
+          <div className="w-11 h-11 rounded-lg bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border flex items-center justify-center mx-auto">
+            <Award className="w-5 h-5 text-light-muted dark:text-dark-muted" />
           </div>
-        ))}
-      </div>
-
-      {/* Add / Edit Scholarship Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-lg w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg space-y-5">
-            <div className="flex items-center justify-between border-b border-light-border dark:border-dark-border pb-3">
-              <h3 className="font-bold text-base text-light-text dark:text-dark-text">
-                {editingItem ? 'Edit Scholarship Scheme' : 'Add New Scholarship'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="p-1 rounded-lg text-light-muted hover:text-light-text">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
-                  Scholarship Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Merit Academic Excellence Award"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-xs font-medium focus:ring-2 focus:ring-primary focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
-                    Category Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-xs font-medium"
+          <h2 className="font-semibold text-light-text dark:text-dark-text mt-4">No scholarships listed</h2>
+          <p className="text-sm text-light-muted dark:text-dark-muted mt-2">
+            Fee support is one of the first things students filter on.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {scholarships.map((s, index) => (
+            <div
+              key={`${s.name}-${index}`}
+              className="p-5 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-light-text dark:text-dark-text">{s.name}</h3>
+                  {s.amount && <p className="text-sm text-primary font-medium mt-0.5">{s.amount}</p>}
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => openEdit(index)}
+                    className="p-2 rounded-lg text-light-muted hover:text-light-text hover:bg-light-bg dark:hover:bg-dark-bg transition-colors"
+                    title="Edit"
                   >
-                    <option value="Merit Based">Merit Based</option>
-                    <option value="Sports & Arts">Sports & Arts</option>
-                    <option value="Financial Need">Financial Need</option>
-                    <option value="Special Category">Special Category</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
-                    Reward / Concession
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 50% Tuition Waiver"
-                    value={formData.amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-xs font-medium"
-                  />
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteIndex(index)}
+                    className="p-2 rounded-lg text-light-muted hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
-                  Eligibility Criteria & Rules
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="Describe minimum marks, rank or income threshold required..."
-                  value={formData.criteria}
-                  onChange={(e) => setFormData(prev => ({ ...prev, criteria: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-xs font-medium"
-                />
-              </div>
+              {s.eligibility && (
+                <p className="text-sm text-light-muted dark:text-dark-muted mt-3 leading-relaxed">
+                  {s.eligibility}
+                </p>
+              )}
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-light-border dark:border-dark-border">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-light-border dark:border-dark-border text-xs font-bold text-light-muted"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-md shadow-primary/20"
-                >
-                  Save Scholarship
-                </button>
-              </div>
-            </form>
-          </div>
+              {(s.deadline || s.link) && (
+                <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-light-border dark:border-dark-border">
+                  {s.deadline && (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-light-muted">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Apply by {new Date(s.deadline).toLocaleDateString()}
+                    </span>
+                  )}
+                  {s.link && (
+                    <a
+                      href={s.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> Details
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg space-y-4">
-            <h3 className="font-bold text-lg text-light-text dark:text-dark-text">Remove Scholarship?</h3>
-            <p className="text-xs text-light-muted dark:text-dark-muted">
-              Are you sure you want to remove this scholarship offering?
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
+      {/* Add / edit */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+          <form
+            onSubmit={handleSubmit}
+            className="max-w-lg w-full p-6 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-4 my-8"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-light-text dark:text-dark-text">
+                {editingIndex === null ? 'Add scholarship' : 'Edit scholarship'}
+              </h3>
+              <button type="button" onClick={() => setModalOpen(false)} className="text-light-muted hover:text-light-text">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-light-muted block mb-1.5">
+                Name
+              </label>
+              <input
+                value={form.name}
+                onChange={(e) => field('name', e.target.value)}
+                placeholder="e.g. Merit Scholarship"
+                className="input-field"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-light-muted block mb-1.5">
+                  Amount
+                </label>
+                <input
+                  value={form.amount}
+                  onChange={(e) => field('amount', e.target.value)}
+                  placeholder="e.g. 50% tuition waiver"
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-light-muted block mb-1.5">
+                  Apply by
+                </label>
+                <input
+                  type="date"
+                  value={form.deadline}
+                  onChange={(e) => field('deadline', e.target.value)}
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-light-muted block mb-1.5">
+                Eligibility
+              </label>
+              <textarea
+                value={form.eligibility}
+                onChange={(e) => field('eligibility', e.target.value)}
+                placeholder="e.g. 90%+ in Class 12, family income under ₹8 LPA"
+                rows={2}
+                className="input-field resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-light-muted block mb-1.5">
+                Details link
+              </label>
+              <input
+                type="url"
+                value={form.link}
+                onChange={(e) => field('link', e.target.value)}
+                placeholder="https://…"
+                className="input-field"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-light-muted block mb-1.5">
+                Description
+              </label>
+              <textarea
+                value={form.description}
+                onChange={(e) => field('description', e.target.value)}
+                rows={2}
+                className="input-field resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
               <button
-                onClick={() => setDeleteId(null)}
-                className="px-4 py-2.5 rounded-xl border border-light-border dark:border-dark-border text-xs font-bold text-light-muted"
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="flex-1 py-2.5 rounded-lg border border-light-border dark:border-dark-border text-sm font-medium"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleDelete(deleteId)}
-                className="px-4 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600"
+                type="submit"
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
               >
-                Confirm Delete
+                {saving ? 'Saving…' : editingIndex === null ? 'Add' : 'Save'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {deleteIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="max-w-sm w-full p-6 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border">
+            <h3 className="font-semibold text-light-text dark:text-dark-text">Remove scholarship?</h3>
+            <p className="text-sm text-light-muted dark:text-dark-muted mt-2">
+              “{scholarships[deleteIndex]?.name}” will disappear from your public page.
+            </p>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setDeleteIndex(null)}
+                className="flex-1 py-2.5 rounded-lg border border-light-border dark:border-dark-border text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors disabled:opacity-60"
+              >
+                {saving ? 'Removing…' : 'Remove'}
               </button>
             </div>
           </div>

@@ -1,255 +1,211 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import {
-  Image as ImageIcon, Upload, Trash2, Plus, Filter,
-  Maximize2, X, CheckCircle2
-} from 'lucide-react';
+import { Image as ImageIcon, Upload, Trash2, X, ZoomIn } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 
+const MAX_IMAGES = 40;
 
-const CATEGORIES = ['All', 'Campus', 'Labs', 'Infrastructure', 'Hostel', 'Events'];
-
+/**
+ * Campus photo gallery.
+ *
+ * Holds plain image URLs, because that is what the record stores
+ * (`campus.galleryImages: [String]`). The earlier version showed a title and a
+ * category filter per photo, but neither was ever saved: titles were generated
+ * as "Campus Image 1, 2, 3…" and the category was hardcoded to "Campus" on every
+ * upload, so the filter tabs sorted images by a value nobody had set. Deleting
+ * was local too — the tile vanished, the toast said "removed from gallery view",
+ * and the photo came back on the next refresh.
+ *
+ * Captions are worth having, but as a schema change and a public-page change
+ * together, not as labels invented in the browser.
+ */
 export default function UniversityGallerySection() {
   const context = useOutletContext();
   const uni = context?.uni;
   const refreshUni = context?.refreshUni;
 
-    // Starts empty and fills from the API. Seeding this with sample rows meant a
-  // university opened its dashboard to somebody else's courses, photos and
-  // recruiters, and a failed request left that fiction on screen looking real.
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [previewImage, setPreviewImage] = useState(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-
-  // New Image Form State
-  const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState('Campus');
+  const [deleting, setDeleting] = useState(null);
+  const [confirmUrl, setConfirmUrl] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   useEffect(() => {
-    if (uni?.campus?.galleryImages?.length) {
-      const formatted = uni.campus.galleryImages.map((imgUrl, idx) => ({
-        id: idx + 1,
-        title: `Campus Image ${idx + 1}`,
-        category: 'Campus',
-        url: imgUrl
-      }));
-      setImages(formatted);
-    }
+    setImages(uni?.campus?.galleryImages || []);
   }, [uni]);
 
-  const filteredImages = selectedCategory === 'All'
-    ? images
-    : images.filter(img => img.category === selectedCategory);
+  const handleUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
 
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+    if (images.length + files.length > MAX_IMAGES) {
+      return toast.error(`A gallery holds at most ${MAX_IMAGES} images.`);
+    }
 
     setUploading(true);
     try {
+      const uploaded = [];
+
       for (const file of files) {
-        // Step 1: Upload file to /api/v1/upload to get URL
-        const formData = new FormData();
-        formData.append('image', file);
-        formData.append('folder', 'gallery');
+        const form = new FormData();
+        form.append('image', file);
+        form.append('folder', 'gallery');
 
-        const { data: uploadRes } = await api.post('/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+        const { data: uploadRes } = await api.post('/upload', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        const fileUrl = uploadRes?.url || uploadRes?.data?.url;
-        if (!fileUrl) throw new Error('Failed to get uploaded image URL');
-
-        // Step 2: POST /my-university/gallery with the obtained URL
-        await api.post('/university-portal/my-university/gallery', {
-          url: fileUrl,
-          title: newTitle || file.name.replace(/\.[^/.]+$/, ""),
-          category: newCategory
-        });
+        const url = uploadRes?.url || uploadRes?.data?.url;
+        if (!url) throw new Error('Upload did not return a URL');
+        uploaded.push(url);
       }
 
-      toast.success(`Successfully uploaded ${files.length} photo(s) to server!`);
-      setNewTitle('');
+      // One request for the batch. The endpoint appends and de-duplicates, so a
+      // retry after a dropped connection cannot produce visible duplicates.
+      const { data } = await api.post('/university-portal/my-university/gallery', {
+        images: uploaded,
+      });
+
+      setImages(data.galleryImages || []);
+      toast.success(`Uploaded ${uploaded.length} photo${uploaded.length > 1 ? 's' : ''}.`);
       if (refreshUni) refreshUni();
     } catch (error) {
-      console.error('Gallery upload failed:', error);
-      toast.error(error.response?.data?.message || 'Failed to upload photo(s)');
+      toast.error(error.response?.data?.message || 'Could not upload the photos');
     } finally {
       setUploading(false);
+      event.target.value = '';
     }
   };
 
-  const handleDelete = (id) => {
-    setImages(prev => prev.filter(img => img.id !== id));
-    setDeleteConfirmId(null);
-    toast.success('Photo removed from gallery view');
+  const handleDelete = async (url) => {
+    setDeleting(url);
+    try {
+      const { data } = await api.delete('/university-portal/my-university/gallery', {
+        // axios sends a DELETE body under `data`.
+        data: { imageUrl: url },
+      });
+
+      setImages(data.galleryImages || []);
+      setConfirmUrl(null);
+      toast.success('Photo removed.');
+      if (refreshUni) refreshUni();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not remove the photo');
+    } finally {
+      setDeleting(null);
+    }
   };
 
   return (
-    <div className="space-y-8">
-      {/* Upload Header Card */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-light-border dark:border-dark-border pb-4">
-          <div>
-            <h2 className="text-xl font-extrabold text-light-text dark:text-dark-text flex items-center gap-2">
-              <ImageIcon className="w-6 h-6 text-primary" /> Campus Photo Gallery
-            </h2>
-            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
-              Upload high-resolution photos of your campus, labs, classrooms, and hostels.
-            </p>
-          </div>
-          <span className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-primary/10 text-primary self-start sm:self-auto">
-            {images.length} Images Uploaded
-          </span>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-light-text dark:text-dark-text">Photo gallery</h1>
+          <p className="text-sm text-light-muted dark:text-dark-muted mt-1">
+            {images.length} of {MAX_IMAGES} photos · campus, labs, hostels and events
+          </p>
         </div>
 
-        {/* Drag & Drop Upload Zone */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 relative group rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary bg-primary/5 transition-all p-8 flex flex-col items-center justify-center text-center">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-              <Upload className="w-7 h-7" />
-            </div>
-            <h3 className="font-bold text-sm text-light-text dark:text-dark-text">Drag & drop photos here</h3>
-            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">Supports JPG, PNG, WEBP up to 10MB each</p>
+        <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors">
+          <Upload className="w-4 h-4" />
+          {uploading ? 'Uploading…' : 'Upload photos'}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleUpload}
+            disabled={uploading || images.length >= MAX_IMAGES}
+          />
+        </label>
+      </div>
 
-            <label className="mt-4 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold cursor-pointer hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
-              Browse Files
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
-            </label>
+      {images.length === 0 ? (
+        <div className="p-12 rounded-xl bg-white dark:bg-dark-card border border-dashed border-light-border dark:border-dark-border text-center">
+          <div className="w-11 h-11 rounded-lg bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border flex items-center justify-center mx-auto">
+            <ImageIcon className="w-5 h-5 text-light-muted dark:text-dark-muted" />
           </div>
-
-          {/* Category & Title Controls */}
-          <div className="space-y-4 p-5 rounded-2xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border">
-            <h4 className="font-bold text-xs uppercase tracking-wider text-light-muted dark:text-dark-muted">Upload Metadata</h4>
-            <div>
-              <label className="block text-xs font-semibold text-light-text dark:text-dark-text mb-1">Image Caption / Title</label>
-              <input
-                type="text"
-                placeholder="e.g. Modern Auditorium"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-xs font-medium focus:ring-2 focus:ring-primary focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-light-text dark:text-dark-text mb-1">Category Tag</label>
-              <select
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-light-border dark:border-dark-border bg-white dark:bg-dark-card text-xs font-medium focus:ring-2 focus:ring-primary focus:outline-none"
-              >
-                {CATEGORIES.filter(c => c !== 'All').map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <h2 className="font-semibold text-light-text dark:text-dark-text mt-4">No photos yet</h2>
+          <p className="text-sm text-light-muted dark:text-dark-muted mt-2">
+            Students look at photos before anything else. Add your campus, labs and hostels.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {images.map((url) => (
+            <div
+              key={url}
+              className="group relative rounded-xl overflow-hidden bg-white dark:bg-dark-card border border-light-border dark:border-dark-border aspect-[4/3]"
+            >
+              <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
 
-      {/* Category Filter Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        <Filter className="w-4 h-4 text-light-muted dark:text-dark-muted shrink-0 mr-1" />
-        {CATEGORIES.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              selectedCategory === cat
-                ? 'bg-primary text-white shadow-md shadow-primary/20'
-                : 'bg-white dark:bg-dark-card text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border hover:text-light-text dark:hover:text-dark-text'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Image Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {filteredImages.map((img) => (
-          <div
-            key={img.id}
-            className="group relative rounded-2xl overflow-hidden bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
-          >
-            <div className="relative aspect-video overflow-hidden bg-slate-900">
-              <img
-                src={img.url}
-                alt={img.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-4">
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <button
-                  onClick={() => setPreviewImage(img)}
-                  className="p-2 rounded-xl bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-colors"
-                  title="View Larger"
+                  onClick={() => setPreviewUrl(url)}
+                  className="p-2 rounded-lg bg-white/90 text-slate-800 hover:bg-white transition-colors"
+                  title="Preview"
                 >
-                  <Maximize2 className="w-4 h-4" />
+                  <ZoomIn className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setDeleteConfirmId(img.id)}
-                  className="p-2 rounded-xl bg-red-500/80 hover:bg-red-600 text-white backdrop-blur-md transition-colors"
-                  title="Delete Photo"
+                  onClick={() => setConfirmUrl(url)}
+                  className="p-2 rounded-lg bg-white/90 text-rose-600 hover:bg-white transition-colors"
+                  title="Remove"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
-
-            <div className="p-4 flex items-center justify-between gap-2 bg-white dark:bg-dark-card">
-              <div>
-                <h4 className="font-bold text-sm text-light-text dark:text-dark-text truncate">{img.title}</h4>
-                <span className="text-[11px] font-semibold text-primary">{img.category}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Lightbox Preview Modal */}
-      {previewImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative max-w-4xl w-full rounded-3xl overflow-hidden bg-white dark:bg-dark-card shadow-lg">
-            <button
-              onClick={() => setPreviewImage(null)}
-              className="absolute top-4 right-4 p-2.5 rounded-full bg-black/60 text-white hover:bg-black transition-colors z-10"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <img src={previewImage.url} alt={previewImage.title} className="w-full max-h-[75vh] object-contain bg-black" />
-            <div className="p-5 flex items-center justify-between border-t border-light-border dark:border-dark-border">
-              <div>
-                <h3 className="font-bold text-base text-light-text dark:text-dark-text">{previewImage.title}</h3>
-                <p className="text-xs text-light-muted dark:text-dark-muted">Category: {previewImage.category}</p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-lg space-y-4">
-            <h3 className="font-bold text-lg text-light-text dark:text-dark-text">Delete Photo?</h3>
-            <p className="text-xs text-light-muted dark:text-dark-muted">
-              Are you sure you want to delete this photo from your university gallery? This action cannot be undone.
+      {/* Preview */}
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <button
+            className="absolute top-5 right-5 p-2 rounded-lg bg-white/90 text-slate-800"
+            onClick={() => setPreviewUrl(null)}
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img
+            src={previewUrl}
+            alt=""
+            className="max-h-[85vh] max-w-full rounded-xl object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {confirmUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="max-w-sm w-full p-6 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border">
+            <h3 className="font-semibold text-light-text dark:text-dark-text">Remove this photo?</h3>
+            <p className="text-sm text-light-muted dark:text-dark-muted mt-2">
+              It will disappear from your public page straight away.
             </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
+
+            <img src={confirmUrl} alt="" className="w-full h-32 object-cover rounded-lg mt-4" />
+
+            <div className="flex gap-3 mt-5">
               <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="px-4 py-2.5 rounded-xl border border-light-border dark:border-dark-border text-xs font-bold text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text"
+                onClick={() => setConfirmUrl(null)}
+                className="flex-1 py-2.5 rounded-lg border border-light-border dark:border-dark-border text-sm font-medium"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleDelete(deleteConfirmId)}
-                className="px-4 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 shadow-md shadow-red-500/20"
+                onClick={() => handleDelete(confirmUrl)}
+                disabled={deleting === confirmUrl}
+                className="flex-1 py-2.5 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors disabled:opacity-60"
               >
-                Confirm Delete
+                {deleting === confirmUrl ? 'Removing…' : 'Remove'}
               </button>
             </div>
           </div>
