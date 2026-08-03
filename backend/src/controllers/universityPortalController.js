@@ -629,6 +629,49 @@ exports.rejectClaim = async (req, res) => {
 };
 
 /**
+ * Every account that holds — or is waiting on — university access.
+ *
+ * Admin needs this to answer "who controls this university?" before revoking or
+ * reassigning anything. Ownership lives only on the user record, so this is the
+ * query that answers it; there is no mirrored field on University to read.
+ */
+exports.listUniversityAccounts = async (req, res) => {
+  try {
+    const accounts = await User.find({ role: 'university' })
+      .populate('universityId', 'name slug city state')
+      .select('name email universityRole universityId isEmailVerified lastLogin createdAt status')
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      total: accounts.length,
+      accounts: accounts.map((a) => ({
+        id: a._id,
+        name: a.name,
+        email: a.email,
+        isEmailVerified: a.isEmailVerified,
+        status: a.status,
+        universityRole: a.universityRole || null,
+        hasAccess: Boolean(a.universityId),
+        university: a.universityId
+          ? {
+              id: a.universityId._id,
+              name: a.universityId.name,
+              slug: a.universityId.slug,
+              location: [a.universityId.city, a.universityId.state].filter(Boolean).join(', '),
+            }
+          : null,
+        lastLogin: a.lastLogin,
+        createdAt: a.createdAt,
+      })),
+    });
+  } catch (error) {
+    console.error('[university-portal] listUniversityAccounts failed:', error);
+    return fail(res, 500, 'Could not load university accounts.');
+  }
+};
+
+/**
  * Withdraws tenancy without going through a claim.
  *
  * Needed for the case a claim cannot express: a representative leaves and there
@@ -649,17 +692,53 @@ exports.revokeAccess = async (req, res) => {
     target.tokenVersion = (target.tokenVersion || 0) + 1;
     await target.save();
 
+    /**
+     * Revoking an owner takes their invitees with them.
+     *
+     * Members exist only because that owner vouched for them, and an owner is
+     * normally revoked because the vouching turned out to be wrong — a claim
+     * that should not have been approved, or a representative who left. Removing
+     * the root and leaving the people they onboarded still holding access
+     * defeats the point, and nobody would be able to invite a replacement either,
+     * since only an owner can invite.
+     */
+    let cascadedCount = 0;
+    if (target.universityRole !== 'member') {
+      const members = await User.find({
+        universityId: previousUniversityId,
+        universityRole: 'member',
+      });
+
+      for (const member of members) {
+        member.universityId = undefined;
+        member.universityRole = undefined;
+        member.tokenVersion = (member.tokenVersion || 0) + 1;
+        await member.save();
+      }
+      cascadedCount = members.length;
+    }
+
     await logAction({
       userId: req.user._id,
       action: 'role_change',
       resource: 'university_ownership',
       resourceId: previousUniversityId,
-      description: `Revoked ${target.email}'s access`,
+      description: `Revoked ${target.email}'s access${cascadedCount ? ` and ${cascadedCount} invited member(s)` : ''}`,
       changes: { before: { universityId: String(previousUniversityId) }, after: { universityId: null } },
       req,
     });
 
-    return res.json({ success: true, message: `Access revoked for ${target.email}.` });
+    /**
+     * The account itself is kept. `role` stays `university` with no
+     * universityId, which is the same state a fresh applicant is in — so the
+     * person can simply sign up again and be reviewed properly, rather than
+     * discovering their email is unusable.
+     */
+    return res.json({
+      success: true,
+      message: `Access revoked for ${target.email}.${cascadedCount ? ` ${cascadedCount} invited member(s) also removed.` : ''} They can apply again.`,
+      cascadedMembers: cascadedCount,
+    });
   } catch (error) {
     console.error('[university-portal] revokeAccess failed:', error);
     return fail(res, 500, 'Could not revoke access.');

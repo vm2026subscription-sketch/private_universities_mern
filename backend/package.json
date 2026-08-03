@@ -10,7 +10,8 @@
     "reset:catalog": "node scripts/resetUniversityCatalog.js",
     "check:email": "node scripts/checkEmail.js",
     "verify:tenancy": "node scripts/verifyTenancy.js",
-    "demo:university": "node scripts/demoUniversityAccount.js"
+    "demo:university": "node scripts/demoUniversityAccount.js",
+    "reset:portal": "node scripts/resetPortalAccounts.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

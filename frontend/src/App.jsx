@@ -60,6 +60,7 @@
   const PartnerDashboard = lazy(() => import('./pages/admin/PartnerDashboard'));
   const ExcelUploader = lazy(() => import('./pages/admin/ExcelUploader'));
   const PendingUniversityRequests = lazy(() => import('./pages/admin/PendingUniversityRequests'));
+  const UniversityAccounts = lazy(() => import('./pages/admin/UniversityAccounts'));
   const SubscriptionsManager = lazy(() => import('./pages/admin/SubscriptionsManager'));
   const RevenueDashboard = lazy(() => import('./pages/admin/RevenueDashboard'));
 
@@ -215,6 +216,7 @@
                   <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
                     <Route index element={<AdminOverview />} />
                     <Route path="pending-requests" element={<PendingUniversityRequests />} />
+                    <Route path="university-accounts" element={<UniversityAccounts />} />
                     <Route path="subscriptions" element={<SubscriptionsManager />} />
                     <Route path="revenue" element={<RevenueDashboard />} />
                     <Route path="universities" element={<UniversitiesManager />} />

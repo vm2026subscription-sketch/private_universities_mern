@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useRole } from '../../hooks/useRole';
 import {
+  KeyRound,
   LayoutDashboard, Building2, BookOpen, FileText, Newspaper,
   Users, Image, MessageSquareQuote, FileEdit, HelpCircle,
   Mail, Bell, Send, Settings, Shield, Menu, ChevronLeft, FileSpreadsheet, BarChart3,
@@ -11,6 +12,7 @@ import {
 const navItems = [
   { label: 'Overview', icon: LayoutDashboard, path: '/admin' },
   { label: 'Pending Requests', icon: Clock, path: '/admin/pending-requests' },
+  { label: 'University Accounts', icon: KeyRound, path: '/admin/university-accounts' },
   { label: 'Universities', icon: Building2, path: '/admin/universities' },
   /**
    * No link to /university/dashboard.
