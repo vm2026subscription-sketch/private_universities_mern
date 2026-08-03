@@ -20,7 +20,11 @@ export default function Login() {
   const navigate = useNavigate();
 
   const landingPathFor = (role) =>
-    role === 'admin' || role === 'superadmin' ? '/admin' : '/';
+    role === 'admin' || role === 'superadmin'
+      ? '/admin'
+      : role === 'university'
+      ? '/university/dashboard'
+      : '/';
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -33,7 +37,11 @@ export default function Login() {
       setOtpSent(true);
       toast.success('OTP sent to your email');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      if (error.response?.data?.code === 'CLAIM_NOT_APPROVED' || (error.response?.status === 403 && error.response?.data?.message?.includes('claim'))) {
+        toast.error(error.response?.data?.message || 'Your university claim request is pending approval by admin.', { duration: 5000 });
+      } else {
+        toast.error(error.response?.data?.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }

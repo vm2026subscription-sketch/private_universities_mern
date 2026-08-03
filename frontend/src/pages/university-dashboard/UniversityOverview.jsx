@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useOutletContext } from 'react-router-dom';
 import {
   Eye, Users, BookOpen, GraduationCap, Award, CreditCard,
   ArrowUpRight, CheckCircle2, AlertCircle, Sparkles, TrendingUp,
@@ -7,21 +7,21 @@ import {
 } from 'lucide-react';
 
 export default function UniversityOverview() {
-  const location = useLocation();
-  const uni = location.state?.university;
+  const context = useOutletContext();
+  const uni = context?.uni;
 
-  const [stats] = useState({
+  const stats = {
     name: uni?.name || 'Apex Technical University',
     profileViews: uni?.stats?.totalStudents ? Number(uni.stats.totalStudents) * 3 : 14280,
     totalLeads: uni?.stats?.totalStudents ? Math.round(Number(uni.stats.totalStudents) / 10) : 384,
     activeCourses: uni?.courses?.length || 28,
     placementRate: uni?.stats?.placementPercentage || 94.5,
-    highestPackage: uni?.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : '₹48 LPA',
+    highestPackage: uni?.stats?.highestPackageLPA ? `₹${uni.stats.highestPackageLPA} LPA` : '₹48.5 LPA',
     averagePackage: uni?.stats?.avgPackageLPA ? `₹${uni.stats.avgPackageLPA} LPA` : '₹8.8 LPA',
     completionRate: uni ? 92 : 85,
     subscriptionPlan: uni?.sponsorTier && uni.sponsorTier !== 'none' ? `${uni.sponsorTier.toUpperCase()} Partner` : 'Gold Partner',
     daysRemaining: 142
-  });
+  };
 
   return (
     <div className="space-y-8">

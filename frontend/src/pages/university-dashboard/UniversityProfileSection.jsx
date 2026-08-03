@@ -1,65 +1,139 @@
-import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
   Building2, Globe, MapPin, Phone, Mail, Upload, CheckCircle,
   Save, Eye, Image as ImageIcon, Sparkles, Shield
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 
 export default function UniversityProfileSection() {
-  const location = useLocation();
-  const uni = location.state?.university;
+  const context = useOutletContext();
+  const uni = context?.uni;
+  const refreshUni = context?.refreshUni;
 
   const [profile, setProfile] = useState({
-    name: uni?.name || 'Apex Technical University',
-    tagline: uni?.tagline || 'Empowering Next-Gen Technologists & Engineers',
-    about: uni?.description || 'Apex Technical University is a premier institution accredited with NAAC A++ Grade. Known for world-class research facilities, state-of-the-art laboratories, and high industry placement records across engineering, management, and computing sciences.',
-    vision: uni?.vision || 'To be a globally recognized institution of educational excellence, fostering innovation, ethics, and cutting-edge technical research.',
-    mission: uni?.mission || 'Delivering industry-relevant curriculum, promoting interdisciplinary learning, and empowering students with hands-on skillsets and global exposure.',
-    email: uni?.email || 'admissions@apexuniv.edu.in',
-    phone: uni?.phone || '+91 98765 43210',
-    website: uni?.website || 'https://www.apexuniv.edu.in',
-    address: uni?.address || 'Sector 62, Institutional Area, Knowledge Park Phase III',
-    city: uni?.city || 'Noida',
-    state: uni?.state || 'Uttar Pradesh',
-    pincode: uni?.pincode || '201309',
-    establishedYear: uni?.establishedYear || '1998',
-    accreditation: uni?.naacGrade ? `NAAC ${uni.naacGrade} Grade, UGC Approved` : 'NAAC A++ Grade, AICTE Approved',
-    logoUrl: uni?.logoUrl || 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?auto=format&fit=crop&w=200&q=80',
-    coverUrl: uni?.bannerImageUrl || 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80'
+    name: 'Apex Technical University',
+    tagline: 'Empowering Next-Gen Technologists & Engineers',
+    about: 'Apex Technical University is a premier institution accredited with NAAC A++ Grade.',
+    vision: 'To be a globally recognized institution of educational excellence.',
+    mission: 'Delivering industry-relevant curriculum and hands-on skillsets.',
+    email: 'admissions@apexuniv.edu.in',
+    phone: '+91 98765 43210',
+    website: 'https://www.apexuniv.edu.in',
+    address: 'Sector 62, Institutional Area, Knowledge Park Phase III',
+    city: 'Noida',
+    state: 'Uttar Pradesh',
+    pincode: '201309',
+    establishedYear: '1998',
+    accreditation: 'NAAC A++ Grade, AICTE Approved',
+    logoUrl: 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?auto=format&fit=crop&w=200&q=80',
+    coverUrl: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80'
   });
 
+  useEffect(() => {
+    if (uni) {
+      setProfile({
+        name: uni.name || '',
+        tagline: uni.tagline || 'Empowering Next-Gen Technologists & Engineers',
+        about: uni.description || '',
+        vision: uni.vision || 'To be a globally recognized institution of educational excellence.',
+        mission: uni.mission || 'Delivering industry-relevant curriculum and hands-on skillsets.',
+        email: uni.email || '',
+        phone: uni.phone || '',
+        website: uni.website || '',
+        address: uni.address || '',
+        city: uni.city || '',
+        state: uni.state || '',
+        pincode: uni.pincode || '201309',
+        establishedYear: uni.establishedYear ? String(uni.establishedYear) : '1998',
+        accreditation: uni.naacGrade ? `NAAC ${uni.naacGrade} Grade, UGC Approved` : 'NAAC A++ Grade, AICTE Approved',
+        logoUrl: uni.logoUrl || 'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?auto=format&fit=crop&w=200&q=80',
+        coverUrl: uni.bannerImageUrl || 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80'
+      });
+    }
+  }, [uni]);
+
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const handleChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleLogoUpload = (e) => {
+  const uploadFile = async (file, folder = 'university') => {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('folder', folder);
+    const { data } = await api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return data?.url || data?.data?.url;
+  };
+
+  const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      handleChange('logoUrl', url);
-      toast.success('University logo updated successfully!');
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const url = await uploadFile(file, 'logos');
+      if (url) {
+        handleChange('logoUrl', url);
+        toast.success('University logo uploaded successfully!');
+      }
+    } catch (error) {
+      toast.error('Failed to upload logo image');
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
-  const handleCoverUpload = (e) => {
+  const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      handleChange('coverUrl', url);
-      toast.success('Cover image updated successfully!');
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const url = await uploadFile(file, 'covers');
+      if (url) {
+        handleChange('coverUrl', url);
+        toast.success('Cover image uploaded successfully!');
+      }
+    } catch (error) {
+      toast.error('Failed to upload cover image');
+    } finally {
+      setUploadingCover(false);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const payload = {
+        name: profile.name,
+        description: profile.about,
+        email: profile.email,
+        phone: profile.phone,
+        website: profile.website,
+        address: profile.address,
+        city: profile.city,
+        state: profile.state,
+        establishedYear: parseInt(profile.establishedYear) || 1998,
+        logoUrl: profile.logoUrl,
+        bannerImageUrl: profile.coverUrl
+      };
+      const { data } = await api.put('/university-portal/my-university', payload);
+      if (data?.success) {
+        toast.success('University profile saved to server successfully!');
+        if (refreshUni) refreshUni();
+      }
+    } catch (error) {
+      console.error('Error updating university profile:', error);
+      toast.error(error.response?.data?.message || 'Failed to update university profile');
+    } finally {
       setSaving(false);
-      toast.success('University profile updated successfully!');
-    }, 800);
+    }
   };
 
   return (

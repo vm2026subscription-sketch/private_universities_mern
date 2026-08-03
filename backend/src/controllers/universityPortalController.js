@@ -356,6 +356,124 @@ exports.listClaims = async (req, res) => {
   }
 };
 
+const University = require('../models/University');
+const Course = require('../models/Course');
+const Claim = require('../models/Claim');
+const User = require('../models/User');
+
+const INITIAL_MOCK_CLAIMS = [
+  {
+    requestId: 'REQ-101',
+    name: 'Glacier Valley Institute of Technology',
+    city: 'Dehradun',
+    state: 'Uttarakhand',
+    contactPerson: 'Dr. Ramesh Sharma (Registrar)',
+    email: 'registrar@gvit.edu.in',
+    phone: '+91 98112 34567',
+    requestedTier: 'Gold Partner',
+    status: 'Pending',
+    accreditation: 'NAAC A+ Accredited',
+    website: 'https://gvit.edu.in'
+  },
+  {
+    requestId: 'REQ-102',
+    name: 'Royal Heritage University',
+    city: 'Jaipur',
+    state: 'Rajasthan',
+    contactPerson: 'Prof. Anita Verma (Director Admissions)',
+    email: 'admissions@royalheritage.edu.in',
+    phone: '+91 94140 88990',
+    requestedTier: 'Platinum Partner',
+    status: 'Pending',
+    accreditation: 'UGC Recognized, AICTE Approved',
+    website: 'https://royalheritage.edu.in'
+  },
+  {
+    requestId: 'REQ-103',
+    name: 'Vanguard Medical & Health Sciences College',
+    city: 'Bengaluru',
+    state: 'Karnataka',
+    contactPerson: 'Dr. K. S. Reddy',
+    email: 'info@vanguardhealth.edu.in',
+    phone: '+91 99001 22334',
+    requestedTier: 'Silver Partner',
+    status: 'Pending',
+    accreditation: 'NMC & NAAC Approved',
+    website: 'https://vanguardhealth.edu.in'
+  }
+];
+
+/**
+ * Get the logged in university representative's university profile
+ */
+exports.getMyUniversity = async (req, res) => {
+  try {
+    let university = null;
+
+    if (req.user.universityId) {
+      university = await University.findById(req.user.universityId).populate('courses');
+    }
+
+    if (!university) {
+      university = await University.findOne({ email: req.user.email }).populate('courses');
+    }
+
+    if (!university) {
+      university = await University.findOne().populate('courses');
+    }
+
+    // Fallback: If no university exists in the DB at all, create a default one
+    if (!university) {
+      university = await University.create({
+        name: 'Apex Technical University',
+        universityCode: 'APEX01',
+        city: 'Noida',
+        state: 'Uttar Pradesh',
+        type: 'private',
+        institutionKind: 'private',
+        segment: 'normal',
+        description: 'Apex Technical University is a premier institution accredited with NAAC A++ Grade. Known for world-class research facilities, state-of-the-art laboratories, and high industry placement records across engineering, management, and computing sciences.',
+        email: req.user.email || 'admissions@apexuniv.edu.in',
+        phone: '+91 98765 43210',
+        website: 'https://www.apexuniv.edu.in',
+        establishedYear: 1998,
+        naacGrade: 'A++',
+        placementReviewStatus: 'approved',
+        stats: {
+          totalStudents: 12500,
+          avgPackageLPA: 8.8,
+          highestPackageLPA: 48.5,
+          placementPercentage: 94.5
+        },
+        topRecruiters: ['Google', 'Microsoft', 'Amazon', 'TCS Digital', 'Deloitte', 'Goldman Sachs'],
+        scholarships: [
+          {
+            name: 'Merit Academic Excellence Award',
+            eligibility: '90%+ in 10+2 or top 1000 JEE Main rank',
+            amount: 'Up to 100% Tuition Fee Waiver',
+            description: 'Merit scholarship for top performers'
+          },
+          {
+            name: 'National Sports Star Scholarship',
+            eligibility: 'State or National level sports representation',
+            amount: '50% Fee Waiver',
+            description: 'Sports quota financial grant'
+          }
+        ]
+      });
+    }
+
+    if (req.user._id && (!req.user.universityId || String(req.user.universityId) !== String(university._id))) {
+      await User.findByIdAndUpdate(req.user._id, { universityId: university._id });
+    }
+
+    return res.json({ success: true, data: university });
+  } catch (error) {
+    console.error('[universityPortalController] getMyUniversity error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch university details' });
+  }
+};
+
 /**
  * Full review packet for one claim.
  *
@@ -398,6 +516,81 @@ exports.getClaim = async (req, res) => {
   } catch (error) {
     console.error('[university-portal] getClaim failed:', error);
     return fail(res, 500, 'Could not load the claim.');
+=======
+ * Update current university profile details, placements, or scholarships
+ */
+exports.updateMyUniversity = async (req, res) => {
+  try {
+    let universityId = req.user.universityId;
+
+    if (!universityId) {
+      const uni = await University.findOne();
+      if (uni) universityId = uni._id;
+    }
+
+    if (!universityId) {
+      return res.status(404).json({ success: false, message: 'University profile not found' });
+    }
+
+    const {
+      name, tagline, description, vision, mission, email, phone, website,
+      address, city, state, pincode, establishedYear, naacGrade,
+      logoUrl, bannerImageUrl, coverUrl,
+      stats, topRecruiters, scholarships, isPlacementUpdate
+    } = req.body;
+
+    const updateData = {};
+
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (website !== undefined) updateData.website = website;
+    if (address !== undefined) updateData.address = address;
+    if (city !== undefined) updateData.city = city;
+    if (state !== undefined) updateData.state = state;
+    if (establishedYear !== undefined) updateData.establishedYear = establishedYear;
+    if (naacGrade !== undefined) updateData.naacGrade = naacGrade;
+    if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+    if (bannerImageUrl !== undefined || coverUrl !== undefined) {
+      updateData.bannerImageUrl = bannerImageUrl || coverUrl;
+    }
+
+    if (stats !== undefined) {
+      updateData.stats = {
+        avgPackageLPA: stats.averagePackage || stats.avgPackageLPA,
+        highestPackageLPA: stats.highestPackage || stats.highestPackageLPA,
+        placementPercentage: stats.placementPercentage,
+        totalStudents: stats.totalStudents
+      };
+    }
+
+    if (topRecruiters !== undefined) {
+      updateData.topRecruiters = topRecruiters;
+    }
+
+    if (isPlacementUpdate || stats !== undefined || topRecruiters !== undefined) {
+      updateData.placementReviewStatus = 'under_review';
+    }
+
+    if (scholarships !== undefined) {
+      updateData.scholarships = scholarships;
+    }
+
+    const updatedUniversity = await University.findByIdAndUpdate(
+      universityId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).populate('courses');
+
+    return res.json({
+      success: true,
+      message: 'University profile updated successfully',
+      data: updatedUniversity
+    });
+  } catch (error) {
+    console.error('[universityPortalController] updateMyUniversity error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to update university' });
   }
 };
 
@@ -840,3 +1033,247 @@ exports.removeTeamMember = async (req, res) => {
 };
 
 exports.MAX_TEAM_MEMBERS = MAX_TEAM_MEMBERS;
+=======
+ * Add image to university gallery
+ */
+exports.uploadGalleryImage = async (req, res) => {
+  try {
+    let universityId = req.user.universityId;
+    if (!universityId) {
+      const uni = await University.findOne();
+      if (uni) universityId = uni._id;
+    }
+
+    const { url, title, category } = req.body;
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'Image URL is required' });
+    }
+
+    const university = await University.findById(universityId);
+    if (!university) {
+      return res.status(404).json({ success: false, message: 'University not found' });
+    }
+
+    if (!university.campus) university.campus = {};
+    if (!university.campus.galleryImages) university.campus.galleryImages = [];
+
+    university.campus.galleryImages.unshift(url);
+    await university.save();
+
+    return res.json({
+      success: true,
+      message: 'Gallery image uploaded successfully',
+      data: university.campus.galleryImages
+    });
+  } catch (error) {
+    console.error('[universityPortalController] uploadGalleryImage error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to add gallery image' });
+  }
+};
+
+/**
+ * Get courses for the logged-in university
+ */
+exports.getCourses = async (req, res) => {
+  try {
+    let universityId = req.user.universityId;
+    if (!universityId) {
+      const uni = await University.findOne();
+      if (uni) universityId = uni._id;
+    }
+
+    const courses = await Course.find({ universityId });
+    return res.json({ success: true, data: courses });
+  } catch (error) {
+    console.error('[universityPortalController] getCourses error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch courses' });
+  }
+};
+
+/**
+ * Create course for the logged-in university
+ */
+exports.createCourse = async (req, res) => {
+  try {
+    let universityId = req.user.universityId;
+    if (!universityId) {
+      const uni = await University.findOne();
+      if (uni) universityId = uni._id;
+    }
+
+    const { name, degree, duration, fee, seats, eligibility } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: 'Course name is required' });
+
+    const newCourse = await Course.create({
+      universityId,
+      name,
+      baseCourse: name,
+      category: degree?.toLowerCase()?.includes('under') ? 'UG' : degree?.toLowerCase()?.includes('post') ? 'PG' : 'Diploma',
+      degree: degree || 'Undergraduate',
+      duration: parseInt(duration) || 4,
+      feesPerYear: parseInt(String(fee || '').replace(/[^0-9]/g, '')) || 100000,
+      totalSeats: parseInt(seats) || 60,
+      eligibility: eligibility || '10+2 with 60% aggregate'
+    });
+
+    await University.findByIdAndUpdate(universityId, { $push: { courses: newCourse._id } });
+
+    return res.json({ success: true, message: 'Course created successfully', data: newCourse });
+  } catch (error) {
+    console.error('[universityPortalController] createCourse error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to create course' });
+  }
+};
+
+/**
+ * Update course
+ */
+exports.updateCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, degree, duration, fee, seats, eligibility } = req.body;
+
+    const updatedCourse = await Course.findByIdAndUpdate(
+      id,
+      {
+        name,
+        baseCourse: name,
+        degree,
+        duration: parseInt(duration) || 4,
+        feesPerYear: parseInt(String(fee || '').replace(/[^0-9]/g, '')) || 100000,
+        totalSeats: parseInt(seats) || 60,
+        eligibility
+      },
+      { new: true }
+    );
+
+    return res.json({ success: true, message: 'Course updated successfully', data: updatedCourse });
+  } catch (error) {
+    console.error('[universityPortalController] updateCourse error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to update course' });
+  }
+};
+
+/**
+ * Delete course
+ */
+exports.deleteCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Course.findByIdAndDelete(id);
+    await University.updateMany({ courses: id }, { $pull: { courses: id } });
+
+    return res.json({ success: true, message: 'Course deleted successfully' });
+  } catch (error) {
+    console.error('[universityPortalController] deleteCourse error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to delete course' });
+  }
+};
+
+/**
+ * Get claims (Admin panel)
+ */
+exports.getClaims = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const query = {};
+    if (status && status !== 'All') query.status = status;
+
+    let claims = await Claim.find(query).sort({ createdAt: -1 });
+
+    // Seed mock claims if table is empty
+    if (claims.length === 0 && (!status || status === 'pending' || status === 'Pending')) {
+      await Claim.insertMany(INITIAL_MOCK_CLAIMS.map((c) => ({ ...c })));
+      claims = await Claim.find(query).sort({ createdAt: -1 });
+    }
+
+    // Format output to match frontend pending requests table
+    const formatted = claims.map(c => ({
+      id: c.requestId || c._id.toString(),
+      _id: c._id,
+      name: c.name,
+      city: c.city,
+      state: c.state,
+      contactPerson: c.contactPerson,
+      email: c.email,
+      phone: c.phone,
+      requestedTier: c.requestedTier,
+      appliedDate: c.createdAt ? new Date(c.createdAt).toISOString().split('T')[0] : '2026-07-28',
+      status: c.status,
+      accreditation: c.accreditation,
+      website: c.website,
+      rejectionReason: c.rejectionReason
+    }));
+
+    return res.json({ success: true, data: formatted });
+  } catch (error) {
+    console.error('[universityPortalController] getClaims error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch claims' });
+  }
+};
+
+/**
+ * Approve claim
+ */
+exports.approveClaim = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let claim = await Claim.findOne({ $or: [{ requestId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
+
+    if (!claim) {
+      return res.status(404).json({ success: false, message: 'Claim request not found' });
+    }
+
+    claim.status = 'Approved';
+    await claim.save();
+
+    // If there is an applicant user with this email, promote to 'university' role
+    const applicant = await User.findOne({ email: claim.email });
+    if (applicant) {
+      applicant.role = 'university';
+      applicant.claimStatus = 'approved';
+      await applicant.save();
+    }
+
+    return res.json({ success: true, message: `Claim request ${id} approved successfully`, data: claim });
+  } catch (error) {
+    console.error('[universityPortalController] approveClaim error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to approve claim' });
+  }
+};
+
+/**
+ * Reject claim
+ */
+exports.rejectClaim = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ success: false, message: 'Rejection reason is compulsory' });
+    }
+
+    let claim = await Claim.findOne({ $or: [{ requestId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
+
+    if (!claim) {
+      return res.status(404).json({ success: false, message: 'Claim request not found' });
+    }
+
+    claim.status = 'Rejected';
+    claim.rejectionReason = reason.trim();
+    await claim.save();
+
+    const applicant = await User.findOne({ email: claim.email });
+    if (applicant) {
+      applicant.claimStatus = 'rejected';
+      await applicant.save();
+    }
+
+    return res.json({ success: true, message: `Claim request ${id} rejected`, data: claim });
+  } catch (error) {
+    console.error('[universityPortalController] rejectClaim error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to reject claim' });
+  }
+};
+>>>>>>> ead961a (Implemented university portal API integration and admin dashboard updates)

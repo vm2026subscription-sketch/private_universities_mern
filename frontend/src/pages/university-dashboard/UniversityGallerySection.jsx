@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
   Image as ImageIcon, Upload, Trash2, Plus, Sparkles, Filter,
   Maximize2, X, CheckCircle2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 
 const INITIAL_IMAGES = [
   { id: 1, title: 'Main Academic Block', category: 'Campus', url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=800&q=80' },
@@ -17,7 +19,12 @@ const INITIAL_IMAGES = [
 const CATEGORIES = ['All', 'Campus', 'Labs', 'Infrastructure', 'Hostel', 'Events'];
 
 export default function UniversityGallerySection() {
+  const context = useOutletContext();
+  const uni = context?.uni;
+  const refreshUni = context?.refreshUni;
+
   const [images, setImages] = useState(INITIAL_IMAGES);
+  const [uploading, setUploading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [previewImage, setPreviewImage] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -26,30 +33,64 @@ export default function UniversityGallerySection() {
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('Campus');
 
+  useEffect(() => {
+    if (uni?.campus?.galleryImages?.length) {
+      const formatted = uni.campus.galleryImages.map((imgUrl, idx) => ({
+        id: idx + 1,
+        title: `Campus Image ${idx + 1}`,
+        category: 'Campus',
+        url: imgUrl
+      }));
+      setImages(formatted);
+    }
+  }, [uni]);
+
   const filteredImages = selectedCategory === 'All'
     ? images
     : images.filter(img => img.category === selectedCategory);
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const uploaded = files.map((file, idx) => ({
-      id: Date.now() + idx,
-      title: newTitle || file.name.replace(/\.[^/.]+$/, ""),
-      category: newCategory,
-      url: URL.createObjectURL(file)
-    }));
+    setUploading(true);
+    try {
+      for (const file of files) {
+        // Step 1: Upload file to /api/v1/upload to get URL
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('folder', 'gallery');
 
-    setImages(prev => [...uploaded, ...prev]);
-    toast.success(`Successfully uploaded ${files.length} photo(s)!`);
-    setNewTitle('');
+        const { data: uploadRes } = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        const fileUrl = uploadRes?.url || uploadRes?.data?.url;
+        if (!fileUrl) throw new Error('Failed to get uploaded image URL');
+
+        // Step 2: POST /my-university/gallery with the obtained URL
+        await api.post('/university-portal/my-university/gallery', {
+          url: fileUrl,
+          title: newTitle || file.name.replace(/\.[^/.]+$/, ""),
+          category: newCategory
+        });
+      }
+
+      toast.success(`Successfully uploaded ${files.length} photo(s) to server!`);
+      setNewTitle('');
+      if (refreshUni) refreshUni();
+    } catch (error) {
+      console.error('Gallery upload failed:', error);
+      toast.error(error.response?.data?.message || 'Failed to upload photo(s)');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDelete = (id) => {
     setImages(prev => prev.filter(img => img.id !== id));
     setDeleteConfirmId(null);
-    toast.success('Photo removed from university gallery');
+    toast.success('Photo removed from gallery view');
   };
 
   return (

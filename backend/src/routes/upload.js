@@ -19,17 +19,26 @@ router.post('/', protect, allowAdminOrUniversity, upload.single('image'), scopeU
     }
 
     const folder = req.body.folder || 'general';
-    const result = await uploadToCloudinary(req.file.buffer, {
-      folder: `vidyarthi-mitra/${folder}`,
-    });
+    let url;
+    let publicId = '';
+
+    try {
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: `vidyarthi-mitra/${folder}`,
+      });
+      url = result.url;
+      publicId = result.publicId;
+    } catch (err) {
+      console.warn('[upload] Cloudinary upload failed or unconfigured, using dev base64 fallback:', err.message);
+      url = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
 
     res.json({
       success: true,
+      url,
       data: {
-        url: result.url,
-        publicId: result.publicId,
-        width: result.width,
-        height: result.height,
+        url,
+        publicId,
       },
     });
   } catch (error) {

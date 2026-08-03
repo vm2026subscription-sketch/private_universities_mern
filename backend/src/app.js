@@ -23,6 +23,7 @@ const publicRoutes = require('./routes/public');
 const uploadRoutes = require('./routes/upload');
 const bhashiniRoutes = require('./routes/bhashini');
 const sitemapRoutes = require('./routes/sitemap');
+const universityPortalRoutes = require('./routes/universityPortal');
 
 const errorHandler = require('./middleware/errorHandler');
 const { isProduction } = require('./config/env');
@@ -172,6 +173,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/university-portal', universityPortalRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
+app.use('/api/v1', universityPortalRoutes);
 app.use('/api/v1', publicRoutes);
 app.use('/api/v1/admin/upload', uploadExcelRoutes);
 

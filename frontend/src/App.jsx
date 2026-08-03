@@ -194,7 +194,7 @@
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   {/* University Dashboard Routes */}
-                  <Route path="/university/dashboard" element={<UniversityDashboardLayout />}>
+                  <Route path="/university/dashboard" element={<ProtectedRoute universityOnly><UniversityDashboardLayout /></ProtectedRoute>}>
                     <Route index element={<UniversityOverview />} />
                     <Route path="profile" element={<UniversityProfileSection />} />
                     <Route path="gallery" element={<UniversityGallerySection />} />
