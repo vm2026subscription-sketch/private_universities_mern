@@ -446,23 +446,7 @@ exports.updateApplicationStatus = async (req, res) => {
   }
 };
 
-exports.getNotifications = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('notifications');
-    res.json({ success: true, data: user.notifications });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+const notificationCtrl = require('./notificationController');
 
-exports.markNotificationRead = async (req, res) => {
-  try {
-    await User.updateOne(
-      { _id: req.user._id, 'notifications._id': req.params.notificationId },
-      { $set: { 'notifications.$.read': true } }
-    );
-    res.json({ success: true, message: 'Notification read' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+exports.getNotifications = notificationCtrl.getUserNotifications;
+exports.markNotificationRead = notificationCtrl.markAsRead;

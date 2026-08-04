@@ -8,6 +8,7 @@ const { buildUniqueSlug } = require('../utils/slug');
 const { normalizeUniversityClassification } = require('../utils/universityClassification');
 const { logAction } = require('../services/auditService');
 const { revokeAllForUser } = require('../services/refreshTokenService');
+const notificationService = require('../services/notificationService');
 
 const splitPipe = (value) => String(value || '').split('|').map((item) => item.trim()).filter(Boolean);
 const parseNumber = (value) => {
@@ -534,6 +535,17 @@ exports.patchSponsorship = async (req, res) => {
     }).select('name slug isSponsored sponsorTier sponsorPriority sponsorExpiry');
 
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+
+    // Notify university owner about plan/sponsorship activation
+    const owner = await User.findOne({ universityId: university._id, role: 'university' });
+    if (owner && university.isSponsored && university.sponsorTier !== 'none') {
+      await notificationService.notifyPaymentSuccess({
+        ownerId: owner._id,
+        ownerEmail: owner.email,
+        universityName: university.name,
+        planName: university.sponsorTier,
+      });
+    }
 
     res.json({ success: true, data: university });
   } catch (error) {

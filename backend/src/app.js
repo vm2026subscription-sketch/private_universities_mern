@@ -23,6 +23,7 @@ const publicRoutes = require('./routes/public');
 const uploadRoutes = require('./routes/upload');
 const bhashiniRoutes = require('./routes/bhashini');
 const sitemapRoutes = require('./routes/sitemap');
+const notificationRoutes = require('./routes/notifications');
 
 const errorHandler = require('./middleware/errorHandler');
 const { isProduction } = require('./config/env');
@@ -170,6 +171,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/university-portal', universityPortalRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
 // Mounted at exactly one prefix. A second mount at '/api/v1' put tenant routes

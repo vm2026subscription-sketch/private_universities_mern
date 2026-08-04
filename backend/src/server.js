@@ -130,6 +130,13 @@ const startServer = async () => {
       }
     });
 
+    // Initialize subscription expiration checker (runs on start + every 12 hours)
+    const { checkSubscriptionExpirations } = require('./services/subscriptionChecker');
+    void checkSubscriptionExpirations();
+    setInterval(() => {
+      void checkSubscriptionExpirations();
+    }, 12 * 60 * 60 * 1000);
+
     // Same reasoning as the SMTP check: without it, a mismatched cloud name is
     // discovered by a university trying to add photos, as "Invalid cloud_name".
     const { verifyCloudinaryCredentials } = require('./config/cloudinary');
