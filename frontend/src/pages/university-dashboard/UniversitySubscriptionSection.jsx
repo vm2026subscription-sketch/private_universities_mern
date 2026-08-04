@@ -226,7 +226,7 @@ const UniversitySubscriptionSection = () => {
             </div>
             
             <div className="mb-6 flex items-baseline">
-              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">₹4,999</span>
+              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">₹1,000</span>
               <span className="text-light-muted dark:text-dark-muted ml-2">/ month</span>
             </div>
             
@@ -278,7 +278,7 @@ const UniversitySubscriptionSection = () => {
             </div>
             
             <div className="mb-6 flex items-baseline">
-              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">₹49,999</span>
+              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">₹10,000</span>
               <span className="text-light-muted dark:text-dark-muted ml-2">/ year</span>
             </div>
             

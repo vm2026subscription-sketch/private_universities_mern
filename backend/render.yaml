@@ -10,3 +10,13 @@ services:
         value: production
       - key: PORT
         value: 5001
+      - key: RAZORPAY_KEY_ID
+        value: rzp_test_TLMeKLeYfGsDeh
+      - key: RAZORPAY_KEY_SECRET
+        value: cY0p5dhjZX6Zz3d7gO6HZ3Zc
+      - key: RAZORPAY_WEBHOOK_SECRET
+        value: VM_Subscription_2026@Webhook
+      - key: PLAN_PRICE_MONTHLY_INR
+        value: 1000
+      - key: PLAN_PRICE_YEARLY_INR
+        value: 10000
