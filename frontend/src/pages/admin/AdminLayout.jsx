@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useRole } from '../../hooks/useRole';
+import NotificationBell from '../../components/NotificationBell';
 import {
   KeyRound, ShieldCheck,
   LayoutDashboard, Building2, BookOpen, FileText, Newspaper,
@@ -142,6 +143,7 @@ export default function AdminLayout() {
           <h1 className="text-lg font-semibold capitalize flex-1">
             {filteredNavItems.find(n => !n.divider && isActive(n.path))?.label || 'Admin'}
           </h1>
+          <NotificationBell />
           {isSuperAdmin ? (
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
               <Star className="w-3.5 h-3.5" aria-hidden="true" /> Super Admin

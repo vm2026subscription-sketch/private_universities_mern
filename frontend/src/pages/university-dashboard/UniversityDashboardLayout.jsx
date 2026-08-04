@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
+import NotificationBell from '../../components/NotificationBell';
 
 const navItems = [
   { label: 'Overview', icon: LayoutDashboard, path: '/university/dashboard' },
@@ -193,6 +194,8 @@ export default function UniversityDashboardLayout() {
             >
               <ExternalLink className="w-3.5 h-3.5" /> Live Preview
             </Link>
+
+            <NotificationBell />
 
             <button className="p-2.5 rounded-xl border border-light-border dark:border-dark-border hover:bg-light-card dark:hover:bg-dark-card relative text-light-muted dark:text-dark-muted">
               <Bell className="w-4 h-4" />

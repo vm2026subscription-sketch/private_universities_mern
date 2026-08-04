@@ -22,7 +22,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const University = require('../models/University');
 const UniversityClaim = require('../models/UniversityClaim');
-const sendEmail = require('../utils/sendEmail');
+const notificationService = require('../services/notificationService');
 const { logAction } = require('../services/auditService');
 const { classifyEmailDomain, needsExtraScrutiny } = require('../utils/emailDomain');
 const { accountRules } = require('./authController');
@@ -268,6 +268,13 @@ exports.signup = async (req, res) => {
       resourceId: claim._id,
       description: `University access requested for ${university?.name || claimData.requestedUniversityName} (email signal: ${signal})`,
       req,
+    });
+
+    await notificationService.notifyApprovalRequest({
+      applicantId: user._id,
+      applicantName: normalizedName,
+      applicantEmail: normalizedEmail,
+      universityName: university?.name || claimData.requestedUniversityName,
     });
 
     return res.status(201).json({
@@ -547,19 +554,14 @@ exports.approveClaim = async (req, res) => {
       req,
     });
 
-    await notify(
-      {
-        to: applicant.email,
-        subject: `Your request for ${university.name} has been approved`,
-        html: emailShell(
-          'Request approved',
-`<p>Your request to manage <strong>${university.name}</strong> has been approved.</p>
-           <p>Complete your subscription to unlock your dashboard:</p>
-           <p><a href="${getClientUrl()}/university/dashboard/subscription" style="display:inline-block;background:#f97316;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Choose a plan</a></p>`
-        ),
-      },
-      'approval'
-    );
+    // notificationService rather than a bare email: it records an in-app
+    // notification as well, so the approval is visible when they next sign in
+    // even if the message never reaches their inbox.
+    await notificationService.notifyClaimApproved({
+      applicantId: applicant._id,
+      applicantEmail: applicant.email,
+      universityName: university.name,
+    });
 
     return res.json({
       success: true,
@@ -607,19 +609,12 @@ exports.rejectClaim = async (req, res) => {
       req,
     });
 
-    await notify(
-      {
-        to: claim.user.email,
-        subject: 'Update on your university access request',
-        html: emailShell(
-          'Request not approved',
-          `<p>We could not approve your request to manage <strong>${claim.university?.name || claim.requestedUniversityName}</strong>.</p>
-           <p><strong>Reason:</strong> ${reason}</p>
-           <p>You are welcome to apply again with the missing information.</p>`
-        ),
-      },
-      'rejection'
-    );
+    await notificationService.notifyClaimRejected({
+      applicantId: claim.user._id || claim.user,
+      applicantEmail: claim.user.email,
+      universityName: claim.university?.name || claim.requestedUniversityName,
+      reason,
+    });
 
     return res.json({ success: true, message: 'Claim rejected.', claim: serializeClaim(claim) });
   } catch (error) {

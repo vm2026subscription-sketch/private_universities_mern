@@ -5,10 +5,23 @@ const University = require('../models/University');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 
-// Plan pricing defined securely on backend in INR Rupees.
+/**
+ * Plan pricing, resolved on the server so the amount can never come from the
+ * client. Rupees here; converted to paise at the point of charge.
+ *
+ * The defaults are the agreed prices — ₹1,000 a month and ₹10,000 a year — not
+ * placeholders. A wrong default is not a harmless one here: if
+ * PLAN_PRICE_MONTHLY_INR is simply absent from the deploy, universities are
+ * charged whatever this line says, and nothing in the flow looks broken. The
+ * earlier values of 4999/49999 would have taken five times the intended amount
+ * from real cards, silently.
+ *
+ * Both variables are listed in .env.example so a deploy that means to override
+ * them has somewhere to look.
+ */
 const PLAN_PRICES_INR = {
-  monthly: Number(process.env.PLAN_PRICE_MONTHLY_INR) || 4999,
-  yearly: Number(process.env.PLAN_PRICE_YEARLY_INR) || 49999,
+  monthly: Number(process.env.PLAN_PRICE_MONTHLY_INR) || 1000,
+  yearly: Number(process.env.PLAN_PRICE_YEARLY_INR) || 10000,
 };
 
 /**

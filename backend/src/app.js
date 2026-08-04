@@ -24,6 +24,8 @@ const uploadRoutes = require('./routes/upload');
 const bhashiniRoutes = require('./routes/bhashini');
 const sitemapRoutes = require('./routes/sitemap');
 const paymentRoutes = require('./routes/payment');
+const notificationRoutes = require('./routes/notifications');
+const cronRoutes = require('./routes/cron');
 
 const errorHandler = require('./middleware/errorHandler');
 const { isProduction } = require('./config/env');
@@ -175,18 +177,29 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/university-portal', universityPortalRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/cron', cronRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
-
-// Payment routes mounted at explicit prefixes.
+/**
+ * Mounted at both prefixes, matching the raw-body registration above.
+ *
+ * One prefix would be tidier, but which URL Razorpay is configured to call lives
+ * in their dashboard, not in this repository. Dropping '/payment' would leave
+ * that path with raw-body parsing and no handler — a 404 on every webhook, and
+ * webhooks fail silently: payments would be taken and no subscription
+ * activated. Keep both until the dashboard is confirmed, then remove the unused
+ * one here and above together.
+ */
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/payment', paymentRoutes);
 
-// publicRoutes mounted AFTER payment and portal routes so it cannot shadow any
-// specific handler above. Mounting it at '/api/v1' alongside tenant routes at
-// the same prefix caused the first-match-wins ordering to silently swallow
-// requests to more specific handlers whenever publicRoutes registered a
-// wildcard or catch-all segment that matched first.
+/**
+ * publicRoutes is mounted last, at '/api/v1', so it cannot shadow any of the
+ * specific routers above: Express matches in registration order, and a catch-all
+ * segment registered earlier would silently swallow requests meant for a more
+ * specific handler.
+ */
 app.use('/api/v1', publicRoutes);
 app.use('/api/v1/admin/upload', uploadExcelRoutes);
 

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Payment Successful</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #334155; margin: 0; padding: 20px; background-color: #f8fafc;">
+  <div style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 28px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <h2 style="color: #16a34a; margin-top: 0; font-size: 20px;">Payment Successful &amp; Plan Activated</h2>
+    <p>Your subscription payment for <strong>{{universityName}}</strong> was processed successfully.</p>
+    <p>Your <strong>{{planName}}</strong> plan features are now fully active on your dashboard.</p>
+    {{#if expiryDateStr}}
+    <p style="padding: 10px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; color: #166534; font-size: 13px;">
+      <strong>Subscription Expiry Date:</strong> {{expiryDateStr}}
+    </p>
+    {{/if}}
+    <div style="margin: 24px 0; text-align: center;">
+      <a href="{{clientUrl}}/university/dashboard/subscription" style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">View Subscription Details</a>
+    </div>
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
+    <p style="color: #64748b; font-size: 12px; margin: 0;">Vidyarthi Mitra — University Portal</p>
+  </div>
+</body>
+</html>

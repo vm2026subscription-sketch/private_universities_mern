@@ -77,11 +77,25 @@ router.get(
 router.post('/google/exchange', loginLimiter, googleExchange);
 
 /* ── Email diagnostics (admin only) ───────────────────────────────────────── */
+/**
+ * Wrapped because server.js treats an unhandled rejection as fatal: an async
+ * handler that throws does not merely fail its request, it shuts the process
+ * down. This one already did exactly that once, when a refactor removed
+ * describeEmailConfig while this route kept importing it — opening the
+ * diagnostics page took the whole API offline.
+ */
 router.get('/email-status', protect, async (req, res) => {
-  const { describeEmailConfig, verifySmtpCredentials } = require('../utils/sendEmail');
-  const config = describeEmailConfig();
-  const smtp = config.smtpConfigured ? await verifySmtpCredentials() : { ok: false, reason: 'SMTP not configured' };
-  res.json({ config, smtp });
+  try {
+    const { describeEmailConfig, verifySmtpCredentials } = require('../utils/sendEmail');
+    const config = describeEmailConfig();
+    const smtp = config.smtpConfigured
+      ? await verifySmtpCredentials()
+      : { ok: false, reason: 'SMTP not configured' };
+    res.json({ config, smtp });
+  } catch (error) {
+    console.error('[auth] email-status failed:', error);
+    res.status(500).json({ success: false, message: 'Could not read the email configuration.' });
+  }
 });
 
 /* ── ONE-TIME admin promotion (remove after use) ──────────────────────────── */

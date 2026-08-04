@@ -111,7 +111,20 @@ const startServer = async () => {
       console.log(`[startup] Health check available at http://localhost:${PORT}/api/v1/health`);
     });
 
-    // Initialize daily subscription expiration check cron job
+    /**
+     * Daily subscription expiry sweep.
+     *
+     * This is the only expiry job now. services/subscriptionChecker.js predates
+     * the Subscription model and reads sponsorTier/sponsorExpiry — sponsorship
+     * fields, a different product — so running both would have emailed some
+     * universities about an advertising slot as though it were their plan.
+     *
+     * node-cron cannot be the only trigger either: this deploy sleeps when idle
+     * and a sleeping process fires no schedule, so on a quiet week the sweep
+     * never runs and nobody learns their plan lapsed. POST /api/v1/cron/run
+     * lets an external scheduler drive the same functions on a fixed clock, and
+     * wakes the instance in the process.
+     */
     const { initSubscriptionCron } = require('./services/subscriptionCron');
     initSubscriptionCron();
 
