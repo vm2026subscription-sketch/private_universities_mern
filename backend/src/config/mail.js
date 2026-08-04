@@ -101,6 +101,39 @@ const verifySmtpCredentials = async () => {
 };
 
 /**
+ * Reports whether email can reach arbitrary recipients, and why not if it cannot.
+ *
+ * Lost when this module was extracted from utils/sendEmail.js, while three
+ * callers kept importing it: the startup check in config/env.js, the
+ * /auth/email-status endpoint, and scripts/checkEmail.js. The endpoint is an
+ * async handler with no try/catch, so calling it threw an unhandled rejection
+ * and server.js — which treats those as fatal — shut the process down. Opening a
+ * diagnostic page took the API offline.
+ */
+const describeEmailConfig = () => {
+  const resendFrom = getResendFrom();
+  const resendUsable = hasResendConfig() && !isResendTestSender(resendFrom);
+  const smtpUsable = hasSmtpConfig();
+
+  const warnings = [];
+  if (hasResendConfig() && !resendUsable) {
+    warnings.push(
+      `RESEND_FROM is "${resendFrom}", Resend's shared test sender. It can only deliver to ` +
+      `${getAllowedResendTestRecipients().join(', ') || 'approved test inboxes'}, so signup and ` +
+      'login codes for real users fall through to SMTP. Verify a domain and set RESEND_FROM to it.'
+    );
+  }
+  if (!smtpUsable) {
+    warnings.push('SMTP_HOST / SMTP_USER / SMTP_PASS are not all set, so there is no fallback sender.');
+  }
+
+  // `smtpConfigured` reflects only that the variables are present. Whether they
+  // authenticate is a separate question — see verifySmtpCredentials — because a
+  // wrong-but-present password is the more common failure and looks identical here.
+  return { canDeliverToAnyone: resendUsable || smtpUsable, resendUsable, smtpConfigured: smtpUsable, warnings };
+};
+
+/**
  * Core sendEmail function using Nodemailer / Resend
  */
 const sendMail = async ({ to, subject, html }) => {
@@ -157,4 +190,5 @@ module.exports = {
   getSmtpTransporter,
   sendMail,
   verifySmtpCredentials,
+  describeEmailConfig,
 };
