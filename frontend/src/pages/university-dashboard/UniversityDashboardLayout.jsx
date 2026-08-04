@@ -1,0 +1,235 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard, Building2, Image as ImageIcon, BookOpen,
+  GraduationCap, Award, CreditCard, Menu, ChevronLeft, LogOut,
+  Bell, ExternalLink, Shield, Lock, AlertCircle, ArrowRight
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/api';
+
+const navItems = [
+  { label: 'Overview', icon: LayoutDashboard, path: '/university/dashboard' },
+  { label: 'Profile & Info', icon: Building2, path: '/university/dashboard/profile', requiresSub: true },
+  { label: 'Photo Gallery', icon: ImageIcon, path: '/university/dashboard/gallery', requiresSub: true },
+  { label: 'Courses Offered', icon: BookOpen, path: '/university/dashboard/courses', requiresSub: true },
+  { label: 'Placement Records', icon: GraduationCap, path: '/university/dashboard/placement', requiresSub: true },
+  { label: 'Scholarships', icon: Award, path: '/university/dashboard/scholarships', requiresSub: true },
+  { label: 'Subscription & Plan', icon: CreditCard, path: '/university/dashboard/subscription' },
+];
+
+export default function UniversityDashboardLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [university, setUniversity] = useState(null);
+  const [subscription, setSubscription] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const fetchUniversity = useCallback(async () => {
+    try {
+      const { data } = await api.get('/university-portal/my-university');
+      if (data?.success && data?.university) {
+        setUniversity(data.university);
+        setSubscription(data.subscription || null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch university details:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUniversity();
+  }, [fetchUniversity]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const isActive = (path) => {
+    if (path === '/university/dashboard') return location.pathname === '/university/dashboard';
+    return location.pathname?.startsWith(path);
+  };
+
+  const currentNav = navItems.find(item => isActive(item.path)) || { label: 'University Dashboard' };
+
+  const SidebarContent = () => (
+    <nav className="flex flex-col h-full bg-white dark:bg-dark-card border-r border-light-border dark:border-dark-border">
+      {/* Brand Header */}
+      <div className="flex items-center justify-between p-4 border-b border-light-border dark:border-dark-border">
+        <Link to="/university/dashboard" className="flex items-center gap-3 overflow-hidden">
+          <div className="w-9 h-9 rounded-lg bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border flex items-center justify-center shrink-0">
+            <Building2 className="w-4.5 h-4.5 text-light-muted dark:text-dark-muted" />
+          </div>
+          {sidebarOpen && (
+            <div className="min-w-0">
+              <h2 className="font-bold text-sm text-light-text dark:text-dark-text truncate">
+                {university?.name || user?.name || 'UniPortal'}
+              </h2>
+              <p className="text-[11px] text-light-muted dark:text-dark-muted font-medium truncate">University Console</p>
+            </div>
+          )}
+        </Link>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="hidden md:flex p-1.5 rounded-lg text-light-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-card dark:hover:bg-dark-border transition-colors"
+          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${sidebarOpen ? '' : 'rotate-180'}`} />
+        </button>
+      </div>
+
+      {/* Navigation Links */}
+      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1.5 scrollbar-thin">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
+          const isLocked = item.requiresSub && !subscription?.isActive;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={() => setMobileOpen(false)}
+              /* A tinted row with a left rule marks the current page. The solid
+                 orange fill plus a pulsing dot made the sidebar the loudest
+                 thing on screen, competing with the content it navigates to. */
+              className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors relative ${
+                active
+                  ? 'bg-primary/8 text-light-text dark:text-dark-text font-semibold'
+                  : 'text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg font-medium'
+              }`}
+              title={!sidebarOpen ? item.label : undefined}
+            >
+              {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-primary" />}
+              <div className="flex items-center gap-3 min-w-0">
+                <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-primary' : ''}`} />
+                {sidebarOpen && <span className="truncate">{item.label}</span>}
+              </div>
+              {sidebarOpen && isLocked && (
+                <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              )}
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Footer Profile & Logout */}
+      <div className="p-3 border-t border-light-border dark:border-dark-border space-y-2 bg-light-bg/40 dark:bg-dark-bg/40">
+        {sidebarOpen && (
+          <div className="flex items-center gap-3 p-2.5 rounded-lg">
+            <div className="w-8 h-8 rounded-lg bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border flex items-center justify-center font-semibold text-xs text-light-muted">
+              {(university?.name || user?.name || 'U')[0]}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-light-text dark:text-dark-text truncate">
+                {university?.name || user?.name || 'Your University'}
+              </p>
+              {/* Was "Gold Partner" with a sparkle, shown to everyone regardless
+                  of any actual plan — a tier the product does not sell yet. */}
+              <p className="text-[11px] text-light-muted dark:text-dark-muted truncate">
+                {user?.email}
+              </p>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          {sidebarOpen && <span>Sign Out</span>}
+        </button>
+      </div>
+    </nav>
+  );
+
+  return (
+    <div className="flex min-h-screen bg-light-bg dark:bg-dark-bg">
+      {/* Desktop Sidebar */}
+      <aside className={`hidden md:block sticky top-0 h-screen transition-all duration-300 z-30 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile Drawer Overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="fixed left-0 top-0 bottom-0 w-72 bg-white dark:bg-dark-card shadow-lg z-50">
+            <SidebarContent />
+          </aside>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Navbar Header */}
+        <header className="sticky top-0 z-20 bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border-b border-light-border dark:border-dark-border px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="md:hidden p-2 rounded-xl border border-light-border dark:border-dark-border hover:bg-light-card dark:hover:bg-dark-card"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-lg md:text-xl font-extrabold text-light-text dark:text-dark-text tracking-tight flex items-center gap-2">
+                {currentNav.label}
+              </h1>
+              <p className="text-xs text-light-muted dark:text-dark-muted hidden sm:block">Manage your university presence, courses, and admissions</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              to="/universities"
+              target="_blank"
+              className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-light-card dark:bg-dark-border text-light-text dark:text-dark-text hover:bg-primary hover:text-white transition-all border border-light-border dark:border-dark-border"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Live Preview
+            </Link>
+
+            <button className="p-2.5 rounded-xl border border-light-border dark:border-dark-border hover:bg-light-card dark:hover:bg-dark-card relative text-light-muted dark:text-dark-muted">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full animate-ping" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+            </button>
+          </div>
+        </header>
+
+        {/* Dynamic Section Render */}
+        <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto space-y-6">
+          {!loading && !subscription?.isActive && location.pathname !== '/university/dashboard/subscription' && (
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                  <Shield className="w-5.5 h-5.5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-amber-900 dark:text-amber-200">
+                    Subscription Required
+                  </h3>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                    Your account does not have an active subscription. Choose a plan to unlock all profile editing features.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/university/dashboard/subscription"
+                className="px-4.5 py-2.5 bg-primary text-white text-xs font-semibold rounded-xl hover:bg-orange-600 transition-colors shrink-0 flex items-center gap-2"
+              >
+                Choose a Plan <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+          <Outlet context={{ uni: university, subscription, loading, refreshUni: fetchUniversity }} />
+        </main>
+      </div>
+    </div>
+  );
+}

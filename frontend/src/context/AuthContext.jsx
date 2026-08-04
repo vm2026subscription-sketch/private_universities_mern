@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import api, { TOKEN_KEY, USER_KEY, REFRESH_KEY, clearStoredSession } from '../utils/api';
 
 const AuthContext = createContext();
@@ -24,6 +24,38 @@ const getGoogleAuthUrl = () => {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser);
+
+  /**
+   * Re-reads the account from the server once on load.
+   *
+   * The cached copy in localStorage is written at sign-in and never revisited,
+   * so it drifts the moment anything about the account changes server-side — a
+   * role change, an approved claim, revoked access. The visible symptom is a UI
+   * that offers actions the server then refuses: a sidebar showing "Super Admin"
+   * from a stale cache while every admin request comes back 403, which reads as
+   * a broken feature rather than a stale session.
+   *
+   * A failure here is left alone deliberately. `protect` already answers 401 for
+   * a revoked or expired token and the axios interceptor handles that; treating
+   * an offline moment or a cold start as a logout would sign people out for a
+   * dropped request.
+   */
+  useEffect(() => {
+    if (!localStorage.getItem(TOKEN_KEY)) return;
+
+    let cancelled = false;
+
+    api.get('/auth/me')
+      .then(({ data }) => {
+        const fresh = data?.user || data?.data;
+        if (cancelled || !fresh) return;
+        localStorage.setItem(USER_KEY, JSON.stringify(fresh));
+        setUser(fresh);
+      })
+      .catch(() => { /* see above */ });
+
+    return () => { cancelled = true; };
+  }, []);
 
   const setAuthSession = (token, userData, refreshToken) => {
     // Guard against a 200 response that omits the token: writing `undefined`

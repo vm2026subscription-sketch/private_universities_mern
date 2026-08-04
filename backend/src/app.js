@@ -115,7 +115,7 @@ app.post(
   express.raw({ type: 'application/json' })
 );
 
-// Global body parsing middleware for JSON and URL-encoded forms
+// Global body parsing middleware for JSON and URL-encoded forms.
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -177,8 +177,16 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/university-portal', universityPortalRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
+
+// Payment routes mounted at explicit prefixes.
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/payment', paymentRoutes);
+
+// publicRoutes mounted AFTER payment and portal routes so it cannot shadow any
+// specific handler above. Mounting it at '/api/v1' alongside tenant routes at
+// the same prefix caused the first-match-wins ordering to silently swallow
+// requests to more specific handlers whenever publicRoutes registered a
+// wildcard or catch-all segment that matched first.
 app.use('/api/v1', publicRoutes);
 app.use('/api/v1/admin/upload', uploadExcelRoutes);
 

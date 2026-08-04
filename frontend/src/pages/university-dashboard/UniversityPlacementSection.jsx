@@ -1,0 +1,299 @@
+import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import {
+  GraduationCap, TrendingUp, Award, Building2, Plus, Trash2,
+  Save, CheckCircle2, DollarSign, Clock, AlertTriangle
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import api from '../../utils/api';
+
+
+export default function UniversityPlacementSection() {
+  const context = useOutletContext();
+  const uni = context?.uni;
+  const refreshUni = context?.refreshUni;
+
+  const [placementStats, setPlacementStats] = useState({
+    highestPackage: '',
+    averagePackage: '',
+    medianPackage: '',
+    placementPercentage: '',
+    totalOffers: '',
+    topRecruiterCount: '',
+  });
+
+  const [reviewStatus, setReviewStatus] = useState('approved');
+    // Starts empty and fills from the API. Seeding this with sample rows meant a
+  // university opened its dashboard to somebody else's courses, photos and
+  // recruiters, and a failed request left that fiction on screen looking real.
+  const [recruiters, setRecruiters] = useState([]);
+  const [newRecruiterName, setNewRecruiterName] = useState('');
+  const [newRecruiterCat, setNewRecruiterCat] = useState('Tech Giant');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (uni) {
+      /**
+       * Blank when unset — never a sample figure.
+       *
+       * These defaulted to 48.5 / 8.8 / 94.5 LPA. The form publishes what it
+       * shows, so a university that had never entered placement data would find
+       * it already filled in and press Save, putting invented packages on a page
+       * students use to choose where to study. This is exactly the claim the
+       * review queue exists to check, arriving pre-answered.
+       */
+      setPlacementStats({
+        highestPackage: uni.stats?.highestPackageLPA != null ? String(uni.stats.highestPackageLPA) : '',
+        averagePackage: uni.stats?.avgPackageLPA != null ? String(uni.stats.avgPackageLPA) : '',
+        medianPackage: '',
+        placementPercentage: uni.stats?.placementPercentage != null ? String(uni.stats.placementPercentage) : '',
+        totalOffers: '',
+        topRecruiterCount: '',
+      });
+      if (uni.placementReviewStatus) {
+        setReviewStatus(uni.placementReviewStatus);
+      }
+      if (uni.topRecruiters?.length) {
+        setRecruiters(uni.topRecruiters.map((r, i) => ({ id: i + 1, name: r, category: 'Top Recruiter' })));
+      }
+    }
+  }, [uni]);
+
+  const handleStatsChange = (field, val) => {
+    setPlacementStats(prev => ({ ...prev, [field]: val }));
+  };
+
+  const handleAddRecruiter = (e) => {
+    e.preventDefault();
+    if (!newRecruiterName.trim()) return;
+    const newEntry = {
+      id: Date.now(),
+      name: newRecruiterName.trim(),
+      category: newRecruiterCat
+    };
+    setRecruiters(prev => [...prev, newEntry]);
+    setNewRecruiterName('');
+    toast.success(`${newEntry.name} added to recruiters list`);
+  };
+
+  const handleRemoveRecruiter = (id) => {
+    setRecruiters(prev => prev.filter(r => r.id !== id));
+    toast.success('Recruiter removed');
+  };
+
+  const handleSaveStats = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      /**
+       * Field names must match the server's schema paths, and blanks must stay
+       * blank.
+       *
+       * This previously sent stats.highestPackage / averagePackage — names the
+       * edit policy does not recognise — so every placement figure was silently
+       * discarded while the UI reported success. Worse, empty inputs fell back to
+       * `|| 48.5`, `|| 8.8`, `|| 94.5`, meaning a university that opened this
+       * page and pressed Save published invented packages under its own name.
+       *
+       * Only fields the user actually filled in are sent; the rest are left
+       * untouched rather than overwritten with a guess.
+       */
+      const stats = {};
+      const num = (value) => {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      };
+
+      if (num(placementStats.highestPackage) !== undefined) stats.highestPackageLPA = num(placementStats.highestPackage);
+      if (num(placementStats.averagePackage) !== undefined) stats.avgPackageLPA = num(placementStats.averagePackage);
+      if (num(placementStats.placementPercentage) !== undefined) stats.placementPercentage = num(placementStats.placementPercentage);
+
+      const payload = { topRecruiters: recruiters.map((r) => r.name) };
+      if (Object.keys(stats).length) payload.stats = stats;
+
+      const { data } = await api.put('/university-portal/my-university', payload);
+      if (data?.success) {
+        // Driven by what the server actually queued, not assumed.
+        if (data.awaitingReview?.length) {
+          setReviewStatus('under_review');
+          toast.success('Submitted. Placement figures are pending verification.', { duration: 4000 });
+        } else {
+          toast.success('Saved.');
+        }
+        if (data.rejected?.length) {
+          toast.error(`Not saved: ${data.rejected.join(', ')}`);
+        }
+        if (refreshUni) refreshUni();
+      }
+    } catch (error) {
+      console.error('Error saving placement stats:', error);
+      toast.error(error.response?.data?.message || 'Failed to save placement metrics');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Review Status Banner */}
+      {reviewStatus === 'under_review' && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-amber-700 dark:text-amber-300">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-amber-500 shrink-0" />
+            <div>
+              <p className="font-extrabold text-sm flex items-center gap-2">
+                Placement Updates Pending Review
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white uppercase tracking-wider">
+                  Under Review
+                </span>
+              </p>
+              <p className="text-xs opacity-90">Your placement changes have been submitted to portal moderators and will be reflected publicly once verified.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Overview Stats Edit Form */}
+      <form onSubmit={handleSaveStats} className="p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-light-border dark:border-dark-border pb-4">
+          <div>
+            <h2 className="text-xl font-extrabold text-light-text dark:text-dark-text flex items-center gap-2">
+              <GraduationCap className="w-6 h-6 text-primary" /> Placement & Package Records
+            </h2>
+            <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
+              Update annual placement metrics to highlight campus placement performance.
+            </p>
+          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 transition-all shadow-md shadow-primary/20 flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save Placement Metrics'}
+          </button>
+        </div>
+
+        {/* Highlighted Stat Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-light-muted dark:text-dark-muted">Highest Package</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xl font-extrabold text-light-text dark:text-dark-text">₹</span>
+              <input
+                type="text"
+                value={placementStats.highestPackage}
+                onChange={(e) => handleStatsChange('highestPackage', e.target.value)}
+                className="w-24 px-2 py-1 rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card font-semibold text-lg text-light-text dark:text-dark-text"
+              />
+              <span className="text-xs font-bold text-light-muted">LPA</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-light-muted dark:text-dark-muted">Average Package</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xl font-extrabold text-light-text dark:text-dark-text">₹</span>
+              <input
+                type="text"
+                value={placementStats.averagePackage}
+                onChange={(e) => handleStatsChange('averagePackage', e.target.value)}
+                className="w-24 px-2 py-1 rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card font-semibold text-lg text-light-text dark:text-dark-text"
+              />
+              <span className="text-xs font-bold text-light-muted">LPA</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-light-muted dark:text-dark-muted">Placement % Rate</span>
+            <div className="flex items-center gap-1">
+              <input
+                type="text"
+                value={placementStats.placementPercentage}
+                onChange={(e) => handleStatsChange('placementPercentage', e.target.value)}
+                className="w-24 px-2 py-1 rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card font-semibold text-lg text-light-text dark:text-dark-text"
+              />
+              <span className="text-xs font-bold text-light-muted">% Placed</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-light-muted dark:text-dark-muted">Total Job Offers</span>
+            <div className="flex items-center gap-1">
+              <input
+                type="text"
+                value={placementStats.totalOffers}
+                onChange={(e) => handleStatsChange('totalOffers', e.target.value)}
+                className="w-24 px-2 py-1 rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card font-semibold text-lg text-light-text dark:text-dark-text"
+              />
+              <span className="text-xs font-bold text-light-muted">Offers</span>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      {/* Top Recruiters Management Section */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-light-border dark:border-dark-border pb-4">
+          <div>
+            <h3 className="font-bold text-base text-light-text dark:text-dark-text flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-amber-500" /> Top Recruiting Companies ({recruiters.length})
+            </h3>
+            <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">
+              Highlight key companies visiting campus during annual placements.
+            </p>
+          </div>
+        </div>
+
+        {/* Add Recruiter Bar */}
+        <form onSubmit={handleAddRecruiter} className="flex flex-col sm:flex-row items-center gap-3">
+          <input
+            type="text"
+            placeholder="Company Name (e.g. Microsoft)"
+            value={newRecruiterName}
+            onChange={(e) => setNewRecruiterName(e.target.value)}
+            className="w-full sm:flex-1 px-4 py-2.5 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-xs font-medium focus:ring-2 focus:ring-primary focus:outline-none"
+          />
+          <select
+            value={newRecruiterCat}
+            onChange={(e) => setNewRecruiterCat(e.target.value)}
+            className="w-full sm:w-48 px-3.5 py-2.5 rounded-xl border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg text-xs font-medium"
+          >
+            <option value="Tech Giant">Tech Giant</option>
+            <option value="Product Tech">Product Tech</option>
+            <option value="Consulting">Consulting</option>
+            <option value="Finance & Banking">Finance & Banking</option>
+            <option value="Core Engineering">Core Engineering</option>
+          </select>
+          <button
+            type="submit"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <Plus className="w-4 h-4" /> Add Recruiter
+          </button>
+        </form>
+
+        {/* Recruiter Chips Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {recruiters.map((r) => (
+            <div
+              key={r.id}
+              className="p-3 rounded-2xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border flex items-center justify-between gap-2 group hover:border-primary transition-all"
+            >
+              <div className="min-w-0">
+                <p className="font-bold text-xs text-light-text dark:text-dark-text truncate">{r.name}</p>
+                <span className="text-[10px] text-light-muted dark:text-dark-muted block truncate">{r.category}</span>
+              </div>
+              <button
+                onClick={() => handleRemoveRecruiter(r.id)}
+                className="p-1 rounded-lg text-light-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Remove"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

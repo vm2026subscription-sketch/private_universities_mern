@@ -2,20 +2,36 @@ import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useRole } from '../../hooks/useRole';
 import {
+  KeyRound, ShieldCheck,
   LayoutDashboard, Building2, BookOpen, FileText, Newspaper,
   Users, Image, MessageSquareQuote, FileEdit, HelpCircle,
   Mail, Bell, Send, Settings, Shield, Menu, ChevronLeft, FileSpreadsheet, BarChart3,
-  Star, Wrench
+  Star, Wrench, Clock, CreditCard, DollarSign
 } from 'lucide-react';
 
 const navItems = [
   { label: 'Overview', icon: LayoutDashboard, path: '/admin' },
+  { label: 'Pending Requests', icon: Clock, path: '/admin/pending-requests' },
+  { label: 'University Accounts', icon: KeyRound, path: '/admin/university-accounts' },
+  { label: 'Content Review', icon: ShieldCheck, path: '/admin/content-review' },
   { label: 'Universities', icon: Building2, path: '/admin/universities' },
+  /**
+   * No link to /university/dashboard.
+   *
+   * That dashboard belongs to a university account and resolves its target from
+   * the session, so an admin — who has no universityId — has nothing for it to
+   * show. Admins edit any university from /admin/universities, by id. Serving
+   * both roles from one screen is what previously required a fallback that
+   * picked an arbitrary university out of the collection.
+   */
   { label: 'Courses', icon: BookOpen, path: '/admin/courses' },
   { label: 'Exams', icon: FileText, path: '/admin/exams' },
   { label: 'News', icon: Newspaper, path: '/admin/news' },
   { label: 'Users', icon: Users, path: '/admin/users', superadminOnly: true },
   { label: 'Leads', icon: MessageSquareQuote, path: '/admin/leads' },
+  { divider: true, label: 'Subscriptions & Revenue' },
+  { label: 'Subscription List', icon: CreditCard, path: '/admin/subscriptions' },
+  { label: 'Revenue Dashboard', icon: DollarSign, path: '/admin/revenue' },
   { divider: true, label: 'Advertising' },
   { label: 'Banners', icon: Image, path: '/admin/banners' },
   { label: 'Ad Analytics', icon: BarChart3, path: '/admin/banner-analytics' },

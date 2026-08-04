@@ -137,6 +137,17 @@ exports.stripPlatformControlledFields = (req, res, next) => {
   const attempted = TENANT_FORBIDDEN_FIELDS.filter((field) => field in req.body);
   attempted.forEach((field) => delete req.body[field]);
 
+  /**
+   * Recorded for the handler to report back.
+   *
+   * Stripping here and saying nothing left the caller unable to distinguish
+   * "your sponsorship change was refused" from "it saved fine" — the response
+   * listed no rejection because the field was already gone before the handler
+   * could classify it. A save that silently discards input is indistinguishable
+   * from a bug, which is exactly what the rejected list exists to prevent.
+   */
+  req.strippedFields = attempted;
+
   if (attempted.length) {
     console.warn(
       `[tenancy] User ${req.user?._id} attempted to set platform-controlled fields: ${attempted.join(', ')}`

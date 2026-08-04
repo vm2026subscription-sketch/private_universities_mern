@@ -13,6 +13,8 @@
  */
 
 const University = require('../models/University');
+const Course = require('../models/Course');
+const Lead = require('../models/Lead');
 const { logAction } = require('../services/auditService');
 const {
   classifyUpdate,
@@ -47,10 +49,27 @@ const isAcceptableImageUrl = (value) => {
 exports.getMyUniversity = async (req, res) => {
   try {
     const university = req.university;
+    const Subscription = require('../models/Subscription');
+
+    const latestSubscription = await Subscription.findOne({ universityId: university._id }).sort({ expiryDate: -1 });
+    const now = new Date();
+    const isSubscribed = Boolean(latestSubscription && latestSubscription.expiryDate && latestSubscription.expiryDate > now);
 
     return res.json({
       success: true,
       university,
+      subscription: latestSubscription ? {
+        _id: latestSubscription._id,
+        plan: latestSubscription.plan,
+        amount: latestSubscription.amount,
+        startDate: latestSubscription.startDate,
+        expiryDate: latestSubscription.expiryDate,
+        isActive: isSubscribed,
+      } : {
+        isActive: false,
+        plan: null,
+        expiryDate: null,
+      },
       pendingChanges: university.pendingChanges?.data || null,
       pendingSubmittedAt: university.pendingChanges?.submittedAt || null,
       policy: {
@@ -61,6 +80,85 @@ exports.getMyUniversity = async (req, res) => {
   } catch (error) {
     console.error('[university-profile] getMyUniversity failed:', error);
     return fail(res, 500, 'Could not load your university.');
+  }
+};
+
+/**
+ * Dashboard summary.
+ *
+ * Every number here is counted from a real record. That constraint is the point:
+ * a dashboard that shows a plausible figure when it has no data is worse than
+ * one that shows nothing, because the university has no way to tell which
+ * numbers to trust and will quote the invented ones to their management. Where
+ * a value has never been set, this returns null and the UI says so.
+ */
+exports.getOverview = async (req, res) => {
+  try {
+    const university = req.university;
+
+    const [courseCount, leadTotal, applyLeads, brochureLeads] = await Promise.all([
+      Course.countDocuments({ universityId: university._id }),
+      Lead.countDocuments({ universityId: university._id }),
+      Lead.countDocuments({ universityId: university._id, leadType: 'apply' }),
+      Lead.countDocuments({ universityId: university._id, leadType: 'brochure' }),
+    ]);
+
+    /**
+     * Completeness is measured against the fields a student actually looks for,
+     * so the percentage tracks how useful the page is rather than how many
+     * columns happen to be populated.
+     */
+    const checklist = [
+      { key: 'logoUrl', label: 'Logo', done: Boolean(university.logoUrl) },
+      { key: 'bannerImageUrl', label: 'Cover image', done: Boolean(university.bannerImageUrl) },
+      { key: 'description', label: 'About', done: Boolean(university.description) },
+      { key: 'vision', label: 'Vision', done: Boolean(university.vision) },
+      { key: 'mission', label: 'Mission', done: Boolean(university.mission) },
+      { key: 'phone', label: 'Contact number', done: Boolean(university.phone) },
+      { key: 'email', label: 'Contact email', done: Boolean(university.email) },
+      { key: 'address', label: 'Address', done: Boolean(university.address) },
+      { key: 'courses', label: 'Courses', done: courseCount > 0 },
+      { key: 'campus.galleryImages', label: 'Gallery', done: (university.campus?.galleryImages || []).length > 0 },
+      { key: 'facilities', label: 'Facilities', done: (university.facilities || []).length > 0 },
+      { key: 'scholarships', label: 'Scholarships', done: (university.scholarships || []).length > 0 },
+      { key: 'stats.placementPercentage', label: 'Placement rate', done: university.stats?.placementPercentage != null },
+      { key: 'topRecruiters', label: 'Recruiters', done: (university.topRecruiters || []).length > 0 },
+    ];
+
+    const completed = checklist.filter((item) => item.done).length;
+
+    return res.json({
+      success: true,
+      university: {
+        id: university._id,
+        name: university.name,
+        slug: university.slug,
+        logoUrl: university.logoUrl,
+        city: university.city,
+        state: university.state,
+      },
+      // The real counter incremented by public page views, not a derived guess.
+      profileViews: university.views || 0,
+      leads: { total: leadTotal, apply: applyLeads, brochure: brochureLeads },
+      courses: courseCount,
+      placement: {
+        // null rather than 0 — "not published yet" and "zero percent" are very
+        // different claims to put in front of a student.
+        placementPercentage: university.stats?.placementPercentage ?? null,
+        avgPackageLPA: university.stats?.avgPackageLPA ?? null,
+        highestPackageLPA: university.stats?.highestPackageLPA ?? null,
+      },
+      completeness: {
+        percent: Math.round((completed / checklist.length) * 100),
+        completed,
+        total: checklist.length,
+        missing: checklist.filter((item) => !item.done).map((item) => item.label),
+      },
+      pendingReview: Object.keys(university.pendingChanges?.data || {}),
+    });
+  } catch (error) {
+    console.error('[university-profile] getOverview failed:', error);
+    return fail(res, 500, 'Could not load your dashboard.');
   }
 };
 
@@ -79,7 +177,13 @@ exports.getMyUniversity = async (req, res) => {
 exports.updateMyUniversity = async (req, res) => {
   try {
     const university = req.university;
-    const { selfServe, review, rejected } = classifyUpdate(req.body);
+    const { selfServe, review, rejected: unknownFields } = classifyUpdate(req.body);
+
+    // Platform-controlled fields were already removed by
+    // stripPlatformControlledFields, so classifyUpdate never sees them. Merging
+    // them back in here keeps the response honest about everything that did not
+    // save, whichever layer refused it.
+    const rejected = [...(req.strippedFields || []), ...unknownFields];
 
     if (!Object.keys(selfServe).length && !Object.keys(review).length) {
       return fail(res, 400, 'No editable fields were supplied.', { rejected });
@@ -162,7 +266,13 @@ exports.updateMyUniversity = async (req, res) => {
  */
 exports.addGalleryImages = async (req, res) => {
   try {
-    const incoming = Array.isArray(req.body.images) ? req.body.images : [req.body.imageUrl];
+    // Accepts a batch (`images`) or a single image under either key. `url` is
+    // supported because the dashboard uploads one file at a time and names it
+    // that; rejecting it would be a naming argument, not a safety one.
+    const incoming = Array.isArray(req.body.images)
+      ? req.body.images
+      : [req.body.imageUrl ?? req.body.url];
+
     const urls = incoming.map((u) => String(u || '').trim()).filter(Boolean);
 
     if (!urls.length) return fail(res, 400, 'No image URLs supplied.');

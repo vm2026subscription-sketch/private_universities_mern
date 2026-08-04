@@ -18,6 +18,7 @@ const {
   approveClaim,
   rejectClaim,
   revokeAccess,
+  listUniversityAccounts,
   listTeam,
   inviteTeamMember,
   acceptInvite,
@@ -25,6 +26,7 @@ const {
 } = require('../controllers/universityPortalController');
 
 const {
+  getOverview,
   getMyUniversity,
   updateMyUniversity,
   addGalleryImages,
@@ -93,6 +95,9 @@ const tenantWrite = [
   requireActiveSubscription,
 ];
 
+/* Dashboard summary */
+router.get('/my-university/overview', ...tenantRead, getOverview);
+
 /* Profile */
 router.get('/my-university', ...tenantRead, getMyUniversity);
 router.put('/my-university', ...tenantWrite, updateMyUniversity);
@@ -144,6 +149,9 @@ router.post('/claims/:id/reject', protect, requireRole('admin'), rejectClaim);
  * approval would revoke a live account's access rather than grant a fresh one.
  */
 router.post('/claims/:id/approve', protect, requireRole('admin'), approveClaim);
+
+/** Who holds access to what — the query admin needs before changing anything. */
+router.get('/accounts', protect, requireRole('admin'), listUniversityAccounts);
 
 /** Withdrawing access outright is superadmin-only — it has no claim to appeal. */
 router.delete('/access/:userId', protect, requireRole('superadmin'), revokeAccess);
