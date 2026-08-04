@@ -130,7 +130,15 @@ const startServer = async () => {
       }
     });
 
-    // Initialize subscription expiration checker (runs on start + every 12 hours)
+    /**
+     * Subscription expiry sweep.
+     *
+     * Kept as a timer for local and always-on hosts, but it cannot be the only
+     * trigger: this deploy sleeps when idle, and a sleeping process does not
+     * fire a 12-hour interval — so on a quiet week the sweep silently never
+     * runs and nobody is told their subscription lapsed. POST /api/v1/cron/run
+     * exists so an external scheduler can drive it on a fixed clock instead.
+     */
     const { checkSubscriptionExpirations } = require('./services/subscriptionChecker');
     void checkSubscriptionExpirations();
     setInterval(() => {

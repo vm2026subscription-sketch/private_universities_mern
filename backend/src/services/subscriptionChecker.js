@@ -7,6 +7,22 @@ const notificationService = require('./notificationService');
  * Checks active university subscriptions for upcoming expirations (7 days) and expired states.
  * Sends in-app and email notifications via notificationService.
  */
+/**
+ * ⚠️ READ BEFORE THE PAYMENT MODULE SHIPS
+ *
+ * The queries below read `sponsorTier` and `sponsorExpiry`. Those are
+ * SPONSORSHIP fields — the paid ad placement the platform sells — not
+ * subscription fields, which have no model yet. Two different products with
+ * different lifecycles and different customers.
+ *
+ * As written, a university whose ADVERTISING is ending gets emailed that its
+ * SUBSCRIPTION is expiring, about a plan it never bought. 209 universities
+ * currently carry a sponsorTier; none expires within the next seven days, which
+ * is why nothing has gone out yet — timing, not safety.
+ *
+ * When the Subscription model lands, repoint both queries at it. The
+ * notification path below is correct and can stay as it is.
+ */
 async function checkSubscriptionExpirations() {
   try {
     const now = new Date();
