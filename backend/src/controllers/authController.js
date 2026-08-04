@@ -330,8 +330,10 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const normalizedEmail = normalizeEmail(req.body.email);
-    const password = String(req.body.password || '');
+    const body = req.body || {};
+    const rawEmail = body.email || body.username || body.user || '';
+    const normalizedEmail = normalizeEmail(rawEmail);
+    const password = String(body.password || body.pass || '');
 
     if (!normalizedEmail || !password) {
       return fail(res, 400, 'Email and password are required');

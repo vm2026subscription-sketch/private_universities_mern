@@ -118,10 +118,19 @@ router.get('/audit-logs', auditCtrl.getLogs);
 
 // SaaS monetization admin routes
 const leadCtrl = require('../controllers/leadController');
+const subAdminCtrl = require('../controllers/subscriptionAdminController');
+
 router.get('/leads', leadCtrl.getLeads);
 router.get('/leads/export-csv', leadCtrl.exportLeadsCSV);
 router.get('/saas-analytics', leadCtrl.getSaaSAnalytics);
 router.get('/partner-analytics/:universityId', leadCtrl.getPartnerAnalytics);
+
+// Subscription & Revenue Analytics Admin Routes
+router.get('/revenue/total', subAdminCtrl.getTotalRevenue);
+router.get('/revenue/monthly', subAdminCtrl.getMonthlyRevenue);
+router.get('/revenue/yearly', subAdminCtrl.getYearlyRevenue);
+router.get('/subscriptions/active', subAdminCtrl.getActiveSubscriptions);
+router.get('/subscriptions/expired', subAdminCtrl.getExpiredSubscriptions);
 
 // Superadmin-only: quick sponsorship patch (grant/revoke without full edit)
 router.patch('/universities/:id/sponsorship', superadmin, adminCtrl.patchSponsorship);

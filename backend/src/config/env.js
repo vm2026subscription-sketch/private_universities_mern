@@ -199,6 +199,18 @@ const validateEnvironment = () => {
     console.warn(`[config] Could not check email configuration: ${error.message}`);
   }
 
+  // Check Razorpay configuration
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    console.warn(
+      '[config] RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not set. Razorpay payment integration will be unavailable until set.'
+    );
+  }
+  if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+    console.warn(
+      '[config] RAZORPAY_WEBHOOK_SECRET is not set. Razorpay webhook verification will fail until set.'
+    );
+  }
+
   if (!isExplicitlyDevelopment()) {
     if (process.env.ALLOW_DEV_OTP_ECHO === 'true') {
       throw new Error(

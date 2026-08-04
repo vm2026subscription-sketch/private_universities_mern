@@ -23,6 +23,7 @@ const publicRoutes = require('./routes/public');
 const uploadRoutes = require('./routes/upload');
 const bhashiniRoutes = require('./routes/bhashini');
 const sitemapRoutes = require('./routes/sitemap');
+const paymentRoutes = require('./routes/payment');
 
 const errorHandler = require('./middleware/errorHandler');
 const { isProduction } = require('./config/env');
@@ -107,12 +108,16 @@ app.options('*', cors(corsOptions));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(cookieParser());
 
-// Auth endpoints accept only small JSON payloads. Applying the 10mb limit to
-// them (as the single global parser previously did) needlessly exposes the
-// unauthenticated surface to memory-exhaustion attempts.
-app.use('/api/v1/auth', express.json({ limit: '32kb' }));
+// Webhook endpoint requires raw body Buffer for Razorpay HMAC signature verification.
+// Must be mounted BEFORE express.json() converts the body to a parsed object.
+app.post(
+  ['/api/v1/payment/webhook', '/payment/webhook'],
+  express.raw({ type: 'application/json' })
+);
+
+// Global body parsing middleware for JSON and URL-encoded forms
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -172,6 +177,8 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/university-portal', universityPortalRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bhashini', bhashiniRoutes);
+app.use('/api/v1/payment', paymentRoutes);
+app.use('/payment', paymentRoutes);
 app.use('/api/v1', publicRoutes);
 app.use('/api/v1/admin/upload', uploadExcelRoutes);
 

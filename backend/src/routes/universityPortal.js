@@ -48,6 +48,7 @@ const {
   rejectUniversityIdInPayload,
   stripPlatformControlledFields,
 } = require('../middleware/universityTenancy');
+const { requireActiveSubscription } = require('../middleware/subscriptionAuth');
 const { registerLimiter, passwordResetLimiter, otpSendLimiter } = require('../middleware/rateLimiters');
 
 /**
@@ -89,7 +90,7 @@ const tenantWrite = [
   ...tenantRead,
   rejectUniversityIdInPayload,
   stripPlatformControlledFields,
-  // requireActiveSubscription,  ← Person B
+  requireActiveSubscription,
 ];
 
 /* Profile */
@@ -114,6 +115,7 @@ router.post(
   protect,
   universityOnly,
   requireUniversityAccess,
+  requireActiveSubscription,
   requireUniversityOwner,
   otpSendLimiter, // sends an outbound email — same abuse surface as OTP dispatch
   rejectUniversityIdInPayload,
@@ -125,6 +127,7 @@ router.delete(
   protect,
   universityOnly,
   requireUniversityAccess,
+  requireActiveSubscription,
   requireUniversityOwner,
   removeTeamMember
 );

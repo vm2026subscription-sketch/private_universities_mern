@@ -111,6 +111,10 @@ const startServer = async () => {
       console.log(`[startup] Health check available at http://localhost:${PORT}/api/v1/health`);
     });
 
+    // Initialize daily subscription expiration check cron job
+    const { initSubscriptionCron } = require('./services/subscriptionCron');
+    initSubscriptionCron();
+
     // Deliberately not awaited: a slow or unreachable mail host must not delay
     // the server accepting traffic. Login still needs email to work, so the
     // result is logged prominently.
