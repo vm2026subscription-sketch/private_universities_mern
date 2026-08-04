@@ -11,17 +11,17 @@ exports.getAll = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { title, message, type, category, link, isBroadcast, userId } = req.body;
+    const { title, message, type, category, link, isBroadcast, targetRole, userId } = req.body;
     if (!title || !message) return res.status(400).json({ success: false, message: 'Title and message are required' });
 
     if (isBroadcast) {
-      const notification = await Notification.create({ title, message, type, category, link, isBroadcast: true });
+      const notification = await Notification.create({ title, message, type, category, link, isBroadcast: true, targetRole });
       res.status(201).json({ success: true, data: notification, message: 'Broadcast notification created' });
     } else if (userId) {
       const notification = await Notification.create({ userId, title, message, type, category, link });
       res.status(201).json({ success: true, data: notification });
     } else {
-      return res.status(400).json({ success: false, message: 'Specify userId or set isBroadcast to true' });
+      return res.status(400).json({ success: false, message: 'Specify userId, targetRole, or set isBroadcast to true' });
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -38,13 +38,37 @@ exports.remove = async (req, res) => {
   }
 };
 
+// Helper: Build precise non-duplicating filter for authenticated user
+const getUserFilter = (user) => {
+  const userRoles = [user.role];
+  if (['admin', 'superadmin'].includes(user.role)) {
+    userRoles.push('admin');
+  }
+
+  return {
+    $or: [
+      { userId: user._id },
+      { targetRole: { $in: userRoles }, userId: { $exists: false } },
+      { isBroadcast: true, userId: { $exists: false } },
+    ],
+  };
+};
+
 // Protected user endpoints
 exports.getUserNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({
-      $or: [{ userId: req.user._id }, { isBroadcast: true }]
-    }).sort({ createdAt: -1 }).limit(50);
-    res.json({ success: true, data: notifications });
+    const filter = getUserFilter(req.user);
+
+    const [notifications, unreadCount] = await Promise.all([
+      Notification.find(filter).sort({ createdAt: -1 }).limit(50),
+      Notification.countDocuments({ ...filter, isRead: false }),
+    ]);
+
+    res.json({
+      success: true,
+      unreadCount,
+      data: notifications,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -52,8 +76,13 @@ exports.getUserNotifications = async (req, res) => {
 
 exports.markAsRead = async (req, res) => {
   try {
+    const filter = getUserFilter(req.user);
+
     const notification = await Notification.findOneAndUpdate(
-      { _id: req.params.id, $or: [{ userId: req.user._id }, { isBroadcast: true }] },
+      {
+        _id: req.params.id,
+        ...filter,
+      },
       { isRead: true, readAt: new Date() },
       { new: true }
     );
@@ -66,8 +95,13 @@ exports.markAsRead = async (req, res) => {
 
 exports.markAllRead = async (req, res) => {
   try {
+    const filter = getUserFilter(req.user);
+
     await Notification.updateMany(
-      { $or: [{ userId: req.user._id }, { isBroadcast: true }], isRead: false },
+      {
+        ...filter,
+        isRead: false,
+      },
       { isRead: true, readAt: new Date() }
     );
     res.json({ success: true, message: 'All notifications marked as read' });
