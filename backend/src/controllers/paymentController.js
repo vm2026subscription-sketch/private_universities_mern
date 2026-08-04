@@ -40,10 +40,10 @@ exports.createOrder = async (req, res, next) => {
       data: orderDetails,
     });
   } catch (error) {
-    console.error('[paymentController] createOrder error:', error);
+    console.error('[paymentController] createOrder error:', error.message, error?.error?.description || '');
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to create payment order',
+      message: error?.error?.description || error.message || 'Failed to create payment order',
     });
   }
 };
