@@ -285,9 +285,31 @@ exports.signup = async (req, res) => {
       claim: serializeClaim({ ...claimData, _id: claim._id, createdAt: claim.createdAt }),
     });
   } catch (error) {
+    /**
+     * 11000 is any duplicate key, not just a repeated claim.
+     *
+     * Reporting them all as "already pending review" sent applicants looking at
+     * the wrong thing: a phone number belonging to someone else's account
+     * produced a message about a claim they had never made, with nothing on the
+     * form to correct. Name the field that actually collided.
+     */
     if (error.code === 11000) {
-      return fail(res, 409, 'A request for this university from this account is already pending review.');
+      const field = Object.keys(error.keyPattern || error.keyValue || {}).join(', ');
+
+      if (field.includes('phone')) {
+        return fail(res, 409, 'That phone number is already registered to another account.');
+      }
+      if (field.includes('email')) {
+        return fail(res, 409, 'That email is already registered.');
+      }
+      if (field.includes('user') || field.includes('university')) {
+        return fail(res, 409, 'A request for this university from this account is already pending review.');
+      }
+
+      console.error('[university-portal] signup duplicate key on:', field, error.keyValue);
+      return fail(res, 409, 'Some of those details are already registered. Please check and try again.');
     }
+
     console.error('[university-portal] signup failed:', error);
     return fail(res, 500, 'Could not submit your request. Please try again.');
   }
