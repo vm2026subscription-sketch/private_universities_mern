@@ -191,9 +191,9 @@ export default function Universities() {
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* Mobile backdrop */}
-        {showFilters && <div className="md:hidden fixed inset-0 z-[55] bg-black/50 backdrop-blur-sm" onClick={() => setShowFilters(false)} />}
+        {showFilters && <div className="md:hidden fixed inset-0 z-[95] bg-black/50 backdrop-blur-sm" onClick={() => setShowFilters(false)} />}
 
-        <aside className={`${showFilters ? 'fixed bottom-0 left-0 right-0 z-[60] flex flex-col max-h-[90vh]' : 'hidden'} md:block md:static md:w-72 shrink-0`}>
+        <aside className={`${showFilters ? 'fixed bottom-0 left-0 right-0 z-[100] flex flex-col max-h-[90vh]' : 'hidden'} md:block md:static md:w-72 shrink-0`}>
           <div className="bg-white dark:bg-dark-card md:rounded-[2rem] rounded-t-[2rem] border border-slate-100 dark:border-white/5 shadow-xl flex flex-col md:block md:overflow-visible overflow-hidden max-h-[90vh] md:max-h-none">
             {/* Sticky header — close button always visible */}
             <div className="flex items-center justify-between px-6 py-4 md:px-6 md:pt-6 md:pb-0 border-b border-slate-100 dark:border-white/5 md:border-b-0 shrink-0 bg-white dark:bg-dark-card md:bg-transparent md:dark:bg-transparent rounded-t-[2rem]">
