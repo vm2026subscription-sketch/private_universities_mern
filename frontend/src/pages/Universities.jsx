@@ -49,11 +49,14 @@ export default function Universities() {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('nirf'); // 'nirf' | 'rating' | 'name'
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ 
-    state: initialState ? [initialState] : [], 
-    type: 'both', 
+  const [filters, setFilters] = useState({
+    state: initialState ? [initialState] : [],
+    type: 'both',
     naacGrade: [],
-    city: initialCity || ''
+    approvals: [],
+    minFees: '',
+    maxFees: '',
+    city: initialCity || '',
   });
 
   useEffect(() => {
@@ -134,6 +137,9 @@ export default function Universities() {
     if (filters.city) params.set('city', filters.city);
     if (filters.type !== 'both') params.set('type', filters.type);
     if (filters.naacGrade.length) params.set('naacGrade', filters.naacGrade.join(','));
+    if (filters.approvals.length) params.set('approvals', filters.approvals.join(','));
+    if (filters.minFees) params.set('minFees', filters.minFees);
+    if (filters.maxFees) params.set('maxFees', filters.maxFees);
     params.set('sort', sort);
     params.set('page', page);
     params.set('limit', 6);
@@ -171,6 +177,11 @@ export default function Universities() {
           <select value={sort} onChange={e => setSort(e.target.value)} className="input-field !w-auto !py-2 text-sm">
             <option value="ranking">By Ranking</option>
             <option value="name">Name A-Z</option>
+            <option value="name_desc">Name Z-A</option>
+            <option value="fees_asc">Fees: Low to High</option>
+            <option value="fees_desc">Fees: High to Low</option>
+            <option value="package">Avg Package</option>
+            <option value="established">Established Year</option>
           </select>
           <button onClick={() => setShowFilters(!showFilters)} className="md:hidden p-2 rounded-xl border border-light-border dark:border-dark-border">
             <Filter className="w-5 h-5" />
@@ -229,10 +240,10 @@ export default function Universities() {
                 <div className="space-y-2">
                   {naacGrades.map(g => (
                     <label key={g} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
-                      <input 
+                      <input
                         type="checkbox"
-                        checked={filters.naacGrade.includes(g)} 
-                        onChange={() => toggleFilter('naacGrade', g)} 
+                        checked={filters.naacGrade.includes(g)}
+                        onChange={() => toggleFilter('naacGrade', g)}
                         className="w-4 h-4 text-link focus:ring-primary border-slate-300 rounded"
                       />
                       <span className={`text-sm font-bold transition-colors ${filters.naacGrade.includes(g) ? 'text-link' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{g}</span>
@@ -240,11 +251,51 @@ export default function Universities() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Approvals</h4>
+                <div className="space-y-2">
+                  {['UGC', 'AICTE', 'NMC', 'BCI', 'COA', 'PCI'].map(a => (
+                    <label key={a} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
+                      <input
+                        type="checkbox"
+                        checked={filters.approvals.includes(a.toLowerCase())}
+                        onChange={() => toggleFilter('approvals', a.toLowerCase())}
+                        className="w-4 h-4 text-link focus:ring-primary border-slate-300 rounded"
+                      />
+                      <span className={`text-sm font-bold transition-colors ${filters.approvals.includes(a.toLowerCase()) ? 'text-link' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{a}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Annual Fees (₹)</h4>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minFees}
+                    onChange={e => { setFilters(f => ({ ...f, minFees: e.target.value })); setPage(1); }}
+                    className="input-field !py-2 text-sm w-full"
+                    min="0"
+                  />
+                  <span className="text-slate-400 shrink-0">–</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxFees}
+                    onChange={e => { setFilters(f => ({ ...f, maxFees: e.target.value })); setPage(1); }}
+                    className="input-field !py-2 text-sm w-full"
+                    min="0"
+                  />
+                </div>
+              </div>
             </div>
             
             <Button
               variant="ghost"
-              onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [], city: '' }); setPage(1); }}
+              onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [], approvals: [], minFees: '', maxFees: '', city: '' }); setPage(1); }}
               className="w-full mt-8 uppercase tracking-widest text-xs bg-slate-100 dark:bg-white/5 hover:bg-primary hover:text-white"
             >
               Reset Filters
