@@ -87,6 +87,10 @@ export default function Profile() {
       ]);
 
       if (profileRes.status !== 'fulfilled') {
+        // 401 → session expired; the API interceptor already redirected to /login.
+        // Returning here avoids a duplicate console error and toast before the
+        // redirect fires. Any other failure is a real error worth surfacing.
+        if (profileRes.reason?.response?.status === 401) return;
         throw profileRes.reason;
       }
 
