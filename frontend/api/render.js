@@ -6,13 +6,42 @@ import { renderUniversity } from './_seoRender.js';
 const BOT_RE =
   /bot|crawl|spider|slurp|bing|google|facebookexternalhit|facebot|twitter|linkedin|whatsapp|telegram|slack|discord|embed|preview|pinterest|quora|reddit|applebot|baidu|yandex|duckduck|ia_archiver|vkshare|skype|semrush|ahrefs|petalbot/i;
 
-// The built index.html, cached in module scope across warm invocations.
+const DEFAULT_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#002147" />
+    <!--SEO-START-->
+    <title>Vidyarthi Mitra - Find Your Perfect University in India</title>
+    <meta name="description" content="Explore 700+ private, deemed and international universities across India. Compare fees, NAAC grades, NIRF rankings, courses, placements and admissions." />
+    <!--SEO-END-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`;
+
 let TEMPLATE = null;
 async function getTemplate(host) {
   if (TEMPLATE) return TEMPLATE;
-  const res = await fetch(`https://${host}/index.html`);
-  TEMPLATE = await res.text();
-  return TEMPLATE;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
+    const res = await fetch(`https://${host}/index.html`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      TEMPLATE = await res.text();
+      return TEMPLATE;
+    }
+  } catch {
+    // Fall back to embedded template instantly if self-fetch fails or times out
+  }
+  return DEFAULT_TEMPLATE;
 }
 
 export default async function handler(req, res) {
