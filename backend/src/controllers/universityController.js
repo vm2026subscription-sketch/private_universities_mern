@@ -346,6 +346,28 @@ exports.getUniversities = async (req, res) => {
       ]);
     }
 
+    // The Excel uploader stores courses via Course.universityId but never
+    // pushes IDs into University.courses[]. populate('courses') always yields [].
+    // For foreign/twinning lists, do one batch lookup keyed by universityId.
+    if ((requestedType === 'foreign' || requestedType === 'twinning') && universities.length) {
+      const uniIds = universities.map(u => u._id);
+      const allCourses = await Course.find(
+        { universityId: { $in: uniIds } },
+        'universityId name baseCourse stream category duration feesPerYear specializationName'
+      ).lean();
+      const coursesByUni = {};
+      for (const c of allCourses) {
+        const key = c.universityId.toString();
+        if (!coursesByUni[key]) coursesByUni[key] = [];
+        coursesByUni[key].push(c);
+      }
+      universities = universities.map(u => {
+        const plain = u.toObject ? u.toObject() : { ...u };
+        plain.courses = coursesByUni[plain._id.toString()] || [];
+        return plain;
+      });
+    }
+
     res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({
       success: true,
