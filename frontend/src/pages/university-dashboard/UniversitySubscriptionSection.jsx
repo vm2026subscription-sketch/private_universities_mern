@@ -45,7 +45,7 @@ const UniversitySubscriptionSection = () => {
       }
       
       const data = orderRes.data.data;
-      
+
       // 2. Open Razorpay checkout
       const options = {
         key: data.keyId,

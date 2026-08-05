@@ -100,7 +100,7 @@ exports.verifyCheckoutSignature = ({
 }) => {
   const secret = process.env.RAZORPAY_KEY_SECRET;
   if (!secret) {
-    throw new Error('RAZORPAY_KEY_SECRET is not configured on server.');
+    throw new Error('RAZORPAY_KEY_SECRET environment variable is missing.');
   }
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
