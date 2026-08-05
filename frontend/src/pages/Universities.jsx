@@ -190,13 +190,25 @@ export default function Universities() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
-        <aside className={`${showFilters ? 'fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md p-6 overflow-y-auto' : 'hidden'} md:block md:static md:w-72 shrink-0`}>
-          <div className="bg-white dark:bg-dark-card rounded-[2rem] p-6 border border-slate-100 dark:border-white/5 shadow-xl h-full md:h-auto overflow-y-auto md:overflow-visible">
-            <div className="flex items-center justify-between mb-8">
+        {/* Mobile backdrop */}
+        {showFilters && <div className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setShowFilters(false)} />}
+
+        <aside className={`${showFilters ? 'fixed bottom-0 left-0 right-0 z-50 flex flex-col max-h-[90vh]' : 'hidden'} md:block md:static md:w-72 shrink-0`}>
+          <div className="bg-white dark:bg-dark-card md:rounded-[2rem] rounded-t-[2rem] border border-slate-100 dark:border-white/5 shadow-xl flex flex-col md:block md:overflow-visible overflow-hidden max-h-[90vh] md:max-h-none">
+            {/* Sticky header — close button always visible */}
+            <div className="flex items-center justify-between px-6 py-4 md:px-6 md:pt-6 md:pb-0 border-b border-slate-100 dark:border-white/5 md:border-b-0 shrink-0 bg-white dark:bg-dark-card md:bg-transparent md:dark:bg-transparent rounded-t-[2rem]">
               <h3 className="font-bold text-lg">Filters</h3>
-              <button className="md:hidden" onClick={() => setShowFilters(false)}><X className="w-5 h-5" /></button>
+              <button
+                className="md:hidden p-2 -mr-1 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                onClick={() => setShowFilters(false)}
+                aria-label="Close filters"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            
+
+            {/* Scrollable filter body */}
+            <div className="overflow-y-auto flex-1 md:overflow-visible px-6 py-4 md:py-6">
             <div className="space-y-8">
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">State</h4>
@@ -292,14 +304,32 @@ export default function Universities() {
                 </div>
               </div>
             </div>
-            
+
+            {/* Desktop reset button */}
             <Button
               variant="ghost"
               onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [], approvals: [], minFees: '', maxFees: '', city: '' }); setPage(1); }}
-              className="w-full mt-8 uppercase tracking-widest text-xs bg-slate-100 dark:bg-white/5 hover:bg-primary hover:text-white"
+              className="hidden md:flex w-full mt-6 uppercase tracking-widest text-xs bg-slate-100 dark:bg-white/5 hover:bg-primary hover:text-white"
             >
               Reset Filters
             </Button>
+            </div>{/* end scrollable body */}
+
+            {/* Mobile sticky footer */}
+            <div className="md:hidden flex gap-3 px-6 py-4 border-t border-slate-100 dark:border-white/5 shrink-0 bg-white dark:bg-dark-card">
+              <button
+                onClick={() => { setFilters({ state: [], type: 'both', naacGrade: [], approvals: [], minFees: '', maxFees: '', city: '' }); setPage(1); }}
+                className="flex-1 py-3 rounded-xl border-2 border-slate-200 dark:border-white/10 text-sm font-bold text-slate-600 dark:text-slate-300"
+              >
+                Reset
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/25"
+              >
+                Apply Filters
+              </button>
+            </div>
           </div>
         </aside>
 
