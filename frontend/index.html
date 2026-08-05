@@ -36,7 +36,42 @@
     <meta name="twitter:title" content="Vidyarthi Mitra - Find Your Perfect University" />
     <meta name="twitter:description" content="Explore 700+ universities in India. Filter by state, NAAC grade, NIRF rank and more." />
     <meta name="twitter:image" content="https://privateuniversity.vidyarthimitra.org/images/logo.png" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://privateuniversity.vidyarthimitra.org/#organization",
+          "name": "Vidyarthi Mitra",
+          "url": "https://privateuniversity.vidyarthimitra.org/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://privateuniversity.vidyarthimitra.org/images/logo.png"
+          },
+          "description": "Explore 700+ private, deemed and international universities across India.",
+          "sameAs": ["https://vidyarthimitra.org"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://privateuniversity.vidyarthimitra.org/#website",
+          "url": "https://privateuniversity.vidyarthimitra.org/",
+          "name": "Vidyarthi Mitra",
+          "publisher": { "@id": "https://privateuniversity.vidyarthimitra.org/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://privateuniversity.vidyarthimitra.org/universities?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
     <!--SEO-END-->
+
     <!-- Preconnect for faster font loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
