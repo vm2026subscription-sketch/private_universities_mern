@@ -59,7 +59,20 @@
   .dark .input-field {
     @apply bg-dark-card border-dark-border text-dark-text;
   }
+}
 
+/* Prevent iOS Safari from auto-zooming on input focus.
+   iOS zooms whenever an input's computed font-size < 16px.
+   This rule enforces 16px on mobile without disabling user zoom. */
+@media screen and (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@layer components {
   /* ── Shimmer skeleton ── */
   .skeleton {
     @apply rounded-xl overflow-hidden relative;
