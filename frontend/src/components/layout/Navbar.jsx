@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, Moon, Sun, Menu, X, User, Bookmark, Settings, LogOut, 
-  ChevronDown, Building2, BookOpen, Shield 
+import {
+  Search, Moon, Sun, Menu, X, User, Bookmark, Settings, LogOut,
+  ChevronDown, Building2, BookOpen, Shield, Bell
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -22,11 +22,25 @@ export default function Navbar() {
   const [showSearch, setShowSearch] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   
   const searchRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!user) { setUnreadCount(0); return; }
+    const fetchCount = () => {
+      api.get('/notifications').then(({ data }) => {
+        const list = Array.isArray(data?.data) ? data.data : [];
+        setUnreadCount(list.filter(n => !n.isRead).length);
+      }).catch(() => {});
+    };
+    fetchCount();
+    const timer = setInterval(fetchCount, 30000);
+    return () => clearInterval(timer);
+  }, [user, location.pathname]);
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -160,6 +174,17 @@ export default function Navbar() {
               {dark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
             </button>
             <AccessibilityWidget inline />
+
+            {user && (
+              <Link to="/profile?tab=notifications" aria-label="Notifications" className="relative p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-dark-card transition-colors">
+                <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {user ? (
               <div className="relative" ref={dropdownRef}>
