@@ -31,10 +31,15 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!user) { setUnreadCount(0); return; }
-    api.get('/notifications').then(({ data }) => {
-      const list = Array.isArray(data?.data) ? data.data : [];
-      setUnreadCount(list.filter(n => !n.isRead).length);
-    }).catch(() => {});
+    const fetchCount = () => {
+      api.get('/notifications').then(({ data }) => {
+        const list = Array.isArray(data?.data) ? data.data : [];
+        setUnreadCount(list.filter(n => !n.isRead).length);
+      }).catch(() => {});
+    };
+    fetchCount();
+    const timer = setInterval(fetchCount, 30000);
+    return () => clearInterval(timer);
   }, [user, location.pathname]);
 
   const navLinks = [

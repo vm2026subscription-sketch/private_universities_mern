@@ -74,6 +74,20 @@ export default function Profile() {
     setRecentlyViewed(recent);
   }, [user]);
 
+  // Poll notifications every 30s when the notifications tab is active.
+  useEffect(() => {
+    if (activeTab !== 'notifications' || !user) return;
+    const poll = async () => {
+      try {
+        const { data } = await api.get('/notifications');
+        setNotifications(data.data || []);
+      } catch {}
+    };
+    poll();
+    const timer = setInterval(poll, 30000);
+    return () => clearInterval(timer);
+  }, [activeTab, user]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -122,6 +136,7 @@ export default function Profile() {
     { id: 'preferences', label: 'Preferences', icon: Settings },
     { id: 'recommendations', label: 'Suggest', icon: Lightbulb },
     { id: 'compare', label: 'Compare', icon: GitCompare },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'settings', label: 'Settings', icon: UserIcon },
   ];
 
@@ -624,6 +639,54 @@ export default function Profile() {
                 compareList={compareList}
                 onRemove={(item) => toggleCompare(item)}
               />
+            )}
+
+            {activeTab === 'notifications' && (
+              <div className="card p-0 overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-primary/5">
+                  <div className="flex items-center gap-3">
+                    <Bell className="w-5 h-5 text-primary" />
+                    <span className="font-bold text-sm">Notifications</span>
+                    {notifications.filter(n => !n.isRead).length > 0 && (
+                      <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
+                        {notifications.filter(n => !n.isRead).length}
+                      </span>
+                    )}
+                  </div>
+                  {notifications.some(n => !n.isRead) && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAllNotificationsRead}
+                      className="text-[10px] font-bold uppercase text-link hover:underline"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                <div className="divide-y divide-light-border dark:divide-dark-border">
+                  {notifications.length === 0 ? (
+                    <div className="p-12 text-center text-light-muted text-sm italic">
+                      No notifications yet
+                    </div>
+                  ) : notifications.map((notif) => (
+                    <button
+                      key={notif._id}
+                      type="button"
+                      onClick={() => handleNotificationClick(notif)}
+                      className={`w-full text-left p-5 hover:bg-light-bg dark:hover:bg-dark-border/30 transition-colors flex gap-4 ${!notif.isRead ? 'bg-primary/5' : ''}`}
+                    >
+                      {!notif.isRead && <span className="mt-1.5 w-2 h-2 rounded-full bg-primary shrink-0" />}
+                      <div className={!notif.isRead ? '' : 'ml-6'}>
+                        <p className="text-sm font-bold mb-0.5">{notif.title}</p>
+                        <p className="text-xs text-light-muted">{notif.message}</p>
+                        <p className="text-[10px] text-light-muted mt-1.5 font-bold uppercase tracking-wide">
+                          {new Date(notif.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {activeTab === 'settings' && (
