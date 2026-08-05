@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { MapPin, Bookmark, Filter, X, Star, Download, BookOpen, Award, GraduationCap, AlertCircle, RefreshCw } from 'lucide-react';
 import Seo from '../components/common/Seo';
 import { motion } from 'framer-motion';
@@ -24,14 +24,31 @@ const states = [
   'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 
   'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
 ];
+
+const stateSlugMap = Object.fromEntries(
+  states.map(s => [s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''), s])
+);
+
 const naacGrades = ['A++','A+','A','B++','B','Not Rated'];
+const naacSlugMap = {
+  'a-plus-plus': 'A++',
+  'a-plus': 'A+',
+  'a': 'A',
+  'b-plus-plus': 'B++',
+  'b': 'B',
+  'not-rated': 'Not Rated'
+};
 
 export default function Universities() {
   const location = useLocation();
+  const { stateSlug, naacSlug } = useParams();
   const searchParams = new URLSearchParams(location.search);
   const initialSearch = searchParams.get('search') || '';
   const initialState = searchParams.get('state') || '';
   const initialCity = searchParams.get('city') || '';
+
+  const matchedState = stateSlug ? stateSlugMap[stateSlug] : null;
+  const matchedNaac = naacSlug ? naacSlugMap[naacSlug] : null;
 
   const { user } = useAuth();
   const [universities, setUniversities] = useState([]);
@@ -43,16 +60,14 @@ export default function Universities() {
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [leadModalType, setLeadModalType] = useState('apply'); // 'apply' | 'brochure'
   const [selectedUniForLead, setSelectedUniForLead] = useState(null);
-  // Which university's brochure is currently being generated. Building the PDF
-  // takes a moment, so the button needs to show progress and refuse re-entry.
   const [downloadingId, setDownloadingId] = useState(null);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('nirf'); // 'nirf' | 'rating' | 'name'
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    state: initialState ? [initialState] : [],
+    state: matchedState ? [matchedState] : (initialState ? [initialState] : []),
     type: 'both',
-    naacGrade: [],
+    naacGrade: matchedNaac ? [matchedNaac] : [],
     approvals: [],
     minFees: '',
     maxFees: '',
@@ -66,11 +81,12 @@ export default function Universities() {
     
     setFilters(f => ({
       ...f,
-      state: newState ? [newState] : [],
+      state: matchedState ? [matchedState] : (newState ? [newState] : []),
+      naacGrade: matchedNaac ? [matchedNaac] : f.naacGrade,
       city: newCity || ''
     }));
     setPage(1);
-  }, [location.search]);
+  }, [location.search, stateSlug, naacSlug]);
 
   useEffect(() => {
     if (!user) {
@@ -164,15 +180,39 @@ export default function Universities() {
     setPage(1);
   };
 
+  const pageTitle = matchedState
+    ? `Top Private Universities in ${matchedState} (2026) | Fees, Ranking & Admissions | Vidyarthi Mitra`
+    : matchedNaac
+    ? `NAAC Grade ${matchedNaac} Universities in India (2026) | Vidyarthi Mitra`
+    : "Universities in India | Fees, Rankings & Admissions 2026 | Vidyarthi Mitra";
+
+  const pageDesc = matchedState
+    ? `Explore top private and deemed universities in ${matchedState}. Compare courses, fees, NAAC grades, NIRF rankings, placements and admission guidelines.`
+    : matchedNaac
+    ? `List of NAAC Grade ${matchedNaac} private & deemed universities in India. Compare NIRF ranks, courses, fees and placement details.`
+    : "Explore 500+ private and deemed universities in India. Compare fees, NAAC grades, NIRF rankings, placements and admission process.";
+
+  const pagePath = matchedState
+    ? `/universities/in-${stateSlug}`
+    : matchedNaac
+    ? `/universities/naac-${naacSlug}`
+    : "/universities";
+
+  const h1Title = matchedState
+    ? `Private Universities in ${matchedState}`
+    : matchedNaac
+    ? `NAAC Grade ${matchedNaac} Universities`
+    : "Universities";
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20 md:pb-8">
       <Seo
-        title="Universities in India | Fees, Rankings & Admissions 2026 | Vidyarthi Mitra"
-        description="Explore 500+ private and deemed universities in India. Compare fees, NAAC grades, NIRF rankings, placements and admission process."
-        path="/universities"
+        title={pageTitle}
+        description={pageDesc}
+        path={pagePath}
       />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-serif font-bold text-link">Universities</h1>
+        <h1 className="text-3xl font-serif font-bold text-link">{h1Title}</h1>
         <div className="flex items-center gap-3">
           <select value={sort} onChange={e => setSort(e.target.value)} className="input-field !w-auto !py-2 text-sm">
             <option value="ranking">By Ranking</option>

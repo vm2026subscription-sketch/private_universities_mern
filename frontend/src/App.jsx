@@ -134,6 +134,8 @@
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/universities" element={<Universities />} />
+          <Route path="/universities/in-:stateSlug" element={<Universities />} />
+          <Route path="/universities/naac-:naacSlug" element={<Universities />} />
           <Route path="/foreign-universities" element={<ForeignUniversities />} />
           <Route path="/universities/:slug" element={<UniversityDetail />} />
           <Route path="/courses" element={<Courses />} />

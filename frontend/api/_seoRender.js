@@ -134,6 +134,75 @@ function notFoundBlock(slug) {
  * (200) so a crawler never sees a hard error for a transient issue.
  */
 export async function renderUniversity(slug, template, fetchImpl = fetch) {
+  if (slug.startsWith('in-')) {
+    const stateName = slug
+      .replace(/^in-/, '')
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    const title = `Top Private Universities in ${stateName} (2026) | Fees, Ranking & Admissions | ${SITE_NAME}`;
+    const description = `Explore top private and deemed universities in ${stateName}. Compare courses, fees, NAAC grades, NIRF rankings, placements and admission guidelines.`;
+    const canonical = `${SITE_URL}/universities/${slug}`;
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'CollectionPage',
+          name: `Private Universities in ${stateName}`,
+          url: canonical,
+          description,
+          publisher: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL }
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+            { '@type': 'ListItem', position: 2, name: 'Universities', item: `${SITE_URL}/universities` },
+            { '@type': 'ListItem', position: 3, name: stateName, item: canonical }
+          ]
+        }
+      ]
+    };
+    const block = metaBlock({ title, description, canonical, image: DEFAULT_OG_IMAGE, noindex: false, jsonLd });
+    return { status: 200, html: injectSeo(template, block) };
+  }
+
+  if (slug.startsWith('naac-')) {
+    const naacMap = {
+      'naac-a-plus-plus': 'A++',
+      'naac-a-plus': 'A+',
+      'naac-a': 'A',
+      'naac-b-plus-plus': 'B++',
+      'naac-b': 'B'
+    };
+    const grade = naacMap[slug] || 'A+';
+    const title = `NAAC Grade ${grade} Universities in India (2026) | Fees & Ranks | ${SITE_NAME}`;
+    const description = `List of NAAC Grade ${grade} private & deemed universities in India. Compare NIRF ranks, courses, fees and placement details.`;
+    const canonical = `${SITE_URL}/universities/${slug}`;
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'CollectionPage',
+          name: `NAAC Grade ${grade} Universities in India`,
+          url: canonical,
+          description,
+          publisher: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL }
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+            { '@type': 'ListItem', position: 2, name: 'Universities', item: `${SITE_URL}/universities` },
+            { '@type': 'ListItem', position: 3, name: `NAAC ${grade}`, item: canonical }
+          ]
+        }
+      ]
+    };
+    const block = metaBlock({ title, description, canonical, image: DEFAULT_OG_IMAGE, noindex: false, jsonLd });
+    return { status: 200, html: injectSeo(template, block) };
+  }
+
   let res;
   try {
     res = await fetchImpl(`${API_BASE}/universities/${encodeURIComponent(slug)}`);
@@ -162,3 +231,4 @@ export async function renderUniversity(slug, template, fetchImpl = fetch) {
   const block = metaBlock({ ...s, jsonLd: s.noindex ? null : universityJsonLd(data) });
   return { status: 200, html: injectSeo(template, block) };
 }
+

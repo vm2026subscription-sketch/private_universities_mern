@@ -58,9 +58,31 @@ exports.getSitemapIndex = async (req, res) => {
 // GET /sitemap-static.xml — hand-maintained list of evergreen public pages.
 exports.getStaticSitemap = async (req, res) => {
   try {
+    const popularStates = [
+      'maharashtra', 'delhi', 'karnataka', 'uttar-pradesh', 'rajasthan',
+      'haryana', 'punjab', 'gujarat', 'madhya-pradesh', 'tamil-nadu',
+      'west-bengal', 'jharkhand', 'bihar', 'andhra-pradesh', 'telangana',
+      'kerala', 'uttarakhand', 'chhattisgarh', 'himachal-pradesh', 'goa', 'assam'
+    ];
+    const naacGrades = ['naac-a-plus-plus', 'naac-a-plus', 'naac-a'];
+
+    const stateRoutes = popularStates.map((s) => ({
+      path: `/universities/in-${s}`,
+      priority: '0.8',
+      changefreq: 'weekly',
+    }));
+
+    const naacRoutes = naacGrades.map((g) => ({
+      path: `/universities/${g}`,
+      priority: '0.8',
+      changefreq: 'weekly',
+    }));
+
     const routes = [
       { path: '/', priority: '1.0', changefreq: 'daily' },
       { path: '/universities', priority: '0.9', changefreq: 'daily' },
+      ...stateRoutes,
+      ...naacRoutes,
       { path: '/foreign-universities', priority: '0.8', changefreq: 'weekly' },
       { path: '/courses', priority: '0.8', changefreq: 'weekly' },
       { path: '/exams', priority: '0.7', changefreq: 'weekly' },
@@ -82,6 +104,7 @@ exports.getStaticSitemap = async (req, res) => {
     res.status(500).send(`<!-- sitemap error: ${xmlEscape(error.message)} -->`);
   }
 };
+
 
 // GET /sitemap-universities.xml — every published, indexable university page.
 exports.getUniversitiesSitemap = async (req, res) => {
