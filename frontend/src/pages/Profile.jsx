@@ -19,7 +19,7 @@ import {
   AlertCircle,
   RefreshCw,
 } from 'lucide-react';
-import api, { TOKEN_KEY, REFRESH_KEY } from '../utils/api';
+import api, { TOKEN_KEY, REFRESH_KEY, clearStoredSession } from '../utils/api';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getUniversityDisplayType } from '../utils/universityType';
@@ -87,10 +87,13 @@ export default function Profile() {
       ]);
 
       if (profileRes.status !== 'fulfilled') {
-        // 401 → session expired; the API interceptor already redirected to /login.
-        // Returning here avoids a duplicate console error and toast before the
-        // redirect fires. Any other failure is a real error worth surfacing.
-        if (profileRes.reason?.response?.status === 401) return;
+        if (profileRes.reason?.response?.status === 401) {
+          // Session expired and token already gone — interceptor won't redirect
+          // (it only redirects when token exists). Clear everything and go to login.
+          clearStoredSession();
+          window.location.href = '/login';
+          return;
+        }
         throw profileRes.reason;
       }
 
@@ -374,6 +377,9 @@ export default function Profile() {
       </div>
     );
   }
+
+  // Safety guard: fullUser can be null briefly while auth redirect fires.
+  if (!fullUser) return null;
 
   const dashboardCounts = {
     savedCollegesCount: fullUser.savedUniversities?.length || 0,
