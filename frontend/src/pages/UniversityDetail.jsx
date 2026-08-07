@@ -84,6 +84,18 @@ export default function UniversityDetail() {
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [leadType, setLeadType] = useState('apply');
 
+  /**
+   * Whether to show the enquiry controls at all.
+   *
+   * Defaults to enabled so a response that predates this field — a cached page,
+   * an older deploy — keeps working normally. Failing the other way would hide
+   * the Apply button across the catalogue on any hiccup.
+   */
+  const enquiriesEnabled = uni?.enquiries?.enabled !== false;
+  const enquiryMessage =
+    uni?.enquiries?.message ||
+    'This university profile is temporarily unavailable for enquiries. Please check back later.';
+
   useEffect(() => {
     window.scrollTo(0, 0);
     setLoading(true);
@@ -365,35 +377,49 @@ export default function UniversityDetail() {
               >
                 <ClipboardList className="w-6 h-6" />
               </button>
-              <button 
-                onClick={() => {
-                  setLeadType('brochure');
-                  setLeadModalOpen(true);
-                }}
-                className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-text dark:text-dark-text font-bold text-xs uppercase tracking-widest px-6 py-4 rounded-2xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
-              >
-                Download Brochure
-              </button>
-              {admissionUrl && (
-                <a
-                  href={admissionUrl.startsWith('http') ? admissionUrl : `https://${admissionUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs uppercase tracking-widest px-6 py-4 rounded-2xl shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all flex items-center gap-2"
-                >
-                  Admission Link <ExternalLink className="w-4 h-4" />
-                </a>
+              {/* Enquiry surface. Withheld when a claimed university's
+                  subscription has lapsed — see enquiriesEnabled below. Saving,
+                  sharing and application tracking stay available: they belong to
+                  the student, not to the university's billing. */}
+              {enquiriesEnabled && (
+                <>
+                  <button
+                    onClick={() => {
+                      setLeadType('brochure');
+                      setLeadModalOpen(true);
+                    }}
+                    className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-text dark:text-dark-text font-bold text-xs uppercase tracking-widest px-6 py-4 rounded-2xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                  >
+                    Download Brochure
+                  </button>
+                  {admissionUrl && (
+                    <a
+                      href={admissionUrl.startsWith('http') ? admissionUrl : `https://${admissionUrl}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs uppercase tracking-widest px-6 py-4 rounded-2xl shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all flex items-center gap-2"
+                    >
+                      Admission Link <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => {
+                      setLeadType('apply');
+                      setLeadModalOpen(true);
+                    }}
+                    className="bg-gradient-to-br from-primary to-primary-light text-white font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-2xl shadow-xl shadow-primary/30 hover:scale-105 transition-all border border-accent/20"
+                  >
+                    APPLY NOW
+                  </button>
+                </>
               )}
-              <button 
-                onClick={() => {
-                  setLeadType('apply');
-                  setLeadModalOpen(true);
-                }}
-                className="bg-gradient-to-br from-primary to-primary-light text-white font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-2xl shadow-xl shadow-primary/30 hover:scale-105 transition-all border border-accent/20"
-              >
-                APPLY NOW
-              </button>
             </div>
+
+            {!enquiriesEnabled && (
+              <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 px-5 py-4 max-w-2xl">
+                <p className="text-sm text-amber-900">{enquiryMessage}</p>
+              </div>
+            )}
           </div>
 
           {/* Edit Form (conditionally shown) */}
@@ -495,12 +521,22 @@ export default function UniversityDetail() {
                       <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-link border-b border-primary/10 pb-4">Campus Contacts</h3>
                       <div className="space-y-5">
                          {(() => {
-                           const validEmail = getValidEmail(uni.email, uni.admissions?.contactEmail);
-                           const validPhone = getValidPhone(uni.phone, uni.admissions?.contactPhone);
+                           // Address and website stay: they are public facts a
+                           // student can find anyway, and hiding them would make
+                           // the page look broken rather than gated. The direct
+                           // line to admissions — email, phone, admission link —
+                           // is the part that carries commercial value, so that
+                           // is what a lapsed subscription withholds.
+                           const validEmail = enquiriesEnabled
+                             ? getValidEmail(uni.email, uni.admissions?.contactEmail)
+                             : null;
+                           const validPhone = enquiriesEnabled
+                             ? getValidPhone(uni.phone, uni.admissions?.contactPhone)
+                             : null;
                            return [
                              { icon: MapPin, value: uni.address || `${uni.city}, ${uni.state}` },
                              { icon: Globe, value: uni.website, link: true },
-                             ...(admissionUrl ? [{ icon: ExternalLink, value: admissionUrl, link: true, isAdmission: true }] : []),
+                             ...(admissionUrl && enquiriesEnabled ? [{ icon: ExternalLink, value: admissionUrl, link: true, isAdmission: true }] : []),
                              ...(validEmail ? [{ icon: Mail, value: validEmail }] : []),
                              ...(validPhone ? [{ icon: Phone, value: validPhone }] : []),
                            ].filter(item => Boolean(item.value));

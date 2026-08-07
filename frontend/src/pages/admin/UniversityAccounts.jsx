@@ -50,6 +50,66 @@ export default function UniversityAccounts() {
     }
   };
 
+  /**
+   * Subscription state per university, loaded alongside the accounts so the
+   * trial controls can show what is already in force. Keyed by university id
+   * because several accounts can belong to one university.
+   */
+  const [subStates, setSubStates] = useState({});
+  const [trialFor, setTrialFor] = useState(null);
+  const [trialNote, setTrialNote] = useState('');
+
+  const loadSubStates = async (rows) => {
+    const ids = [...new Set(rows.map((r) => r.university?.id).filter(Boolean))];
+    const entries = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const { data } = await api.get(`/admin/subscriptions/${id}/state`);
+          return [id, data.data];
+        } catch {
+          return [id, null];
+        }
+      })
+    );
+    setSubStates(Object.fromEntries(entries));
+  };
+
+  useEffect(() => {
+    if (accounts.length) loadSubStates(accounts);
+  }, [accounts]);
+
+  const grantTrial = async (universityId, body) => {
+    setWorking(true);
+    try {
+      const { data } = await api.post(`/admin/subscriptions/${universityId}/trial`, {
+        ...body,
+        note: trialNote.trim() || undefined,
+      });
+      toast.success(data.message || 'Trial granted');
+      setTrialFor(null);
+      setTrialNote('');
+      loadSubStates(accounts);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not grant the trial');
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const removeTrial = async (universityId) => {
+    setWorking(true);
+    try {
+      const { data } = await api.delete(`/admin/subscriptions/${universityId}/trial`);
+      toast.success(data.message || 'Trial removed');
+      setTrialFor(null);
+      loadSubStates(accounts);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not remove the trial');
+    } finally {
+      setWorking(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -89,6 +149,7 @@ export default function UniversityAccounts() {
                 <th className="p-4">University</th>
                 <th className="p-4">Role</th>
                 <th className="p-4">Status</th>
+                <th className="p-4">Subscription</th>
                 <th className="p-4 text-right">Action</th>
               </tr>
             </thead>
@@ -115,6 +176,50 @@ export default function UniversityAccounts() {
 
                   <td className="p-4">
                     <span className="text-xs text-light-muted">{a.universityRole || '—'}</span>
+                  </td>
+
+                  {/* Subscription state, and the trial controls. Shown per
+                      account row but keyed on the university, so granting from
+                      any row of the same university reads back the same. */}
+                  <td className="p-4">
+                    {(() => {
+                      const uid = a.university?.id;
+                      const s = uid ? subStates[uid] : null;
+                      if (!uid) return <span className="text-xs text-light-muted">—</span>;
+                      if (!s) return <span className="text-xs text-light-muted">…</span>;
+
+                      const label = s.lifetime
+                        ? 'Lifetime'
+                        : s.isActive
+                        ? `Until ${new Date(s.expiryDate).toLocaleDateString()}`
+                        : s.state === 'never_subscribed'
+                        ? 'Never subscribed'
+                        : 'Expired';
+
+                      return (
+                        <div className="space-y-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                              s.isActive ? 'text-emerald-600' : 'text-amber-600'
+                            }`}
+                          >
+                            {label}
+                          </span>
+                          {s.source === 'trial' && (
+                            <p className="text-[11px] text-blue-600 font-medium">Trial</p>
+                          )}
+                          {!s.enquiriesEnabled && (
+                            <p className="text-[11px] text-rose-600">Enquiries locked</p>
+                          )}
+                          <button
+                            onClick={() => { setTrialFor({ ...a, sub: s }); setTrialNote(''); }}
+                            className="block text-[11px] text-primary font-semibold hover:underline"
+                          >
+                            Manage trial
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </td>
 
                   <td className="p-4">
@@ -156,6 +261,76 @@ export default function UniversityAccounts() {
           Revoking access is restricted to superadmins — it signs the university out immediately and
           removes anyone they invited.
         </p>
+      )}
+
+      {/* Trial controls */}
+      {trialFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="max-w-md w-full p-6 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-light-text dark:text-dark-text">Manage trial</h3>
+                <p className="text-xs text-light-muted mt-0.5">{trialFor.university?.name}</p>
+              </div>
+              <button onClick={() => setTrialFor(null)} className="text-light-muted hover:text-light-text">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 p-3 rounded-lg bg-light-bg dark:bg-dark-bg text-xs text-light-muted">
+              {trialFor.sub?.isActive
+                ? trialFor.sub.lifetime
+                  ? 'Currently on lifetime access.'
+                  : `Active until ${new Date(trialFor.sub.expiryDate).toLocaleDateString()}. Extending adds to that date rather than replacing it.`
+                : 'No active subscription. A trial starts from today.'}
+            </div>
+
+            <label className="text-xs font-semibold uppercase tracking-wide text-light-muted block mt-4 mb-1.5">
+              Note (optional, kept in the audit log)
+            </label>
+            <input
+              value={trialNote}
+              onChange={(e) => setTrialNote(e.target.value)}
+              placeholder="e.g. Pilot agreed with the registrar"
+              className="input-field"
+            />
+
+            <p className="text-xs font-semibold uppercase tracking-wide text-light-muted mt-5 mb-2">Extend</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[7, 15, 30].map((days) => (
+                <button
+                  key={days}
+                  onClick={() => grantTrial(trialFor.university.id, { days })}
+                  disabled={working}
+                  className="py-2.5 rounded-lg border border-light-border dark:border-dark-border text-sm font-medium hover:border-primary transition-colors disabled:opacity-50"
+                >
+                  {days} days
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => grantTrial(trialFor.university.id, { lifetime: true })}
+              disabled={working}
+              className="w-full mt-2 py-2.5 rounded-lg border border-light-border dark:border-dark-border text-sm font-medium hover:border-primary transition-colors disabled:opacity-50"
+            >
+              Lifetime
+            </button>
+
+            {/* Only trials can be removed here. Deleting a paid subscription is
+                a refund, and refunds go through Razorpay. */}
+            {trialFor.sub?.source === 'trial' && (
+              <button
+                onClick={() => removeTrial(trialFor.university.id)}
+                disabled={working || !isSuperadmin}
+                title={isSuperadmin ? 'Remove trial' : 'Only a superadmin can remove a trial'}
+                className="w-full mt-4 py-2.5 rounded-lg text-sm font-semibold text-rose-600 border border-rose-200 hover:bg-rose-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Remove trial
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Confirmation. Revocation is instant and cannot be undone from here, so

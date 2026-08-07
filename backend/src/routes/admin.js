@@ -132,6 +132,19 @@ router.get('/revenue/yearly', subAdminCtrl.getYearlyRevenue);
 router.get('/subscriptions/active', subAdminCtrl.getActiveSubscriptions);
 router.get('/subscriptions/expired', subAdminCtrl.getExpiredSubscriptions);
 
+/**
+ * Manual trials.
+ *
+ * Granting is available to any admin — sales needs it without waiting on a
+ * superadmin. Removing is superadmin-only: it takes access away from a customer,
+ * which is the same class of action as revoking a claim.
+ */
+const trialCtrl = require('../controllers/trialController');
+
+router.get('/subscriptions/:universityId/state', trialCtrl.getUniversitySubscriptionState);
+router.post('/subscriptions/:universityId/trial', trialCtrl.grantTrial);
+router.delete('/subscriptions/:universityId/trial', superadmin, trialCtrl.removeTrial);
+
 // Superadmin-only: quick sponsorship patch (grant/revoke without full edit)
 router.patch('/universities/:id/sponsorship', superadmin, adminCtrl.patchSponsorship);
 

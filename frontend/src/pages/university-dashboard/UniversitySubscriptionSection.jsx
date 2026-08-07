@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { 
   CreditCard, Check, Shield, Clock, Zap, 
@@ -24,6 +24,30 @@ const UniversitySubscriptionSection = () => {
   const { user } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [paymentState, setPaymentState] = useState('idle'); // idle, processing, success
+
+  /**
+   * Prices come from the server, which is also what prices the order.
+   *
+   * These cards used to carry their own hardcoded figures, so the page
+   * advertised ₹4,999 while PLAN_PRICE_MONTHLY_INR said 1000 — a customer read
+   * one number and would have been charged another. Falling back to null keeps
+   * the card blank rather than guessing.
+   */
+  const [prices, setPrices] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/payment/plans')
+      .then(({ data }) => {
+        if (cancelled || !data?.data?.plans) return;
+        setPrices(Object.fromEntries(data.data.plans.map((p) => [p.plan, p.amountInRupees])));
+      })
+      .catch(() => { /* card shows a dash; ordering still works */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const priceLabel = (plan) =>
+    prices?.[plan] != null ? `₹${prices[plan].toLocaleString('en-IN')}` : '—';
   
   const handleSubscribe = async (plan) => {
     try {
@@ -195,12 +219,30 @@ const UniversitySubscriptionSection = () => {
             <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <AlertCircle className="w-6 h-6" />
             </div>
+            {/* A university that never subscribed has no expiryDate, and
+                new Date(null) is 1 January 1970 — so this banner used to tell a
+                brand-new customer their plan "lapsed" fifty-six years ago. The
+                two states read differently because they are different. */}
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-amber-900 dark:text-amber-200">Subscription Expired</span>
+                <span className="font-bold text-lg text-amber-900 dark:text-amber-200">
+                  {subscription.expiryDate ? 'Subscription Expired' : 'No active subscription'}
+                </span>
               </div>
               <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                Lapsed on: <strong>{new Date(subscription.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>. Renew below to resume editing.
+                {subscription.expiryDate ? (
+                  <>
+                    Lapsed on:{' '}
+                    <strong>
+                      {new Date(subscription.expiryDate).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'long', year: 'numeric',
+                      })}
+                    </strong>
+                    . Renew below to resume editing.
+                  </>
+                ) : (
+                  <>Choose a plan below to unlock editing.</>
+                )}
               </p>
             </div>
           </div>
@@ -226,7 +268,7 @@ const UniversitySubscriptionSection = () => {
             </div>
             
             <div className="mb-6 flex items-baseline">
-              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">₹1,000</span>
+              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">{priceLabel('monthly')}</span>
               <span className="text-light-muted dark:text-dark-muted ml-2">/ month</span>
             </div>
             
@@ -278,7 +320,7 @@ const UniversitySubscriptionSection = () => {
             </div>
             
             <div className="mb-6 flex items-baseline">
-              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">₹10,000</span>
+              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">{priceLabel('yearly')}</span>
               <span className="text-light-muted dark:text-dark-muted ml-2">/ year</span>
             </div>
             

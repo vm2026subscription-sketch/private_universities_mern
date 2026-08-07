@@ -10,6 +10,29 @@ const paymentService = require('../services/paymentService');
  * - Calculates amount on backend in paise.
  * - Returns order details.
  */
+/**
+ * The price list, straight from the same function that prices an order — so a
+ * card can never advertise a figure the charge will not match.
+ */
+exports.getPlans = async (req, res) => {
+  try {
+    const plans = ['monthly', 'yearly'].map((plan) => {
+      const { amountInRupees, amountInPaise } = paymentService.getPlanPricing(plan);
+      return {
+        plan,
+        amountInRupees,
+        amountInPaise,
+        durationDays: plan === 'yearly' ? 365 : 30,
+      };
+    });
+
+    return res.json({ success: true, data: { currency: 'INR', plans } });
+  } catch (error) {
+    console.error('[paymentController] getPlans error:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not load plan pricing.' });
+  }
+};
+
 exports.createOrder = async (req, res, next) => {
   try {
     const { plan } = req.body || {};

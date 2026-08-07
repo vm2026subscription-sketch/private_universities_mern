@@ -4,9 +4,21 @@ const Subscription = require('../models/Subscription');
  * GET /admin/revenue/total
  * Aggregates total revenue across all subscriptions.
  */
+/**
+ * Revenue counts money that was actually taken.
+ *
+ * Admin-granted trials are Subscription rows with amount 0 and source 'trial'.
+ * Left unfiltered they would not move the rupee totals, but they would inflate
+ * the subscription COUNT and so drag average-revenue-per-subscription down — a
+ * figure that then reads as customers paying less, rather than as free trials
+ * being handed out.
+ */
+const PAID_ONLY = { source: { $ne: 'trial' } };
+
 exports.getTotalRevenue = async (req, res) => {
   try {
     const result = await Subscription.aggregate([
+      { $match: PAID_ONLY },
       {
         $group: {
           _id: null,
@@ -43,6 +55,7 @@ exports.getTotalRevenue = async (req, res) => {
 exports.getMonthlyRevenue = async (req, res) => {
   try {
     const monthlyData = await Subscription.aggregate([
+      { $match: PAID_ONLY },
       {
         $group: {
           _id: {
@@ -87,6 +100,7 @@ exports.getMonthlyRevenue = async (req, res) => {
 exports.getYearlyRevenue = async (req, res) => {
   try {
     const yearlyData = await Subscription.aggregate([
+      { $match: PAID_ONLY },
       {
         $group: {
           _id: {

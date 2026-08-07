@@ -409,7 +409,21 @@ exports.getUniversity = async (req, res) => {
     university.views = (university.views || 0) + 1;
     University.updateOne({ _id: university._id }, { $inc: { views: 1 } }).catch(() => {});
 
-    res.json({ success: true, data: university });
+    /**
+     * Whether the enquiry surface — Apply, phone, email, brochure, lead form —
+     * should be shown. A claimed university whose subscription lapsed loses it;
+     * everything else keeps it. See services/subscriptionStatus.js for why an
+     * unclaimed university is never locked.
+     *
+     * The flag rides on the same response the page already fetches, so no extra
+     * round-trip and no window where the page renders a button it should not.
+     */
+    const { getPublicEnquiryState } = require('../services/subscriptionStatus');
+    const enquiries = await getPublicEnquiryState(university._id);
+
+    const payload = typeof university.toObject === 'function' ? university.toObject() : university;
+
+    res.json({ success: true, data: { ...payload, enquiries } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
