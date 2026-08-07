@@ -77,27 +77,35 @@ exports.getCourses = async (req, res) => {
     });
     pipeline.push({ $unwind: '$universityId' });
 
-    const universityMatch = {};
-    Object.assign(universityMatch, PUBLISHED_UNIVERSITY_MATCH);
+    // Collected under $and: the published check and the segment check are both
+    // top-level $or clauses, so assigning them to the same object made the
+    // segment filter silently overwrite the published filter — letting draft
+    // universities into the course→state college list, where clicking one 404s
+    // (getUniversity only serves published records). Mirrors getGroupedCourses.
+    const universityMatch = { $and: [PUBLISHED_UNIVERSITY_MATCH] };
     if (state && state !== 'All') {
-      universityMatch['universityId.state'] = { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') };
+      universityMatch.$and.push({
+        'universityId.state': { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') },
+      });
     }
     if (segment && segment !== 'all' && !universityId) {
       if (segment === 'foreign' || segment === 'twinning') {
-        universityMatch.$or = [
-          { 'universityId.segment': segment },
-          { 'universityId.segment': { $exists: false }, 'universityId.type': segment },
-        ];
+        universityMatch.$and.push({
+          $or: [
+            { 'universityId.segment': segment },
+            { 'universityId.segment': { $exists: false }, 'universityId.type': segment },
+          ],
+        });
       } else {
-        universityMatch.$or = [
-          { 'universityId.segment': 'normal' },
-          { 'universityId.segment': { $exists: false }, 'universityId.type': { $nin: ['foreign', 'twinning'] } },
-        ];
+        universityMatch.$and.push({
+          $or: [
+            { 'universityId.segment': 'normal' },
+            { 'universityId.segment': { $exists: false }, 'universityId.type': { $nin: ['foreign', 'twinning'] } },
+          ],
+        });
       }
     }
-    if (Object.keys(universityMatch).length) {
-      pipeline.push({ $match: universityMatch });
-    }
+    pipeline.push({ $match: universityMatch });
     
     // Get total count before pagination
     const countPipeline = [...pipeline, { $count: 'total' }];
