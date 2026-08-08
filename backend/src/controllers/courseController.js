@@ -1,24 +1,12 @@
 const mongoose = require('mongoose');
 const Course = require('../models/Course');
 const { escapeRegExp } = require('../utils/regex');
-
-const STREAM_MAP = {
-  'mba/pgdm': 'Management',
-  'management': 'Management',
-  'medical': 'Medical & Health Sciences',
-  'medical & health sciences': 'Medical & Health Sciences',
-  'design': 'Design & Architecture',
-  'design & architecture': 'Design & Architecture',
-  'engineering': 'Engineering',
-  'law': 'Law',
-  'science': 'Science',
-};
-
-const normalizeStream = (stream) => {
-  if (!stream) return stream;
-  const key = stream.toLowerCase().trim();
-  return STREAM_MAP[key] || stream;
-};
+const {
+  canonicalStream,
+  streamVariants,
+  categoryVariants,
+  stateVariants,
+} = require('../utils/courseTaxonomy');
 
 const PUBLISHED_UNIVERSITY_MATCH = {
   $or: [
@@ -36,14 +24,15 @@ exports.getCourses = async (req, res) => {
     
     const pipeline = [];
 
-    // Basic filters on Course model
+    // Basic filters on Course model.
+    // category/stream are matched against EVERY raw spelling that folds into the
+    // chosen bucket (see utils/courseTaxonomy) so one button catches all its
+    // synonyms instead of the single exact label it was generated from.
     const match = {};
-    if (category && category !== 'All') match.category = { $regex: new RegExp(`^${escapeRegExp(category)}$`, 'i') };
-    
-    // Filter by stream (uses the normalized canonical DB stream value)
-    const normalizedStream = normalizeStream(stream);
-    if (normalizedStream && normalizedStream !== 'All') {
-      match.stream = { $regex: new RegExp(`^${escapeRegExp(normalizedStream)}$`, 'i') };
+    if (category && category !== 'All') match.category = { $in: categoryVariants(category) };
+
+    if (stream && stream !== 'All') {
+      match.stream = { $in: streamVariants(stream) };
     }
     
     if (universityId) {
@@ -85,7 +74,7 @@ exports.getCourses = async (req, res) => {
     const universityMatch = { $and: [PUBLISHED_UNIVERSITY_MATCH] };
     if (state && state !== 'All') {
       universityMatch.$and.push({
-        'universityId.state': { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') },
+        'universityId.state': { $in: stateVariants(state) },
       });
     }
     if (segment && segment !== 'all' && !universityId) {
@@ -186,15 +175,14 @@ exports.getGroupedCourses = async (req, res) => {
       pipeline.push({ $match: { universityId: new mongoose.Types.ObjectId(universityId) } });
     }
 
-    // Filter by category if provided
+    // Filter by category if provided (matches every raw spelling in the bucket)
     if (category && category !== 'All') {
-      pipeline.push({ $match: { category: { $regex: new RegExp(`^${escapeRegExp(category)}$`, 'i') } } });
+      pipeline.push({ $match: { category: { $in: categoryVariants(category) } } });
     }
 
-    // Filter by stream if provided
-    const normalizedStream = normalizeStream(stream);
-    if (normalizedStream && normalizedStream !== 'All') {
-      pipeline.push({ $match: { stream: { $regex: new RegExp(`^${escapeRegExp(normalizedStream)}$`, 'i') } } });
+    // Filter by stream if provided (matches every raw spelling in the bucket)
+    if (stream && stream !== 'All') {
+      pipeline.push({ $match: { stream: { $in: streamVariants(stream) } } });
     }
 
     // To filter by state, we need to join with University
@@ -218,7 +206,7 @@ exports.getGroupedCourses = async (req, res) => {
       },
     ];
     if (state && state !== 'All') {
-      universityMatch.$and.push({ 'university.state': { $regex: new RegExp(`^${escapeRegExp(state)}$`, 'i') } });
+      universityMatch.$and.push({ 'university.state': { $in: stateVariants(state) } });
     }
     if (segment && segment !== 'all' && !universityId) {
       if (segment === 'foreign' || segment === 'twinning') {
@@ -313,7 +301,11 @@ exports.getGroupedCourses = async (req, res) => {
 
 exports.getStreamStats = async (req, res) => {
   try {
-    const stats = await Course.aggregate([
+    // Group by the RAW stream first, keeping the set of universities per spelling,
+    // then fold the raw spellings into their canonical bucket in JS. Folding after
+    // the $group lets us union the university sets so each canonical stream reports
+    // the true number of DISTINCT colleges (not the sum of its variants' counts).
+    const rawStats = await Course.aggregate([
       {
         $lookup: {
           from: 'universities',
@@ -344,18 +336,23 @@ exports.getStreamStats = async (req, res) => {
       {
         $group: {
           _id: '$stream',
-          // Count unique universities per stream
           universityIds: { $addToSet: '$universityId' }
         }
       },
-      {
-        $project: {
-          stream: '$_id',
-          collegeCount: { $size: '$universityIds' }
-        }
-      },
-      { $sort: { collegeCount: -1 } }
     ]);
+
+    const buckets = new Map(); // canonical stream -> Set of university id strings
+    for (const row of rawStats) {
+      const canonical = canonicalStream(row._id) || 'Others';
+      const set = buckets.get(canonical) || new Set();
+      for (const id of row.universityIds) set.add(String(id));
+      buckets.set(canonical, set);
+    }
+
+    const stats = [...buckets.entries()]
+      .map(([stream, set]) => ({ stream, collegeCount: set.size }))
+      .sort((a, b) => b.collegeCount - a.collegeCount);
+
     res.set('Cache-Control', 'public, max-age=300, s-maxage=1200');
     res.json({ success: true, data: stats });
   } catch (error) {
