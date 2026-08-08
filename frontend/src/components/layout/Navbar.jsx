@@ -29,6 +29,12 @@ export default function Navbar() {
   const mobileSearchRef = useRef(null);
   const dropdownRef = useRef(null);
 
+  const closeSearch = () => {
+    setShowSearch(false);
+    setSearchResults([]);
+    setSearchQuery('');
+  };
+
   useEffect(() => {
     if (!user) { setUnreadCount(0); return; }
     const fetchCount = () => {
@@ -79,9 +85,7 @@ export default function Navbar() {
   }, [searchQuery]);
 
   useEffect(() => {
-    setShowSearch(false);
-    setSearchResults([]);
-    setSearchQuery('');
+    closeSearch();
   }, [location.pathname]);
 
   useEffect(() => {
@@ -147,19 +151,19 @@ export default function Navbar() {
                 className="pl-10 pr-4 py-2 w-64 text-sm rounded-xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card focus:ring-2 focus:ring-primary outline-none transition-all focus:w-80"
               />
               <AnimatePresence>
-                {showSearch && searchResults.length > 0 && (
-                  <motion.div 
+                {showSearch && searchQuery.length >= 2 && searchResults.length > 0 && (
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-lg overflow-hidden z-[110]"
                   >
                     {searchResults.map(r => (
-                      <button type="button" key={r._id} onClick={() => { 
+                      <button type="button" key={r._id} onClick={e => {
+                          e.currentTarget.blur();
                           if (r._type === 'university') navigate(`/universities/${r.slug}`);
                           else if (r.universityId?.slug) navigate(`/universities/${r.universityId.slug}`);
-                          setShowSearch(false); 
-                          setSearchQuery(''); 
+                          closeSearch();
                         }}
                         className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-dark-border flex items-center gap-3 transition-colors">
                         <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
@@ -277,10 +281,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   aria-label="Clear search input"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setShowSearch(false);
-                  }}
+                  onClick={closeSearch}
                   className="absolute right-7 top-1/2 -translate-y-1/2 p-1 text-light-muted hover:text-slate-700 dark:hover:text-slate-200"
                 >
                   <X className="w-4 h-4" />
@@ -288,8 +289,8 @@ export default function Navbar() {
               )}
 
               <AnimatePresence>
-                {showSearch && searchResults.length > 0 && (
-                  <motion.div 
+                {showSearch && searchQuery.length >= 2 && searchResults.length > 0 && (
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
@@ -299,12 +300,12 @@ export default function Navbar() {
                       <button
                         type="button"
                         key={r._id}
-                        onClick={() => { 
+                        onClick={e => {
+                          e.currentTarget.blur();
                           if (r._type === 'university') navigate(`/universities/${r.slug}`);
                           else if (r.universityId?.slug) navigate(`/universities/${r.universityId.slug}`);
                           else navigate(`/courses?search=${encodeURIComponent(r.name)}`);
-                          setShowSearch(false); 
-                          setSearchQuery(''); 
+                          closeSearch();
                           setMobileOpen(false);
                         }}
                         className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-dark-border flex items-center gap-3 transition-colors"
