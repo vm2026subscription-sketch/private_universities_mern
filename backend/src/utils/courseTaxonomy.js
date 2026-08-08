@@ -110,6 +110,25 @@ const canonicalStream = makeCanonical(STREAM_REVERSE);
 const canonicalCategory = makeCanonical(CATEGORY_REVERSE);
 const canonicalState = makeCanonical(STATE_REVERSE);
 
+// ── Course-name canonicalisation ──────────────────────────────────────────────
+// The same programme is entered with many spellings across colleges — "Ph.D" /
+// "Ph.D." / "PhD", "BPT" / "B.P.T", "BA LLB" / "B.A. LL.B." / "BA + LLB". Reduce
+// any label to its alphanumerics (uppercased) so all those collapse to one key.
+const canonicalCourseKey = (value) =>
+  String(value == null ? '' : value).replace(/[^a-z0-9]/gi, '').toUpperCase();
+
+// The query-side twin of canonicalCourseKey: a RegExp that matches any stored
+// label whose alphanumerics are exactly those of `value`, with any punctuation or
+// spacing between (and trailing) them. Anchored at the first character so the
+// courses index can still be used. Matches "Ph.D" / "Ph.D." / "PhD" for "PhD",
+// and "BA LLB" / "BA + LLB" for "BA LLB".
+const courseMatchRegex = (value) => {
+  const cleaned = String(value == null ? '' : value).replace(/[^a-z0-9]/gi, '');
+  const SEP = '[^a-zA-Z0-9]*';
+  const body = cleaned.split('').join(SEP);
+  return new RegExp(`^${body}${SEP}$`, 'i');
+};
+
 const streamVariants = makeVariants(STREAM_GROUPS, canonicalStream);
 const categoryVariants = makeVariants(CATEGORY_GROUPS, canonicalCategory);
 const stateVariants = makeVariants(STATE_GROUPS, canonicalState);
@@ -124,4 +143,6 @@ module.exports = {
   streamVariants,
   categoryVariants,
   stateVariants,
+  canonicalCourseKey,
+  courseMatchRegex,
 };
