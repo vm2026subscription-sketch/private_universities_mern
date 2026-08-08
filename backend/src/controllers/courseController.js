@@ -6,6 +6,8 @@ const {
   streamVariants,
   categoryVariants,
   stateVariants,
+  canonicalCourseKey,
+  courseMatchRegex,
 } = require('../utils/courseTaxonomy');
 
 const PUBLISHED_UNIVERSITY_MATCH = {
@@ -51,22 +53,12 @@ exports.getCourses = async (req, res) => {
     if (name) match.name = { $regex: new RegExp(escapeRegExp(name), 'i') };
     if (baseCourse) {
       // The same programme is spelled inconsistently across colleges — e.g.
-      // "BPT" at one university and "B.P.T" at another (Jamia Hamdard). An exact
-      // match on the clicked label misses the other spelling and empties the
-      // list. Match on the alphanumerics only, allowing optional dots/spaces
-      // between characters, so "BPT" also finds "B.P.T" / "B P T" and vice versa.
-      const cleaned = String(baseCourse).replace(/[^a-z0-9]/gi, '');
-      if (cleaned) {
-        const tolerant = cleaned.split('').map((ch) => escapeRegExp(ch)).join('[.\\s]*');
-        const rx = new RegExp(`^${tolerant}$`, 'i');
-        match.$or = [{ baseCourse: rx }, { name: rx }];
-      } else {
-        const safeBaseCourse = escapeRegExp(baseCourse);
-        match.$or = [
-          { baseCourse: { $regex: new RegExp(`^${safeBaseCourse}$`, 'i') } },
-          { name: { $regex: new RegExp(`^${safeBaseCourse}$`, 'i') } },
-        ];
-      }
+      // "BPT" at one university and "B.P.T" at another (Jamia Hamdard), or
+      // "Ph.D" / "Ph.D." / "PhD". Match tolerant of punctuation/spacing so the
+      // clicked card finds every spelling. Uses the same normalisation the
+      // grouped view folds by, so card-count always equals drill-count.
+      const rx = courseMatchRegex(baseCourse);
+      match.$or = [{ baseCourse: rx }, { name: rx }];
     }
     
     pipeline.push({ $match: match });
@@ -248,68 +240,93 @@ exports.getGroupedCourses = async (req, res) => {
       pipeline.push({ $match: universityMatch });
     }
 
-    // Group by normalized base course (fall back to course name if baseCourse is missing)
+    // Group by the RAW baseCourse/name first, collecting everything needed to
+    // fold spelling variants together in JS afterwards.
     pipeline.push({
       $group: {
         _id: { $ifNull: ['$baseCourse', '$name'] },
-        name: { $first: { $ifNull: ['$baseCourse', '$name'] } },
+        courseCount: { $sum: 1 },
         category: { $first: '$category' },
         stream: { $first: '$stream' },
         duration: { $first: '$duration' },
         university: { $first: '$university' },
-        // Count unique universityIds for this base course
         universityIds: { $addToSet: '$universityId' },
         specializations: { $addToSet: '$specializationName' },
-        entranceExams: { $addToSet: '$entranceExams' }
+        entranceExams: { $push: '$entranceExams' },
       }
     });
 
-    // Exclude groups where name is null, empty, or whitespace-only
-    pipeline.push({
-      $match: {
-        name: { $exists: true, $ne: null, $not: /^\s*$/ }
-      }
-    });
+    const rawGroups = await Course.aggregate(pipeline);
 
-    // Flatten arrays and project
-    pipeline.push({
-      $project: {
-        name: 1,
-        category: 1,
-        stream: 1,
-        duration: 1,
-        'university.name': 1,
-        'university.slug': 1,
-        'university.logoUrl': 1,
-        'university.city': 1,
-        'university.state': 1,
-        collegeCount: { $size: '$universityIds' },
-        specializations: {
-          $filter: {
-            input: '$specializations',
-            as: 'spec',
-            cond: { $and: [{ $ne: ['$$spec', null] }, { $ne: ['$$spec', 'General'] }] }
-          }
-        },
-        entranceExams: {
-          $reduce: {
-            input: '$entranceExams',
-            initialValue: [],
-            in: { $setUnion: ['$$value', '$$this'] }
-          }
+    // Fold the many spellings of one programme — "Ph.D" / "Ph.D." / "PhD",
+    // "BPT" / "B.P.T", "BA LLB" / "B.A. LL.B." — into a single card keyed by its
+    // canonical form, so the grouped view shows each programme once with its true
+    // distinct-college count. The card's college count therefore matches the
+    // punctuation-tolerant drill in getCourses (both use courseTaxonomy).
+    const buckets = new Map();
+    for (const group of rawGroups) {
+      const rawName = group._id;
+      if (rawName == null || String(rawName).trim() === '') continue;
+      const key = canonicalCourseKey(rawName);
+      if (!key) continue;
+
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        bucket = {
+          labelCounts: new Map(),
+          category: group.category,
+          stream: group.stream,
+          duration: group.duration,
+          university: group.university,
+          universityIds: new Set(),
+          specializations: new Set(),
+          entranceExams: new Set(),
+        };
+        buckets.set(key, bucket);
+      }
+
+      bucket.labelCounts.set(rawName, (bucket.labelCounts.get(rawName) || 0) + (group.courseCount || 0));
+      for (const id of (group.universityIds || [])) bucket.universityIds.add(String(id));
+      for (const spec of (group.specializations || [])) {
+        if (spec && spec !== 'General') bucket.specializations.add(spec);
+      }
+      for (const examList of (group.entranceExams || [])) {
+        if (Array.isArray(examList)) {
+          for (const exam of examList) { if (exam) bucket.entranceExams.add(exam); }
         }
       }
-    });
-
-    pipeline.push({ $sort: { collegeCount: -1 } });
-
-    // Note: We don't paginate here yet to keep the "All" view functional with frontend filtering,
-    // but we limit to 1000 for safety if no specific filter is applied.
-    if (!stream && !category && !universityId) {
-      pipeline.push({ $limit: 1000 });
     }
 
-    const grouped = await Course.aggregate(pipeline);
+    const trimUniversity = (u) => (u
+      ? { name: u.name, slug: u.slug, logoUrl: u.logoUrl, city: u.city, state: u.state }
+      : null);
+
+    let grouped = [...buckets.entries()].map(([key, bucket]) => {
+      // Show the spelling used by the most courses as the card label.
+      let name = null;
+      let bestCount = -1;
+      for (const [label, count] of bucket.labelCounts) {
+        if (count > bestCount) { bestCount = count; name = label; }
+      }
+      return {
+        _id: key,
+        name,
+        category: bucket.category,
+        stream: bucket.stream,
+        duration: bucket.duration,
+        university: trimUniversity(bucket.university),
+        collegeCount: bucket.universityIds.size,
+        specializations: [...bucket.specializations],
+        entranceExams: [...bucket.entranceExams],
+      };
+    });
+
+    grouped.sort((a, b) => b.collegeCount - a.collegeCount);
+
+    // Safety cap when no specific filter is applied (mirrors the previous limit).
+    if (!stream && !category && !universityId) {
+      grouped = grouped.slice(0, 1000);
+    }
 
     res.set('Cache-Control', 'public, max-age=120, s-maxage=600');
     res.json({ success: true, data: grouped });
