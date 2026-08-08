@@ -31,7 +31,14 @@ exports.getCourses = async (req, res) => {
     const match = {};
     if (category && category !== 'All') match.category = { $in: categoryVariants(category) };
 
-    if (stream && stream !== 'All') {
+    // In drill mode (a specific baseCourse is requested) the chosen course
+    // already identifies the programme. The same course is tagged under
+    // different streams at different universities (e.g. "BPT" is filed under
+    // "Science" at some Assam colleges and "Medical & Health Sciences"
+    // elsewhere), so keeping the stream filter here wrongly hides valid
+    // colleges and can empty the list. Skip it when drilling; the grouped view
+    // still uses stream to build the cards.
+    if (stream && stream !== 'All' && !baseCourse) {
       match.stream = { $in: streamVariants(stream) };
     }
     
