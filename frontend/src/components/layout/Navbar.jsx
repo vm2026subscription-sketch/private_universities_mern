@@ -54,6 +54,7 @@ export default function Navbar() {
   const visibleNavLinks = isAdmin ? [...navLinks, { to: '/admin', label: 'Admin' }] : navLinks;
 
   useEffect(() => {
+    let cancelled = false;
     const timer = setTimeout(async () => {
       if (searchQuery.length >= 2) {
         try {
@@ -61,20 +62,27 @@ export default function Navbar() {
             api.get(`/universities/search?q=${searchQuery}`),
             api.get(`/courses?name=${searchQuery}`)
           ]);
-          
+          if (cancelled) return;
+
           const unis = (uniRes.data.data || []).map(u => ({ ...u, _type: 'university' }));
           const courses = (courseRes.data.data || []).map(c => ({ ...c, _type: 'course' }));
-          
+
           setSearchResults([...unis, ...courses].slice(0, 8));
           setShowSearch(true);
-        } catch { setSearchResults([]); }
+        } catch { if (!cancelled) setSearchResults([]); }
       } else {
         setSearchResults([]);
         setShowSearch(false);
       }
     }, 300);
-    return () => clearTimeout(timer);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [searchQuery]);
+
+  useEffect(() => {
+    setShowSearch(false);
+    setSearchResults([]);
+    setSearchQuery('');
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleClick = (e) => {
