@@ -50,11 +50,23 @@ exports.getCourses = async (req, res) => {
     }
     if (name) match.name = { $regex: new RegExp(escapeRegExp(name), 'i') };
     if (baseCourse) {
-      const safeBaseCourse = escapeRegExp(baseCourse);
-      match.$or = [
-        { baseCourse: { $regex: new RegExp(`^${safeBaseCourse}$`, 'i') } },
-        { name: { $regex: new RegExp(`^${safeBaseCourse}$`, 'i') } },
-      ];
+      // The same programme is spelled inconsistently across colleges — e.g.
+      // "BPT" at one university and "B.P.T" at another (Jamia Hamdard). An exact
+      // match on the clicked label misses the other spelling and empties the
+      // list. Match on the alphanumerics only, allowing optional dots/spaces
+      // between characters, so "BPT" also finds "B.P.T" / "B P T" and vice versa.
+      const cleaned = String(baseCourse).replace(/[^a-z0-9]/gi, '');
+      if (cleaned) {
+        const tolerant = cleaned.split('').map((ch) => escapeRegExp(ch)).join('[.\\s]*');
+        const rx = new RegExp(`^${tolerant}$`, 'i');
+        match.$or = [{ baseCourse: rx }, { name: rx }];
+      } else {
+        const safeBaseCourse = escapeRegExp(baseCourse);
+        match.$or = [
+          { baseCourse: { $regex: new RegExp(`^${safeBaseCourse}$`, 'i') } },
+          { name: { $regex: new RegExp(`^${safeBaseCourse}$`, 'i') } },
+        ];
+      }
     }
     
     pipeline.push({ $match: match });
