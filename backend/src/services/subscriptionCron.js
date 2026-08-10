@@ -3,6 +3,7 @@ const Subscription = require('../models/Subscription');
 const University = require('../models/University');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
+const { wrapInLayout } = require('./emailService');
 
 /**
  * Checks for subscriptions expiring in 7 days and dispatches notification emails.
@@ -29,20 +30,18 @@ const checkExpiringSubscriptions = async () => {
       if (recipientEmail) {
         const daysLeft = Math.ceil((sub.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         const emailSubject = `Subscription Expiring in ${daysLeft} Days - ${university.name}`;
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <h2 style="color: #c53030;">Action Required: Subscription Expiring Soon</h2>
-            <p>Dear Representative,</p>
-            <p>Your subscription for <strong>${university.name}</strong> on Vidyarthi Mitra is set to expire on <strong>${sub.expiryDate.toDateString()}</strong> (in approximately ${daysLeft} days).</p>
-            <p>To avoid any interruption to your university portal editing permissions, please log into your dashboard and renew your subscription.</p>
-            <div style="margin: 25px 0;">
-              <a href="${process.env.CLIENT_URL || 'https://privateuniversity.vidyarthimitra.org'}/dashboard" style="background-color: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Renew Subscription Now</a>
-            </div>
-            <p style="font-size: 13px; color: #4a5568;">Note: Even after expiry, your public university listing will remain visible to students, but portal editing will be temporarily locked until renewed.</p>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-            <p style="font-size: 12px; color: #718096;">Vidyarthi Mitra Platform Services</p>
-          </div>
+        const bodyHtml = `
+          <h2 style="color: #d97706; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">Action Required: Subscription Expiring Soon</h2>
+          <p style="margin: 0 0 12px 0;">Dear Representative,</p>
+          <p style="margin: 0 0 12px 0;">Your subscription for <strong>${university.name}</strong> on Vidyarthi Mitra is set to expire on <strong>${sub.expiryDate.toDateString()}</strong> (in approximately ${daysLeft} days).</p>
+          <p style="margin: 0 0 12px 0;">To avoid any interruption to your university portal editing permissions, please log into your dashboard and renew your subscription.</p>
+          <p style="margin: 0; font-size: 13px; color: #64748b;">Note: Even after expiry, your public university listing will remain visible to students, but portal editing will be temporarily locked until renewed.</p>
         `;
+        const emailHtml = wrapInLayout(bodyHtml, {
+          title: 'Subscription Expiring Soon',
+          ctaLabel: 'Renew Subscription Now',
+          ctaUrl: `${process.env.CLIENT_URL || 'https://privateuniversity.vidyarthimitra.org'}/university/dashboard/subscription`,
+        });
 
         try {
           await sendEmail({ to: recipientEmail, subject: emailSubject, html: emailHtml });
@@ -91,20 +90,18 @@ const checkExpiredSubscriptions = async () => {
 
         if (recipientEmail) {
           const emailSubject = `Subscription Expired - ${university.name}`;
-          const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-              <h2 style="color: #e53e3e;">Subscription Expired</h2>
-              <p>Dear Representative,</p>
-              <p>Your subscription for <strong>${university.name}</strong> on Vidyarthi Mitra expired on <strong>${sub.expiryDate.toDateString()}</strong>.</p>
-              <p>Editing access for your university portal features has been temporarily locked. Your public profile remain visible on the site.</p>
-              <p>To restore portal editing capabilities immediately, please renew your subscription.</p>
-              <div style="margin: 25px 0;">
-                <a href="${process.env.CLIENT_URL || 'https://privateuniversity.vidyarthimitra.org'}/dashboard" style="background-color: #e53e3e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Renew Subscription</a>
-              </div>
-              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-              <p style="font-size: 12px; color: #718096;">Vidyarthi Mitra Platform Services</p>
-            </div>
+          const bodyHtml = `
+            <h2 style="color: #dc2626; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">Subscription Expired</h2>
+            <p style="margin: 0 0 12px 0;">Dear Representative,</p>
+            <p style="margin: 0 0 12px 0;">Your subscription for <strong>${university.name}</strong> on Vidyarthi Mitra expired on <strong>${sub.expiryDate.toDateString()}</strong>.</p>
+            <p style="margin: 0 0 12px 0;">Editing access for your university portal features has been temporarily locked. Your public profile remains visible on the site.</p>
+            <p style="margin: 0;">To restore portal editing capabilities immediately, please renew your subscription.</p>
           `;
+          const emailHtml = wrapInLayout(bodyHtml, {
+            title: 'Subscription Expired',
+            ctaLabel: 'Renew Subscription',
+            ctaUrl: `${process.env.CLIENT_URL || 'https://privateuniversity.vidyarthimitra.org'}/university/dashboard/subscription`,
+          });
 
           try {
             await sendEmail({ to: recipientEmail, subject: emailSubject, html: emailHtml });
