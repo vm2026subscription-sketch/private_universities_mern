@@ -40,14 +40,16 @@ exports.createOrder = async (req, res, next) => {
     if (!plan || !['monthly', 'yearly'].includes(String(plan).toLowerCase())) {
       return res.status(400).json({
         success: false,
+        code: 'INVALID_PLAN',
         message: "Invalid plan. Plan must be either 'monthly' or 'yearly'.",
       });
     }
 
-    const universityId = req.user?.universityId;
+    const universityId = req.university?._id || req.user?.universityId;
     if (!universityId) {
       return res.status(403).json({
         success: false,
+        code: 'NO_UNIVERSITY_LINKED',
         message: 'No university linked to this account.',
       });
     }
@@ -63,10 +65,36 @@ exports.createOrder = async (req, res, next) => {
       data: orderDetails,
     });
   } catch (error) {
-    console.error('[paymentController] createOrder error:', error.message, error?.error?.description || '');
-    return res.status(500).json({
+    console.error('[paymentController] createOrder error:', error);
+
+    // Razorpay SDK errors carry { statusCode, error: { description, code } }.
+    // CRITICAL: Never forward a Razorpay 401 as HTTP 401 — the axios
+    // interceptor treats 401 as "user session expired" and redirects to /login.
+    // A Razorpay 401 means our server's API keys are wrong, which is a gateway
+    // configuration problem (502), not a user authentication problem.
+    const isRazorpayError = error?.error?.code === 'BAD_REQUEST_ERROR' || error?.statusCode;
+    const errorMessage =
+      error?.error?.description ||
+      error?.description ||
+      error?.message ||
+      'Failed to create payment order';
+
+    let statusCode;
+    if (isRazorpayError) {
+      // All Razorpay-side failures are upstream gateway errors from the
+      // client's perspective.  Map them to 502 so the frontend can show
+      // "payment gateway error" instead of triggering a session refresh loop.
+      statusCode = 502;
+    } else {
+      statusCode = 500;
+    }
+
+    return res.status(statusCode).json({
       success: false,
-      message: error?.error?.description || error.message || 'Failed to create payment order',
+      code: 'ORDER_CREATION_FAILED',
+      message: isRazorpayError
+        ? 'Payment gateway configuration error. Please contact support.'
+        : errorMessage,
     });
   }
 };

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const University = require('../models/University');
 const Course = require('../models/Course');
+const Subscription = require('../models/Subscription');
 const { buildUniqueSlug } = require('../utils/slug');
 const { escapeRegExp } = require('../utils/regex');
 const { getDisplayUniversityType, normalizeUniversityClassification } = require('../utils/universityClassification');

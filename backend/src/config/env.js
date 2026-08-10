@@ -204,6 +204,11 @@ const validateEnvironment = () => {
     console.warn(
       '[config] RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not set. Razorpay payment integration will be unavailable until set.'
     );
+  } else {
+    const isLiveKey = process.env.RAZORPAY_KEY_ID.startsWith('rzp_live_');
+    console.log(
+      `[config] Razorpay integration initialized in ${isLiveKey ? 'LIVE' : 'TEST'} mode (${process.env.RAZORPAY_KEY_ID.slice(0, 12)}...).`
+    );
   }
   if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
     console.warn(
