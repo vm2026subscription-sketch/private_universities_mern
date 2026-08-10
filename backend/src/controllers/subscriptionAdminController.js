@@ -184,3 +184,104 @@ exports.getExpiredSubscriptions = async (req, res) => {
     });
   }
 };
+
+/**
+ * POST /admin/universities/:universityId/trial
+ * Manage university trial subscription (extend_7, extend_15, extend_30, lifetime, remove).
+ */
+exports.manageUniversityTrial = async (req, res) => {
+  try {
+    const { universityId } = req.params;
+    const { action } = req.body;
+    const validActions = ['extend_7', 'extend_15', 'extend_30', 'lifetime', 'remove'];
+
+    if (!validActions.includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid action. Must be one of: ${validActions.join(', ')}`,
+      });
+    }
+
+    const now = new Date();
+
+    if (action === 'remove') {
+      await Subscription.updateMany(
+        { universityId, expiryDate: { $gt: now } },
+        { $set: { expiryDate: now } }
+      );
+      return res.status(200).json({
+        success: true,
+        message: 'Trial removed successfully',
+      });
+    }
+
+    let expiryDate;
+    if (action === 'lifetime') {
+      expiryDate = new Date('2099-12-31T23:59:59.999Z');
+    } else if (action === 'extend_7') {
+      expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    } else if (action === 'extend_15') {
+      expiryDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+    } else if (action === 'extend_30') {
+      expiryDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const timestamp = Date.now();
+    const newSubscription = await Subscription.create({
+      universityId,
+      plan: 'trial',
+      amount: 0,
+      razorpayOrderId: 'ADMIN_TRIAL',
+      razorpayPaymentId: `ADMIN_TRIAL_${universityId}_${timestamp}`,
+      startDate: now,
+      expiryDate,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Trial updated successfully',
+      data: newSubscription,
+    });
+  } catch (error) {
+    console.error('[subscriptionAdminController] manageUniversityTrial error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to manage trial',
+    });
+  }
+};
+
+/**
+ * GET /admin/universities/:universityId/subscription-status
+ * Fetch latest subscription status for a university.
+ */
+exports.getUniversitySubscriptionStatus = async (req, res) => {
+  try {
+    const { universityId } = req.params;
+    const latestSubscription = await Subscription.findOne({ universityId }).sort({ expiryDate: -1 });
+
+    if (!latestSubscription) {
+      return res.status(200).json({
+        success: true,
+        data: null,
+      });
+    }
+
+    const isActive = Boolean(latestSubscription.expiryDate && new Date(latestSubscription.expiryDate) > new Date());
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...latestSubscription.toObject(),
+        isActive,
+      },
+    });
+  } catch (error) {
+    console.error('[subscriptionAdminController] getUniversitySubscriptionStatus error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch subscription status',
+    });
+  }
+};
+
