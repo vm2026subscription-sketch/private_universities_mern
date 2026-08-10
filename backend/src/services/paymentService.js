@@ -4,6 +4,7 @@ const Subscription = require('../models/Subscription');
 const University = require('../models/University');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
+const { wrapInLayout } = require('./emailService');
 
 /**
  * Plan pricing, resolved on the server so the amount can never come from the
@@ -262,29 +263,29 @@ exports.activateSubscriptionFromWebhook = async (eventPayload) => {
 
     if (recipientEmail) {
       const emailSubject = `Subscription Payment Successful - ${university.name}`;
-      const emailHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-          <h2 style="color: #1a365d;">Subscription Activated Successfully</h2>
-          <p>Dear Representative,</p>
-          <p>Thank you for subscribing to <strong>Vidyarthi Mitra University Portal</strong>. Your payment has been received and processed successfully.</p>
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr style="background-color: #f7fafc;"><td style="padding: 8px; border: 1px solid #e2e8f0;"><strong>University Name</strong></td><td style="padding: 8px; border: 1px solid #e2e8f0;">${university.name}</td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #e2e8f0;"><strong>Plan</strong></td><td style="padding: 8px; border: 1px solid #e2e8f0;">${plan.toUpperCase()}</td></tr>
-            <tr style="background-color: #f7fafc;"><td style="padding: 8px; border: 1px solid #e2e8f0;"><strong>Amount Paid</strong></td><td style="padding: 8px; border: 1px solid #e2e8f0;">₹${amountInRupees.toLocaleString('en-IN')}</td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #e2e8f0;"><strong>Payment ID</strong></td><td style="padding: 8px; border: 1px solid #e2e8f0;">${razorpayPaymentId}</td></tr>
-            <tr style="background-color: #f7fafc;"><td style="padding: 8px; border: 1px solid #e2e8f0;"><strong>Subscription Start Date</strong></td><td style="padding: 8px; border: 1px solid #e2e8f0;">${startDate.toDateString()}</td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #e2e8f0;"><strong>Subscription Expiry Date</strong></td><td style="padding: 8px; border: 1px solid #e2e8f0;">${expiryDate.toDateString()}</td></tr>
-          </table>
-          <p>Your university portal editing features are now fully enabled.</p>
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #718096;">This is an automated notification from Vidyarthi Mitra platform.</p>
-        </div>
+      const innerHtml = `
+        <h2 style="color: #16a34a; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">Subscription Activated Successfully</h2>
+        <p style="margin: 0 0 12px 0;">Dear Representative,</p>
+        <p style="margin: 0 0 16px 0;">Thank you for subscribing to <strong>Vidyarthi Mitra University Portal</strong>. Your payment has been received and processed successfully.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>University Name</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${university.name}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Plan</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${plan.toUpperCase()}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Amount Paid</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">₹${amountInRupees.toLocaleString('en-IN')}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Payment ID</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${razorpayPaymentId}</td></tr>
+          <tr style="background-color: #f8fafc;"><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Subscription Start Date</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${startDate.toDateString()}</td></tr>
+          <tr><td style="padding: 10px; border: 1px solid #e2e8f0;"><strong>Subscription Expiry Date</strong></td><td style="padding: 10px; border: 1px solid #e2e8f0;">${expiryDate.toDateString()}</td></tr>
+        </table>
+        <p style="margin: 0 0 12px 0;">Your university portal editing features are now fully enabled.</p>
       `;
 
       await sendEmail({
         to: recipientEmail,
         subject: emailSubject,
-        html: emailHtml,
+        html: wrapInLayout(innerHtml, {
+          title: 'Subscription Activated',
+          ctaLabel: 'View Subscription Details',
+          ctaUrl: `${process.env.CLIENT_URL || 'https://privateuniversity.vidyarthimitra.org'}/university/dashboard/subscription`,
+        }),
       });
 
       console.log(`[webhook] Payment success email sent to ${recipientEmail}`);

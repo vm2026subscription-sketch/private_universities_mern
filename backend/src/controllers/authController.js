@@ -17,6 +17,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
+const { wrapInLayout } = require('../services/emailService');
 const otpService = require('../services/otpService');
 const { getSafeUser } = require('../utils/userSerializer');
 const { logAction } = require('../services/auditService');
@@ -113,17 +114,16 @@ const setVerificationCode = (user) => {
 };
 
 const sendVerificationEmail = async (user, code) => {
+  const bodyHtml = `
+    <h2 style="color: #ea580c; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">Verify Your Email</h2>
+    <p style="margin: 0 0 12px 0;">Your verification code is:</p>
+    <div style="font-size: 28px; font-weight: 700; letter-spacing: 6px; margin: 16px 0; text-align: center; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px dashed #cbd5e1; color: #0f172a;">${code}</div>
+    <p style="margin: 0; color: #64748b; font-size: 13px;">This code expires in 10 minutes.</p>
+  `;
   await sendEmail({
     to: user.email,
     subject: 'Verify your Vidyarthi Mitra account',
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Verify your email</h2>
-        <p>Your verification code is:</p>
-        <div style="font-size: 28px; font-weight: 700; letter-spacing: 6px; margin: 16px 0;">${code}</div>
-        <p>This code expires in 10 minutes.</p>
-      </div>
-    `,
+    html: wrapInLayout(bodyHtml, { title: 'Verify Email' }),
   });
 };
 
@@ -754,6 +754,25 @@ exports.verifyEmail = async (req, res) => {
     user.emailVerificationAttempts = 0;
     await updateLoginTracking(user);
 
+    // If this is a university account with a pending claim, notify admin and send request submitted email now that email control is verified
+    if (user.role === 'university') {
+      try {
+        const UniversityClaim = require('../models/UniversityClaim');
+        const notificationService = require('../services/notificationService');
+        const claim = await UniversityClaim.findOne({ user: user._id, status: 'pending' }).populate('university', 'name');
+        if (claim) {
+          await notificationService.notifyApprovalRequest({
+            applicantId: user._id,
+            applicantName: user.name,
+            applicantEmail: user.email,
+            universityName: claim.university?.name || claim.requestedUniversityName,
+          });
+        }
+      } catch (notifErr) {
+        console.error('[auth] notifyApprovalRequest after email verification failed:', notifErr.message);
+      }
+    }
+
     const { token, refreshToken } = await issueSession(user, req, res);
     await auditAuthEvent(user, 'login', 'Email verification login', req);
 
@@ -843,7 +862,15 @@ exports.forgotPassword = async (req, res) => {
       await sendEmail({
         to: user.email,
         subject: 'Vidyarthi Mitra - Password Reset',
-        html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. Link expires in 30 minutes.</p>`,
+        html: wrapInLayout(
+          `<h2 style="color: #ea580c; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">Reset Your Password</h2>
+           <p style="margin: 0 0 12px 0;">We received a request to reset your password. Click the button below to proceed. This link expires in 30 minutes.</p>`,
+          {
+            title: 'Password Reset',
+            ctaLabel: 'Reset Password',
+            ctaUrl: resetUrl,
+          }
+        ),
       });
     } catch (emailError) {
       console.error('Password reset email failed:', emailError.message);

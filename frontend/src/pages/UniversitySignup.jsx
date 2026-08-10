@@ -144,7 +144,12 @@ export default function UniversitySignup() {
       });
 
       setOtpStep(true);
-      toast.success(data.message || 'Request submitted. Verify your email.');
+      if (data.devVerificationCode) {
+        setOtp(data.devVerificationCode);
+        toast.success(`Verification code sent. Local mode code: ${data.devVerificationCode}`);
+      } else {
+        toast.success(data.message || 'Request submitted. Check your email for the verification code.');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Could not submit your request');
     } finally {
@@ -173,7 +178,12 @@ export default function UniversitySignup() {
     setResending(true);
     try {
       const response = await resendVerificationEmail(form.email.trim());
-      toast.success(response.message || 'OTP resent');
+      if (response.devVerificationCode) {
+        setOtp(response.devVerificationCode);
+        toast.success(`Code resent. Local mode code: ${response.devVerificationCode}`);
+      } else {
+        toast.success(response.message || 'Verification code resent');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Could not resend OTP');
     } finally {

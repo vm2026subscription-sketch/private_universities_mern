@@ -196,19 +196,19 @@ exports.sendOtp = async ({ identifier, type = 'sms', purpose = 'verify', ipAddre
     if (type === 'email') {
       const otp = generateOtp();
       const sendEmail = require('../utils/sendEmail');
+      const { wrapInLayout } = require('./emailService');
 
       try {
+        const bodyHtml = `
+          <h2 style="color: #ea580c; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">Verification Code</h2>
+          <p style="margin: 0 0 12px 0;">Your verification code is:</p>
+          <div style="font-size: 32px; font-weight: 700; letter-spacing: 8px; text-align: center; margin: 16px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; color: #0f172a;">${otp}</div>
+          <p style="margin: 0; color: #64748b; font-size: 13px;">Expires in ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.</p>
+        `;
         await sendEmail({
           to: identifier,
           subject: 'Vidyarthi Mitra - Verification Code',
-          html: `
-            <div style="font-family:Arial,sans-serif;line-height:1.6;max-width:400px;margin:0 auto;padding:20px;">
-              <h2 style="color:#6366f1;">Verification Code</h2>
-              <p>Your code is:</p>
-              <div style="font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;margin:20px 0;padding:16px;background:#f4f4f5;border-radius:12px;">${otp}</div>
-              <p style="color:#888;font-size:13px;">Expires in ${OTP_EXPIRY_MINUTES} minutes. Do not share.</p>
-            </div>
-          `,
+          html: wrapInLayout(bodyHtml, { title: 'Verification Code' }),
         });
       } catch (emailErr) {
         if (isDevEchoEnabled()) {
