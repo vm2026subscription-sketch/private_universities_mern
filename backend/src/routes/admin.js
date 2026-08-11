@@ -148,4 +148,8 @@ router.delete('/subscriptions/:universityId/trial', superadmin, trialCtrl.remove
 // Superadmin-only: quick sponsorship patch (grant/revoke without full edit)
 router.patch('/universities/:id/sponsorship', superadmin, adminCtrl.patchSponsorship);
 
+// Superadmin-only: Manual trial management
+router.post('/universities/:universityId/trial', superadmin, subAdminCtrl.manageUniversityTrial);
+router.get('/universities/:universityId/subscription-status', superadmin, subAdminCtrl.getUniversitySubscriptionStatus);
+
 module.exports = router;

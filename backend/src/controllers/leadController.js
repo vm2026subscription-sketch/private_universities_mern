@@ -1,5 +1,6 @@
 const Lead = require('../models/Lead');
 const University = require('../models/University');
+const Subscription = require('../models/Subscription');
 
 // Submit a lead (public route)
 exports.submitLead = async (req, res) => {
@@ -16,6 +17,15 @@ exports.submitLead = async (req, res) => {
     const university = await University.findById(universityId);
     if (!university) {
       return res.status(404).json({ success: false, message: 'University not found.' });
+    }
+
+    const latestSubscription = await Subscription.findOne({ universityId }).sort({ expiryDate: -1 });
+    const isSubscriptionActive = Boolean(latestSubscription && latestSubscription.expiryDate && new Date(latestSubscription.expiryDate) > new Date());
+    if (!isSubscriptionActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'This university is not currently accepting enquiries.'
+      });
     }
 
     const lead = await Lead.create({ name, email, phone, state, preferredCourse, universityId, leadType, notes });

@@ -3,7 +3,7 @@ import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, Globe, Phone, Mail, BookOpen, Users, Award, 
   Building, Bookmark, Share2, ChevronRight, CheckCircle2, ArrowRight, ExternalLink,
-  Edit, Trash2, Save, X, ClipboardList, GraduationCap
+  Edit, Trash2, Save, X, ClipboardList, GraduationCap, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
@@ -69,6 +69,7 @@ export default function UniversityDetail() {
   const [isSaved, setIsSaved] = useState(false);
   // superadmin inherits every admin capability — matches the backend role hierarchy.
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const isSubscriptionActive = uni?.isSubscriptionActive ?? true;
 
   // Application tracking states
   const [isTracked, setIsTracked] = useState(false);
@@ -318,6 +319,14 @@ export default function UniversityDetail() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 -mt-24 relative z-10">
+        {!isSubscriptionActive && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 flex items-center gap-3 text-amber-800 dark:text-amber-200 shadow-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <p className="text-sm font-semibold">
+              This university profile is temporarily unavailable for enquiries. Please check back later.
+            </p>
+          </div>
+        )}
         <div className="bg-white dark:bg-dark-card rounded-[2rem] p-4 sm:p-6 md:p-10 shadow-lg border border-slate-100 dark:border-white/5 mb-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="flex flex-col md:flex-row gap-8 items-center md:items-end">
@@ -845,17 +854,19 @@ export default function UniversityDetail() {
         )}
       </AnimatePresence>
 
-      <LeadCaptureModal 
-        isOpen={leadModalOpen} 
-        onClose={() => setLeadModalOpen(false)} 
-        university={uni} 
-        leadType={leadType}
-        onSuccess={() => {
-          if (leadType === 'brochure') {
-            handleDownloadBrochure();
-          }
-        }}
-      />
+      {isSubscriptionActive && (
+        <LeadCaptureModal 
+          isOpen={leadModalOpen} 
+          onClose={() => setLeadModalOpen(false)} 
+          university={uni} 
+          leadType={leadType}
+          onSuccess={() => {
+            if (leadType === 'brochure') {
+              handleDownloadBrochure();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

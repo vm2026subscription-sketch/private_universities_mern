@@ -18,13 +18,46 @@ const STREAMS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 mins
 const COURSE_RESULTS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 mins
 const getCourseResultsCacheKey = (queryStr) => `vm_courses_results_${queryStr}_v1`;
 
+/**
+ * Canonical signature of the query a `courses` payload answers.
+ *
+ * This page feeds one `courses` state from two differently shaped endpoints:
+ * /courses/grouped returns programme groups (specializations are NAME STRINGS),
+ * /courses returns flat college rows (specializations are OBJECTS, and the
+ * university is nested under `universityId`). Which shape is rendered is decided
+ * by the `course` URL param, which flips a render BEFORE the matching response
+ * arrives — on browser back, on "reset filters", and on every course/state
+ * change. Stamping each payload with the query it came from lets the render skip
+ * results that answer a different question than the one currently on screen.
+ */
+const buildRequestKey = ({ category, state, stream, universityId, course }) => {
+  const params = new URLSearchParams();
+  if (category !== 'All') params.append('category', category);
+  if (state !== 'All') params.append('state', state);
+  if (stream !== 'All') params.append('stream', stream);
+  if (universityId) params.append('universityId', universityId);
+  const base = params.toString();
+  return course
+    ? `list_${base}&baseCourse=${encodeURIComponent(course)}`
+    : `grouped_${base}`;
+};
+
+// Grouped results carry specialization names; flat course rows carry
+// specialization sub-documents. Cards render these as text either way.
+const toSpecializationNames = (value) =>
+  (Array.isArray(value) ? value : [])
+    .map((spec) => (spec && typeof spec === 'object' ? spec.name : spec))
+    .filter(Boolean);
+
+// Only states that actually have universities in the catalogue are listed, so no
+// filter button ever returns an empty screen. "Delhi" covers both the "Delhi" and
+// "Delhi NCR" spellings via the backend state alias (utils/courseTaxonomy).
 const ALL_STATES = [
-  'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
-  'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli', 'Daman and Diu', 'Delhi NCR', 
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 
-  'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 
-  'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 
-  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 
+  'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',
+  'Chandigarh', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh',
+  'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Madhya Pradesh', 'Maharashtra',
+  'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
   'Uttarakhand', 'West Bengal'
 ];
 
@@ -336,7 +369,16 @@ export default function Courses() {
   const cachedStreams = readSessionCache(STREAMS_CACHE_KEY, STREAMS_CACHE_TTL_MS) || [];
   
   const urlSearchParam = searchParams.get('search') || '';
+  const requestKey = buildRequestKey({
+    category: selectedCategory,
+    state: selectedState,
+    stream: selectedStream,
+    universityId,
+    course: selectedCourse,
+  });
   const [courses, setCourses] = useState([]);
+  // Which query the rows currently in `courses` answer. Null until the first load.
+  const [coursesKey, setCoursesKey] = useState(null);
   const [streams, setStreams] = useState(cachedStreams);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
@@ -411,14 +453,12 @@ export default function Courses() {
         if (selectedState !== 'All') queryParams.append('state', selectedState);
         if (selectedStream !== 'All') queryParams.append('stream', selectedStream);
         if (universityId) queryParams.append('universityId', universityId);
-        const queryStringBase = queryParams.toString();
-        const requestKey = selectedCourse
-          ? getCourseResultsCacheKey(`list_${queryStringBase}&baseCourse=${encodeURIComponent(selectedCourse)}`)
-          : getCourseResultsCacheKey(`grouped_${queryStringBase}`);
-        const cachedData = readSessionCache(requestKey, COURSE_RESULTS_CACHE_TTL_MS);
+        const cacheKey = getCourseResultsCacheKey(requestKey);
+        const cachedData = readSessionCache(cacheKey, COURSE_RESULTS_CACHE_TTL_MS);
 
         if (cachedData && active) {
           setCourses(cachedData.data || []);
+          setCoursesKey(requestKey);
           setTotalCount(cachedData.total || cachedData.data?.length || 0);
           setLoading(false);
         } else {
@@ -433,13 +473,15 @@ export default function Courses() {
             const nextCourses = data.data || [];
             const nextTotal = data.pagination?.total || nextCourses.length;
             setCourses(nextCourses);
+            setCoursesKey(requestKey);
             setTotalCount(nextTotal);
-            writeSessionCache(requestKey, { data: nextCourses, total: nextTotal });
+            writeSessionCache(cacheKey, { data: nextCourses, total: nextTotal });
           }
         } else {
           const { data } = await api.get(`/courses/grouped?${queryParams.toString()}`);
           if (active) {
             setCourses(data.data || []);
+            setCoursesKey(requestKey);
             setTotalCount(data.data?.length || 0);
           }
         }
@@ -451,7 +493,7 @@ export default function Courses() {
     };
     loadData();
     return () => { active = false; };
-  }, [selectedCategory, universityId, selectedState, selectedCourse, selectedStream, reloadToken]);
+  }, [selectedCategory, universityId, selectedState, selectedCourse, selectedStream, requestKey, reloadToken]);
 
   useEffect(() => {
     setVisibleCount(24);
@@ -498,8 +540,13 @@ export default function Courses() {
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
+  // True while `courses` still holds the answer to a previous selection. Those
+  // rows have the wrong shape AND the wrong course/state, so nothing derived
+  // from them may reach the screen.
+  const isStaleData = coursesKey !== requestKey;
+
   const courseGroups = useMemo(() => {
-    if (selectedCourse) return [];
+    if (selectedCourse || isStaleData) return [];
     return courses
       .filter((course) => course && course.name && course.name.trim() !== '' && (course.category || course.stream))
       .map((course, index) => ({
@@ -508,6 +555,7 @@ export default function Courses() {
         name: course.name.trim(),
         category: course.category || 'Others',
         stream: course.stream || 'Others',
+        specializations: toSpecializationNames(course.specializations),
         normName: normalizeText(course.name),
         searchIndex: normalizeText(
           course.name,
@@ -520,7 +568,7 @@ export default function Courses() {
           course.universityId
         ),
       }));
-  }, [courses, selectedCourse]);
+  }, [courses, selectedCourse, isStaleData]);
 
   const filteredCourseGroups = useMemo(() => {
     let filtered = courseGroups;
@@ -572,6 +620,7 @@ export default function Courses() {
   };
 
   const availableSpecs = useMemo(() => {
+    if (isStaleData) return [];
     if (!selectedCourse && selectedCategory === 'All') return [];
     const specs = new Set();
     courses.forEach(c => {
@@ -580,10 +629,10 @@ export default function Courses() {
       }
     });
     return Array.from(specs).sort();
-  }, [courses, selectedCourse, selectedCategory]);
+  }, [courses, selectedCourse, selectedCategory, isStaleData]);
 
   const filteredColleges = useMemo(() => {
-    if (!selectedCourse) return [];
+    if (!selectedCourse || isStaleData) return [];
     let filtered = courses;
     if (selectedSpec !== 'All') {
       filtered = filtered.filter(c => c.specializationName === selectedSpec);
@@ -606,7 +655,7 @@ export default function Courses() {
       );
       return terms.every(t => searchIndex.includes(t));
     });
-  }, [courses, selectedCourse, deferredSearch, search, selectedSpec]);
+  }, [courses, selectedCourse, deferredSearch, search, selectedSpec, isStaleData]);
 
   const visibleColleges = useMemo(() => filteredColleges.slice(0, visibleCount), [filteredColleges, visibleCount]);
 
@@ -852,7 +901,7 @@ export default function Courses() {
                   </h2>
                   <div className="flex flex-wrap items-center gap-4 text-white/50 text-xs font-bold pt-2">
                     <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-                      <Building2 className="w-3.5 h-3.5" /> {selectedCourse ? courses.length : filteredCourseGroups.length} {selectedCourse ? 'Institutions' : 'Programs'}
+                      <Building2 className="w-3.5 h-3.5" /> {selectedCourse ? filteredColleges.length : filteredCourseGroups.length} {selectedCourse ? 'Institutions' : 'Programs'}
                     </span>
                     <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
                       <CheckCircle2 className="w-3.5 h-3.5" /> {availableSpecs.length} Specializations
@@ -927,7 +976,10 @@ export default function Courses() {
             </div>
           )}
 
-          {loading ? (
+          {/* `isStaleData` keeps the skeleton up for the frame between a filter
+              change and its response, instead of briefly painting the previous
+              course/state's results. A failed load must still show the error. */}
+          {(loading || (isStaleData && !fetchError)) ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {[1,2,3,4,5,6].map(i => <CardSkeleton key={i} />)}
             </div>

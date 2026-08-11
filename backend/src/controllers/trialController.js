@@ -67,9 +67,11 @@ exports.grantTrial = async (req, res) => {
     const trialFields = {
       universityId,
       source: 'trial',
-      // Recorded so reports can separate granted time from sold time. A trial
-      // reporting its plan as "monthly" would inflate the monthly count.
-      plan: lifetime || numericDays > 60 ? 'yearly' : 'monthly',
+      // `plan: 'trial'` rather than borrowing 'monthly'/'yearly': the
+      // Subscriptions screen badges a row by its plan, and a granted trial
+      // labelled "monthly" would read as a sale. `source` is what the revenue
+      // queries filter on; this is what the UI shows.
+      plan: 'trial',
       amount: 0,
       expiryDate,
       grantedBy: req.user._id,

@@ -24,6 +24,7 @@ const University = require('../models/University');
 const UniversityClaim = require('../models/UniversityClaim');
 const notificationService = require('../services/notificationService');
 const { logAction } = require('../services/auditService');
+const { isDevEchoEnabled } = require('../config/env');
 const { classifyEmailDomain, needsExtraScrutiny } = require('../utils/emailDomain');
 const { accountRules } = require('./authController');
 
@@ -37,6 +38,9 @@ const getClientUrl = () =>
   (process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
 
 const INVITE_TTL_HOURS = 72;
+
+const sendEmail = require('../utils/sendEmail');
+const { wrapInLayout } = require('../services/emailService');
 
 /**
  * Email failures must never abort an approval or an invite.
@@ -53,13 +57,13 @@ const notify = async ({ to, subject, html }, context) => {
   }
 };
 
-const emailShell = (heading, bodyHtml) => `
-  <div style="font-family:Arial,sans-serif;line-height:1.6;max-width:520px;margin:0 auto;padding:20px;">
-    <h2 style="color:#f97316;margin-bottom:8px;">${heading}</h2>
+const emailShell = (heading, bodyHtml, layoutVars = {}) => {
+  const innerHtml = `
+    <h2 style="color: #ea580c; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">${heading}</h2>
     ${bodyHtml}
-    <p style="color:#94a3b8;font-size:12px;margin-top:24px;">Vidyarthi Mitra — University Portal</p>
-  </div>
-`;
+  `;
+  return wrapInLayout(innerHtml, { title: heading, ...layoutVars });
+};
 
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(String(value || ''));
 
@@ -270,19 +274,13 @@ exports.signup = async (req, res) => {
       req,
     });
 
-    await notificationService.notifyApprovalRequest({
-      applicantId: user._id,
-      applicantName: normalizedName,
-      applicantEmail: normalizedEmail,
-      universityName: university?.name || claimData.requestedUniversityName,
-    });
-
     return res.status(201).json({
       success: true,
       requiresVerification: true,
       message:
-        'Request submitted. Verify your email, then our team will review your request — usually within 2 working days.',
+        'Request submitted. Please enter the 6-digit verification code sent to your email address.',
       claim: serializeClaim({ ...claimData, _id: claim._id, createdAt: claim.createdAt }),
+      ...(isDevEchoEnabled() ? { devVerificationCode: verificationCode } : {}),
     });
   } catch (error) {
     /**
@@ -849,11 +847,13 @@ exports.inviteTeamMember = async (req, res) => {
         to: email,
         subject: `You have been invited to manage ${req.university?.name || 'your university'} on Vidyarthi Mitra`,
         html: emailShell(
-          'You have been invited',
-          `<p><strong>${req.user.name}</strong> has invited you to help manage
-           <strong>${req.university?.name || 'their university'}</strong> on Vidyarthi Mitra.</p>
-           <p><a href="${getClientUrl()}/university/accept-invite?token=${rawToken}" style="display:inline-block;background:#f97316;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Accept invitation</a></p>
-           <p style="color:#94a3b8;font-size:13px;">This invitation expires in ${INVITE_TTL_HOURS} hours.</p>`
+          'You Have Been Invited',
+          `<p style="margin: 0 0 12px 0;"><strong>${req.user.name}</strong> has invited you to help manage <strong>${req.university?.name || 'their university'}</strong> on Vidyarthi Mitra.</p>
+           <p style="color: #64748b; font-size: 13px; margin: 0;">This invitation expires in ${INVITE_TTL_HOURS} hours.</p>`,
+          {
+            ctaLabel: 'Accept Invitation',
+            ctaUrl: `${getClientUrl()}/university/accept-invite?token=${rawToken}`,
+          }
         ),
       },
       'invite'
