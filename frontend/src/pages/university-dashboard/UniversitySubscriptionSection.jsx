@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { 
-  CreditCard, Check, Shield, Clock, Zap, 
-  Crown, AlertCircle, CheckCircle2, Loader2, RefreshCw
+import {
+  Check, Shield, Clock, Zap,
+  AlertCircle, CheckCircle2, Loader2,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -19,11 +19,37 @@ const loadRazorpayScript = () => {
   });
 };
 
+const ACCENT = '#ff7a00';
+
+const planCardBase =
+  'bg-white dark:bg-dark-card rounded-2xl border border-light-border dark:border-dark-border ' +
+  'shadow-card flex flex-col overflow-hidden ' +
+  'transition-all duration-200 ease-in-out ' +
+  'hover:-translate-y-1 hover:shadow-card-hover';
+
+const planCardActive = 'ring-2 ring-[#ff7a00]/30 shadow-card-hover -translate-y-1';
+
+const MONTHLY_FEATURES = [
+  'Premium University Listing',
+  'Basic Analytics Dashboard',
+  'Lead Generation Features',
+  'Standard Support',
+];
+
+const YEARLY_FEATURES = [
+  'Everything in Monthly Plan',
+  'Priority Support',
+  'Advanced Analytics & Insights',
+  'Featured Placements',
+  'Unlimited Lead Access',
+];
+
 const UniversitySubscriptionSection = () => {
   const { uni, subscription, loading: uniLoading, refreshUni } = useOutletContext();
   const { user } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [paymentState, setPaymentState] = useState('idle'); // idle, processing, success
+  const [billingView, setBillingView] = useState('yearly');
 
   /**
    * Prices come from the server, which is also what prices the order.
@@ -249,55 +275,96 @@ const UniversitySubscriptionSection = () => {
         </div>
       )}
 
-      <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-light-text dark:text-dark-text mb-4">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-light-text dark:text-dark-text mb-2">
           {subscription?.isActive ? 'Renew or Extend Subscription' : 'Choose Your Plan'}
         </h1>
-        <p className="text-lg text-light-muted dark:text-dark-muted max-w-2xl mx-auto">
+        <p className="text-base text-light-muted dark:text-dark-muted max-w-2xl mx-auto">
           Get premium visibility, detailed analytics, and direct access to prospective students with our university subscription plans.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        {/* Monthly Plan */}
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-light-border dark:border-dark-border overflow-hidden hover:shadow-md transition-shadow relative flex flex-col">
-          <div className="p-8 flex-grow">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">Monthly Plan</h3>
-              <Clock className="text-light-muted dark:text-dark-muted w-6 h-6" />
+      {/* Billing toggle */}
+      <div className="flex justify-center mb-10">
+        <div
+          className="inline-flex p-1 bg-gray-100 dark:bg-gray-800/80 rounded-xl border border-light-border dark:border-dark-border"
+          role="group"
+          aria-label="Billing period"
+        >
+          <button
+            type="button"
+            onClick={() => setBillingView('monthly')}
+            className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+              billingView === 'monthly'
+                ? 'bg-white dark:bg-dark-card text-[#ff7a00] shadow-sm'
+                : 'text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text'
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setBillingView('yearly')}
+            className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+              billingView === 'yearly'
+                ? 'bg-white dark:bg-dark-card text-[#ff7a00] shadow-sm'
+                : 'text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text'
+            }`}
+          >
+            Yearly
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto items-stretch">
+        {/* Monthly Plan — STANDARD */}
+        <div
+          id="plan-monthly"
+          className={`${planCardBase} ${billingView === 'monthly' ? planCardActive : ''}`}
+        >
+          <div className="p-8 flex flex-col flex-grow">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-xs font-bold tracking-widest text-light-muted dark:text-dark-muted uppercase">
+                Standard
+              </span>
+              <Clock className="w-5 h-5 text-light-muted dark:text-dark-muted" aria-hidden="true" />
             </div>
-            
-            <div className="mb-6 flex items-baseline">
-              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">{priceLabel('monthly')}</span>
-              <span className="text-light-muted dark:text-dark-muted ml-2">/ month</span>
+
+            <div className="mb-2 flex items-baseline gap-1">
+              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">
+                {priceLabel('monthly')}
+              </span>
+              <span className="text-light-muted dark:text-dark-muted text-sm">/month</span>
             </div>
-            
-            <p className="text-light-muted dark:text-dark-muted mb-8">
+
+            <p className="text-sm text-light-muted dark:text-dark-muted mb-8">
               Perfect for getting started and trying out premium features.
             </p>
-            
-            <ul className="space-y-4 mb-8">
-              {['Premium University Listing', 'Basic Analytics Dashboard', 'Lead Generation Features', 'Standard Support'].map((feature, i) => (
-                <li key={i} className="flex items-start">
-                  <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+
+            <ul className="space-y-3.5 flex-grow mb-8">
+              {MONTHLY_FEATURES.map((feature) => (
+                <li key={feature} className="flex items-start gap-3 text-sm">
+                  <Check className="w-4 h-4 text-[#ff7a00] mt-0.5 flex-shrink-0" aria-hidden="true" />
                   <span className="text-light-text dark:text-dark-text">{feature}</span>
                 </li>
               ))}
             </ul>
-          </div>
-          
-          <div className="p-8 pt-0 mt-auto">
+
             <button
+              type="button"
               onClick={() => handleSubscribe('monthly')}
               disabled={loadingPlan !== null}
-              className={`w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center transition-colors
-                ${loadingPlan === 'monthly' 
-                  ? 'bg-orange-200 dark:bg-orange-900/50 text-orange-500 cursor-not-allowed' 
-                  : 'bg-orange-100 dark:bg-orange-900/30 text-primary hover:bg-orange-200 dark:hover:bg-orange-900/50'
-                }`}
+              className={`w-full py-3.5 px-4 rounded-xl font-semibold flex items-center justify-center transition-colors duration-200 ${
+                loadingPlan === 'monthly'
+                  ? 'bg-[#ff7a00]/60 text-white cursor-not-allowed'
+                  : 'bg-[#ff7a00] text-white hover:bg-[#e66e00]'
+              }`}
             >
               {loadingPlan === 'monthly' ? (
-                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</>
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
               ) : (
                 'Subscribe Monthly'
               )}
@@ -305,51 +372,66 @@ const UniversitySubscriptionSection = () => {
           </div>
         </div>
 
-        {/* Yearly Plan */}
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-md border-2 border-primary overflow-hidden hover:shadow-lg transition-shadow relative flex flex-col">
-          <div className="absolute top-0 inset-x-0 h-1 bg-primary"></div>
-          
-          <div className="absolute top-4 right-4 bg-orange-100 dark:bg-orange-900/40 text-primary text-xs font-bold px-3 py-1 rounded-full flex items-center">
-            <Zap className="w-3 h-3 mr-1" /> Best Value (~17% savings)
+        {/* Yearly Plan — ANNUAL PARTNER */}
+        <div
+          id="plan-yearly"
+          className={`${planCardBase} ${billingView === 'yearly' ? planCardActive : ''}`}
+        >
+          <div
+            className="px-4 py-2.5 flex items-center justify-center"
+            style={{ backgroundColor: ACCENT }}
+          >
+            <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide uppercase text-center">
+              Recommended • Best Value (~17% Savings)
+            </span>
           </div>
 
-          <div className="p-8 flex-grow">
-            <div className="flex justify-between items-center mb-4 mt-2">
-              <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">Yearly Plan</h3>
-              <Crown className="text-primary w-6 h-6" />
+          <div className="p-8 flex flex-col flex-grow">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-xs font-bold tracking-widest text-[#ff7a00] uppercase">
+                Annual Partner
+              </span>
+              <Zap className="w-5 h-5 text-[#ff7a00]" aria-hidden="true" />
             </div>
-            
-            <div className="mb-6 flex items-baseline">
-              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">{priceLabel('yearly')}</span>
-              <span className="text-light-muted dark:text-dark-muted ml-2">/ year</span>
+
+            <div className="mb-2 flex items-baseline gap-2 flex-wrap">
+              <span className="text-4xl font-extrabold text-light-text dark:text-dark-text">
+                {priceLabel('yearly')}
+              </span>
+              <span className="text-light-muted dark:text-dark-muted text-sm">/year</span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#ff7a00]/10 text-[#ff7a00] border border-[#ff7a00]/20">
+                Save ₹2,000/yr
+              </span>
             </div>
-            
-            <p className="text-light-muted dark:text-dark-muted mb-8">
+
+            <p className="text-sm text-light-muted dark:text-dark-muted mb-8">
               Maximize your reach with complete access for a full year.
             </p>
-            
-            <ul className="space-y-4 mb-8">
-              {['Everything in Monthly Plan', 'Priority Support', 'Advanced Analytics & Insights', 'Featured Placements', 'Unlimited Lead Access'].map((feature, i) => (
-                <li key={i} className="flex items-start">
-                  <Check className="w-5 h-5 text-primary mr-3 flex-shrink-0 mt-0.5" />
+
+            <ul className="space-y-3.5 flex-grow mb-8">
+              {YEARLY_FEATURES.map((feature) => (
+                <li key={feature} className="flex items-start gap-3 text-sm">
+                  <Check className="w-4 h-4 text-[#ff7a00] mt-0.5 flex-shrink-0" aria-hidden="true" />
                   <span className="text-light-text dark:text-dark-text">{feature}</span>
                 </li>
               ))}
             </ul>
-          </div>
-          
-          <div className="p-8 pt-0 mt-auto">
+
             <button
+              type="button"
               onClick={() => handleSubscribe('yearly')}
               disabled={loadingPlan !== null}
-              className={`w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center transition-colors
-                ${loadingPlan === 'yearly'
-                  ? 'bg-orange-400 text-white cursor-not-allowed'
-                  : 'bg-primary text-white hover:bg-orange-600'
-                }`}
+              className={`w-full py-3.5 px-4 rounded-xl font-semibold flex items-center justify-center transition-colors duration-200 ${
+                loadingPlan === 'yearly'
+                  ? 'bg-[#ff7a00]/60 text-white cursor-not-allowed'
+                  : 'bg-[#ff7a00] text-white hover:bg-[#e66e00]'
+              }`}
             >
               {loadingPlan === 'yearly' ? (
-                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</>
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
               ) : (
                 'Subscribe Yearly'
               )}
@@ -358,8 +440,8 @@ const UniversitySubscriptionSection = () => {
         </div>
       </div>
 
-      <div className="mt-12 flex items-center justify-center text-sm text-light-muted dark:text-dark-muted bg-gray-50 dark:bg-gray-800/50 py-4 px-6 rounded-lg max-w-2xl mx-auto border border-light-border dark:border-dark-border">
-        <Shield className="w-5 h-5 mr-3 text-green-500 flex-shrink-0" />
+      <div className="mt-8 flex items-center justify-center text-sm text-light-muted dark:text-dark-muted bg-gray-50 dark:bg-gray-800/50 py-3.5 px-5 rounded-lg max-w-2xl mx-auto border border-light-border dark:border-dark-border">
+        <Shield className="w-4 h-4 mr-2.5 text-green-500 flex-shrink-0" />
         <p>Payments are processed securely by Razorpay. We never store your card details.</p>
       </div>
     </div>
