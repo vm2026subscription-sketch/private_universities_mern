@@ -253,8 +253,18 @@ async function fetchUniversityPages(fetchImpl, query, maxPages, signal) {
   };
 }
 
-/** Matches the /universities/in-<state> route, and round-trips back to a name. */
-const stateSlug = (state) => String(state).trim().toLowerCase().replace(/\s+/g, '-');
+/**
+ * Matches the /universities/in-<state> route, and round-trips back to a name.
+ * Kept identical to stateSlug in backend/src/controllers/sitemapController.js,
+ * which builds the same URLs for the sitemap — the two must agree exactly or the
+ * sitemap points at pages this file cannot resolve.
+ */
+const stateSlug = (state) =>
+  String(state || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 
 /** One <li> per university — name, city and NAAC grade, all of them search terms. */
 const universityItems = (list) =>
@@ -336,7 +346,7 @@ export async function renderUniversityList(template, fetchImpl = fetch) {
     .filter(([name, count]) => name && count > 0)
     .sort(([a], [b]) => a.localeCompare(b));
 
-  if (!states.length && !universities.length) return { status: 200, html: withHead };
+  if (!states.length && !universities.length) return { status: 200, html: withHead, degraded: true };
 
   const total = states.reduce((sum, [, count]) => sum + count, 0);
 
@@ -491,7 +501,8 @@ export async function renderUniversity(slug, template, fetchImpl = fetch) {
     };
     const block = metaBlock({ title, description, canonical, image: DEFAULT_OG_IMAGE, noindex: false, jsonLd });
     const withHead = injectSeo(template, block);
-    return { status: 200, html: body ? injectBody(withHead, body) : withHead };
+    // No body means the backend did not answer in time — see `degraded` in render.js.
+    return { status: 200, html: body ? injectBody(withHead, body) : withHead, degraded: !body };
   }
 
   if (slug.startsWith('naac-')) {
@@ -550,7 +561,7 @@ export async function renderUniversity(slug, template, fetchImpl = fetch) {
       signal: controller.signal,
     });
   } catch {
-    return { status: 200, html: template };
+    return { status: 200, html: template, degraded: true };
   } finally {
     clearTimeout(timeout);
   }
@@ -559,14 +570,14 @@ export async function renderUniversity(slug, template, fetchImpl = fetch) {
     return { status: 404, html: injectSeo(template, notFoundBlock(slug)) };
   }
   if (!res.ok) {
-    return { status: 200, html: template };
+    return { status: 200, html: template, degraded: true };
   }
 
   let data;
   try {
     data = (await res.json()).data;
   } catch {
-    return { status: 200, html: template };
+    return { status: 200, html: template, degraded: true };
   }
   if (!data) {
     return { status: 404, html: injectSeo(template, notFoundBlock(slug)) };

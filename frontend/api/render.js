@@ -44,6 +44,32 @@ async function getTemplate(host) {
   return DEFAULT_TEMPLATE;
 }
 
+/**
+ * Cache hard at the edge, and keep serving while refreshing.
+ *
+ * `Vary: User-Agent` splits the cache by the exact UA string, and Googlebot
+ * alone sends many variants — so a one-hour TTL meant most crawls missed the
+ * edge and went to the origin, which is a free-tier host that sleeps. That
+ * round-trip is what a 4.8s average response time is made of, and Google
+ * throttles crawl rate against exactly that number.
+ *
+ * A day of freshness with a week of stale-while-revalidate means a crawler
+ * almost always gets an edge hit, and a university's edits still appear within
+ * a day. `must-revalidate` is deliberately absent: a stale page served instantly
+ * beats a fresh one served after a cold start.
+ *
+ * Unless the render is degraded. When the backend does not answer inside the
+ * six-second budget the page still returns 200, but with meta and no content —
+ * and a sleeping free-tier host makes that likely on the first request of the
+ * day. Caching that for a day would pin a thin page in front of crawlers long
+ * after the backend woke up, so a failed render is cached for two minutes and
+ * retried instead.
+ */
+const cacheHeader = (degraded) =>
+  degraded
+    ? 'public, max-age=60, s-maxage=120'
+    : 'public, max-age=600, s-maxage=86400, stale-while-revalidate=604800';
+
 export default async function handler(req, res) {
   const host = req.headers.host;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -73,30 +99,15 @@ export default async function handler(req, res) {
      * with no referring page.
      */
     if (isList) {
-      const { status, html } = await renderUniversityList(template);
-      res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=86400, stale-while-revalidate=604800');
+      const { status, html, degraded } = await renderUniversityList(template);
+      res.setHeader('Cache-Control', cacheHeader(degraded));
       res.status(status).send(html);
       return;
     }
 
     // Crawlers: inject per-university meta, JSON-LD and page content.
-    const { status, html } = await renderUniversity(slug, template);
-
-    /**
-     * Cache hard at the edge, and keep serving while refreshing.
-     *
-     * `Vary: User-Agent` above splits the cache by the exact UA string, and
-     * Googlebot alone sends many variants — so a one-hour TTL meant most crawls
-     * missed the edge and went to the origin, which is a free-tier host that
-     * sleeps. That round-trip is what a 4.8s average response time is made of,
-     * and Google throttles crawl rate against exactly that number.
-     *
-     * A day of freshness with a week of stale-while-revalidate means a crawler
-     * almost always gets an edge hit, and a university's edits still appear
-     * within a day. `must-revalidate` is deliberately absent: a stale page
-     * served instantly beats a fresh one served after a cold start.
-     */
-    res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=86400, stale-while-revalidate=604800');
+    const { status, html, degraded } = await renderUniversity(slug, template);
+    res.setHeader('Cache-Control', cacheHeader(degraded));
     res.status(status).send(html);
   } catch {
     // Never fail a page load because of SEO — fall back to the shell.
