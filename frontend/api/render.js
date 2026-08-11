@@ -1,4 +1,4 @@
-import { renderUniversity } from './_seoRender.js';
+import { renderUniversity, renderUniversityList } from './_seoRender.js';
 
 // Known crawler / link-preview user agents. Only these get the (slightly slower)
 // server-rendered <head> + real 404. Human browsers get the static SPA shell
@@ -51,19 +51,31 @@ export default async function handler(req, res) {
   res.setHeader('Vary', 'User-Agent');
 
   try {
-    const slug = (
-      req.query?.slug ||
-      new URL(req.url, `https://${host}`).searchParams.get('slug') ||
-      ''
-    ).toString();
+    const params = new URL(req.url, `https://${host}`).searchParams;
+    const slug = (req.query?.slug || params.get('slug') || '').toString();
+    const isList = (req.query?.list || params.get('list') || '') === '1';
 
     const template = await getTemplate(host);
     const ua = req.headers['user-agent'] || '';
+    const isBot = BOT_RE.test(ua);
 
-    // Humans (or a missing slug): serve the SPA shell immediately.
-    if (!slug || !BOT_RE.test(ua)) {
+    // Humans always get the shell instantly and never wait on the backend.
+    if (!isBot || (!slug && !isList)) {
       res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
       res.status(200).send(template);
+      return;
+    }
+
+    /**
+     * The universities index for crawlers: the page that carries the links to
+     * every university. Without it a crawler has no path to those pages except
+     * the sitemap, which is why they sit at "Discovered – currently not indexed"
+     * with no referring page.
+     */
+    if (isList) {
+      const { status, html } = await renderUniversityList(template);
+      res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=86400, stale-while-revalidate=604800');
+      res.status(status).send(html);
       return;
     }
 

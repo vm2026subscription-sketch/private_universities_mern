@@ -188,6 +188,233 @@ export function renderUniversityBody(u = {}) {
 }
 
 /**
+ * The universities index, as crawlable HTML with real links.
+ *
+ * This is the piece that makes the detail pages reachable. Search Console
+ * reports each of the 747 university URLs as "Discovered – currently not
+ * indexed" with "Last crawl: N/A" and "Referring page: None detected" — Google
+ * knows they exist, from the sitemap, and has never fetched one.
+ *
+ * A sitemap is a hint. Internal links are the signal that decides crawl
+ * priority, and this site had none a crawler could see: /universities renders
+ * its list in JavaScript, so the HTML Googlebot receives contains zero <a href>
+ * pointing at a university. Prerendering the detail pages fixed what a crawler
+ * reads once it arrives; this fixes whether it ever arrives.
+ *
+ * Links are plain <a href> on purpose — the whole point is that they exist
+ * without executing anything.
+ *
+ * The shape is a directory, not one flat page: the index links to every state
+ * page, and each state page links to its universities. That is partly for
+ * crawlers — a link two hops from the index carries more weight than one of 706
+ * on a single page — and partly forced, because the public list API caps `limit`
+ * at 50, so a flat page would cost fifteen backend round-trips on a host that
+ * sleeps. Split by state, no page needs more than a handful.
+ */
+
+/** The public list endpoint clamps `limit` to 50, whatever we ask for. */
+const PAGE_SIZE = 50;
+
+/**
+ * Reads a list endpoint across its pages.
+ *
+ * Page one is fetched first because it reports the page count; the rest go out
+ * together, so total latency is two round-trips rather than N. `maxPages` is a
+ * ceiling, not an expectation — it exists so an unexpectedly large result set
+ * cannot stall the function.
+ */
+async function fetchUniversityPages(fetchImpl, query, maxPages, signal) {
+  const url = (page) => `${API_BASE}/universities?limit=${PAGE_SIZE}&page=${page}${query}`;
+
+  const readPage = async (page) => {
+    const res = await fetchImpl(url(page), { signal });
+    if (!res.ok) return { data: [], pages: 0 };
+    const json = await res.json();
+    return { data: Array.isArray(json.data) ? json.data : [], pages: Number(json.pages) || 0 };
+  };
+
+  const first = await readPage(1);
+  const wanted = Math.min(first.pages, maxPages);
+  if (wanted <= 1) return { universities: first.data, total: first.data.length, truncated: first.pages > 1 };
+
+  const rest = await Promise.all(
+    Array.from({ length: wanted - 1 }, (_, i) => readPage(i + 2).catch(() => ({ data: [] })))
+  );
+
+  return {
+    universities: [...first.data, ...rest.flatMap((r) => r.data)],
+    truncated: first.pages > maxPages,
+  };
+}
+
+/** Matches the /universities/in-<state> route, and round-trips back to a name. */
+const stateSlug = (state) => String(state).trim().toLowerCase().replace(/\s+/g, '-');
+
+/** One <li> per university — name, city and NAAC grade, all of them search terms. */
+const universityItems = (list) =>
+  list
+    .filter((u) => u?.slug && u?.name)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(
+      (u) =>
+        `<li><a href="${SITE_URL}/universities/${esc(u.slug)}">${esc(u.name)}</a>${
+          u.city ? ` — ${esc(u.city)}` : ''
+        }${u.naacGrade ? ` — NAAC ${esc(u.naacGrade)}` : ''}</li>`
+    )
+    .join('');
+
+export async function renderUniversityList(template, fetchImpl = fetch) {
+  const title = `Private & Deemed Universities in India (2026) — Fees, Rankings & Admissions | ${SITE_NAME}`;
+  const description =
+    'Browse 700+ private, deemed and international universities in India. Compare courses, fees, NAAC grades, NIRF rankings, placements and admissions.';
+  const canonical = `${SITE_URL}/universities`;
+
+  let universities = [];
+  let stateCounts = {};
+  let offshore = [];
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    // State counts drive the directory; two pages of universities give the index
+    // itself something to rank on rather than making it a pure hub of hubs.
+    const [counts, listed, foreign, twinning] = await Promise.all([
+      fetchImpl(`${API_BASE}/universities/state-counts`, { signal: controller.signal })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+      fetchUniversityPages(fetchImpl, '', 2, controller.signal).catch(() => ({ universities: [] })),
+      /**
+       * Foreign and twinning universities are the reason this is not just the
+       * state directory. They carry no Indian state, so `state-counts` omits
+       * them and no state page can reach them — 50 of the 747 sitemap URLs had
+       * no inbound link at all until they were listed here.
+       */
+      fetchUniversityPages(fetchImpl, '&type=foreign', 2, controller.signal).catch(() => ({ universities: [] })),
+      fetchUniversityPages(fetchImpl, '&type=twinning', 2, controller.signal).catch(() => ({ universities: [] })),
+    ]);
+    stateCounts = counts?.data && typeof counts.data === 'object' ? counts.data : {};
+    universities = listed.universities;
+    offshore = [
+      ['International & Foreign Universities', foreign.universities],
+      ['Twinning & Study-Abroad Programmes', twinning.universities],
+    ];
+  } catch {
+    // Fall through to a meta-only page rather than failing the route.
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: 'Private & Deemed Universities in India',
+        url: canonical,
+        description,
+        publisher: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+          { '@type': 'ListItem', position: 2, name: 'Universities', item: canonical },
+        ],
+      },
+    ],
+  };
+
+  const block = metaBlock({ title, description, canonical, image: DEFAULT_OG_IMAGE, noindex: false, jsonLd });
+  const withHead = injectSeo(template, block);
+
+  const states = Object.entries(stateCounts)
+    .filter(([name, count]) => name && count > 0)
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  if (!states.length && !universities.length) return { status: 200, html: withHead };
+
+  const total = states.reduce((sum, [, count]) => sum + count, 0);
+
+  const directory = states.length
+    ? `<h2>Universities by state</h2><ul>${states
+        .map(
+          ([name, count]) =>
+            `<li><a href="${SITE_URL}/universities/in-${stateSlug(name)}">Private universities in ${esc(
+              name
+            )}</a> (${count})</li>`
+        )
+        .join('')}</ul>`
+    : '';
+
+  const featured = universities.length
+    ? `<h2>Universities A–Z</h2><ul>${universityItems(universities)}</ul>`
+    : '';
+
+  const international = offshore
+    .filter(([, list]) => list.length)
+    .map(([heading, list]) => `<h2>${heading}</h2><ul>${universityItems(list)}</ul>`)
+    .join('');
+
+  const body = `
+      <main>
+        <h1>Private &amp; Deemed Universities in India</h1>
+        <p>${esc(description)}</p>
+        ${total ? `<p>${total} universities listed across ${states.length} states.</p>` : ''}
+        ${directory}
+        ${international}
+        ${featured}
+      </main>`;
+
+  return { status: 200, html: injectBody(withHead, body) };
+}
+
+/**
+ * The state page: name as stored, plus its universities.
+ *
+ * The name has to come back from the database rather than from the slug. The
+ * list API filters state by exact match, and title-casing every word of
+ * "andaman-and-nicobar-islands" yields "Andaman And Nicobar Islands", which
+ * matches nothing — that page came back empty. Resolving through the counts
+ * endpoint also means the heading reads the way the data does.
+ */
+async function renderStatePage(slug, fallbackName, fetchImpl) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const counts = await fetchImpl(`${API_BASE}/universities/state-counts`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+
+    const stateName =
+      Object.keys(counts?.data || {}).find((name) => stateSlug(name) === slug) || fallbackName;
+
+    // Four pages covers the largest state in the catalogue with room to spare.
+    const { universities, truncated } = await fetchUniversityPages(
+      fetchImpl,
+      `&state=${encodeURIComponent(stateName)}`,
+      4,
+      controller.signal
+    );
+    if (!universities.length) return { stateName, body: '' };
+
+    const body = `
+      <main>
+        <h1>Private Universities in ${esc(stateName)}</h1>
+        <p>${universities.length}${truncated ? '+' : ''} private and deemed universities in ${esc(
+          stateName
+        )}, with courses, fees, NAAC grades and admission details.</p>
+        <ul>${universityItems(universities)}</ul>
+        <p><a href="${SITE_URL}/universities">Browse universities in every state</a></p>
+      </main>`;
+
+    return { stateName, body };
+  } catch {
+    return { stateName: fallbackName, body: '' };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
  * Places prerendered markup inside #root.
  *
  * Matches the empty div specifically. If the template ever ships with content
@@ -224,11 +451,15 @@ function notFoundBlock(slug) {
  */
 export async function renderUniversity(slug, template, fetchImpl = fetch) {
   if (slug.startsWith('in-')) {
-    const stateName = slug
-      .replace(/^in-/, '')
+    const bare = slug.replace(/^in-/, '');
+    const guessed = bare
       .split('-')
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
+
+    // Resolved first: the title and the list must name the state identically.
+    const { stateName, body } = await renderStatePage(bare, guessed, fetchImpl);
+
     const title = `Top Private Universities in ${stateName} (2026) | Fees, Ranking & Admissions | ${SITE_NAME}`;
     const description = `Explore top private and deemed universities in ${stateName}. Compare courses, fees, NAAC grades, NIRF rankings, placements and admission guidelines.`;
     const canonical = `${SITE_URL}/universities/${slug}`;
@@ -253,7 +484,8 @@ export async function renderUniversity(slug, template, fetchImpl = fetch) {
       ]
     };
     const block = metaBlock({ title, description, canonical, image: DEFAULT_OG_IMAGE, noindex: false, jsonLd });
-    return { status: 200, html: injectSeo(template, block) };
+    const withHead = injectSeo(template, block);
+    return { status: 200, html: body ? injectBody(withHead, body) : withHead };
   }
 
   if (slug.startsWith('naac-')) {
