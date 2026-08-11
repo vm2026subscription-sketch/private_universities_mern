@@ -183,7 +183,13 @@ export function renderUniversityBody(u = {}) {
             )}`
           : ''}
 
-        <p><a href="${SITE_URL}/universities">Browse all universities</a></p>
+        <p>${
+          u.state
+            ? `<a href="${SITE_URL}/universities/in-${stateSlug(u.state)}">More private universities in ${esc(
+                u.state
+              )}</a> · `
+            : ''
+        }<a href="${SITE_URL}/universities">Browse all universities</a></p>
       </main>`;
 }
 
