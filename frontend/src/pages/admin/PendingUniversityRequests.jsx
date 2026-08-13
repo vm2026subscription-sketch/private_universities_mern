@@ -48,10 +48,19 @@ export default function PendingUniversityRequests() {
   const fetchClaims = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/university-portal/claims?status=pending');
-      if (data?.success) {
-        setRequests((data.claims || []).map(normalizeClaim));
-      }
+      let page = 1;
+      let allClaims = [];
+      let pages = 1;
+
+      do {
+        const { data } = await api.get(`/university-portal/claims?status=all&limit=100&page=${page}`);
+        if (!data?.success) break;
+        allClaims = allClaims.concat(data.claims || []);
+        pages = data.pages || 1;
+        page += 1;
+      } while (page <= pages);
+
+      setRequests(allClaims.map(normalizeClaim));
     } catch (error) {
       console.error('Error fetching claims:', error);
       toast.error(error.response?.data?.message || 'Failed to load claims');
@@ -177,7 +186,21 @@ export default function PendingUniversityRequests() {
               </tr>
             </thead>
             <tbody className="divide-y divide-light-border dark:divide-dark-border font-medium text-light-text dark:text-dark-text">
-              {filteredRequests.map((r) => (
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-light-muted dark:text-dark-muted">
+                    Loading requests...
+                  </td>
+                </tr>
+              )}
+              {!loading && filteredRequests.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-light-muted dark:text-dark-muted">
+                    No requests match your search or filter.
+                  </td>
+                </tr>
+              )}
+              {!loading && filteredRequests.map((r) => (
                 <tr key={r.id} className="hover:bg-light-bg/50 dark:hover:bg-dark-bg/30 transition-colors">
                   <td className="p-4 pl-6">
                     <p className="font-bold text-sm text-light-text dark:text-dark-text">{r.name}</p>

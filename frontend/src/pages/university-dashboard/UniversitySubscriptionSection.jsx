@@ -24,10 +24,8 @@ const ACCENT = '#ff7a00';
 const planCardBase =
   'bg-white dark:bg-dark-card rounded-2xl border border-light-border dark:border-dark-border ' +
   'shadow-card flex flex-col overflow-hidden ' +
-  'transition-all duration-200 ease-in-out ' +
+  'transition-all duration-200 ease ' +
   'hover:-translate-y-1 hover:shadow-card-hover';
-
-const planCardActive = 'ring-2 ring-[#ff7a00]/30 shadow-card-hover -translate-y-1';
 
 const MONTHLY_FEATURES = [
   'Premium University Listing',
@@ -49,7 +47,6 @@ const UniversitySubscriptionSection = () => {
   const { user } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [paymentState, setPaymentState] = useState('idle'); // idle, processing, success
-  const [billingView, setBillingView] = useState('yearly');
 
   /**
    * Prices come from the server, which is also what prices the order.
@@ -284,43 +281,11 @@ const UniversitySubscriptionSection = () => {
         </p>
       </div>
 
-      {/* Billing toggle */}
-      <div className="flex justify-center mb-10">
-        <div
-          className="inline-flex p-1 bg-gray-100 dark:bg-gray-800/80 rounded-xl border border-light-border dark:border-dark-border"
-          role="group"
-          aria-label="Billing period"
-        >
-          <button
-            type="button"
-            onClick={() => setBillingView('monthly')}
-            className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-              billingView === 'monthly'
-                ? 'bg-white dark:bg-dark-card text-[#ff7a00] shadow-sm'
-                : 'text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            type="button"
-            onClick={() => setBillingView('yearly')}
-            className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-              billingView === 'yearly'
-                ? 'bg-white dark:bg-dark-card text-[#ff7a00] shadow-sm'
-                : 'text-light-muted dark:text-dark-muted hover:text-light-text dark:hover:text-dark-text'
-            }`}
-          >
-            Yearly
-          </button>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto items-stretch">
         {/* Monthly Plan — STANDARD */}
         <div
           id="plan-monthly"
-          className={`${planCardBase} ${billingView === 'monthly' ? planCardActive : ''}`}
+          className={planCardBase}
         >
           <div className="p-8 flex flex-col flex-grow">
             <div className="flex items-center justify-between mb-6">
@@ -375,7 +340,7 @@ const UniversitySubscriptionSection = () => {
         {/* Yearly Plan — ANNUAL PARTNER */}
         <div
           id="plan-yearly"
-          className={`${planCardBase} ${billingView === 'yearly' ? planCardActive : ''}`}
+          className={planCardBase}
         >
           <div
             className="px-4 py-2.5 flex items-center justify-center"
