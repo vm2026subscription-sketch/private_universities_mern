@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import { useAiChat } from '../../context/AiChatContext';
@@ -53,17 +53,53 @@ const footerGroups = [
   },
 ];
 
-const socialLinks = [
-  { label: 'Facebook', href: 'https://www.facebook.com/vidyarthimitra', icon: Facebook },
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/vidyarthimitra', icon: Linkedin },
-  { label: 'Instagram', href: 'https://www.instagram.com/vidyarthi_mitra/', icon: Instagram },
-  { label: 'YouTube', href: 'https://www.youtube.com/@vidyarthimitra', icon: Youtube },
+const DEFAULT_SOCIAL_URLS = {
+  facebookUrl: 'https://www.facebook.com/VidyarthiMitra.ORG',
+  instagramUrl: 'https://www.instagram.com/vidyarthi_mitra',
+  linkedinUrl: 'https://www.linkedin.com/company/vidyarthimitra',
+  youtubeUrl: 'https://www.youtube.com/@vidyarthimitra',
+};
+
+const socialLinkDefs = [
+  { label: 'Facebook', key: 'facebookUrl', icon: Facebook },
+  { label: 'LinkedIn', key: 'linkedinUrl', icon: Linkedin },
+  { label: 'Instagram', key: 'instagramUrl', icon: Instagram },
+  { label: 'YouTube', key: 'youtubeUrl', icon: Youtube },
 ];
 
 export default function Footer() {
   const { openChat } = useAiChat();
   const [email, setEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
+  const [socialUrls, setSocialUrls] = useState(DEFAULT_SOCIAL_URLS);
+  const [footerText, setFooterText] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/site-settings')
+      .then((res) => {
+        if (cancelled) return;
+        const data = res.data?.data || {};
+        setSocialUrls({
+          facebookUrl: data.facebookUrl?.trim() || DEFAULT_SOCIAL_URLS.facebookUrl,
+          instagramUrl: data.instagramUrl?.trim() || DEFAULT_SOCIAL_URLS.instagramUrl,
+          linkedinUrl: data.linkedinUrl?.trim() || DEFAULT_SOCIAL_URLS.linkedinUrl,
+          youtubeUrl: data.youtubeUrl?.trim() || DEFAULT_SOCIAL_URLS.youtubeUrl,
+        });
+        if (data.footerText?.trim()) {
+          setFooterText(data.footerText.trim());
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const socialLinks = socialLinkDefs
+    .map((social) => ({
+      ...social,
+      href: socialUrls[social.key],
+    }))
+    .filter((social) => Boolean(social.href));
 
   const handleOpenFeedback = (e) => {
     if (e) e.preventDefault();
@@ -96,7 +132,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="mt-6 md:mt-8 bg-primary text-white border-t border-primary-dark/60">
+    <footer className="mt-6 md:mt-8 bg-primary text-white border-t border-primary-dark/60 pb-24 md:pb-8">
       <div className="max-w-[90rem] mx-auto px-4 pt-8 pb-6 sm:pt-10 sm:pb-8">
         <div className="grid gap-8 lg:grid-cols-[1.5fr_2fr] mb-8">
           <div className="rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-sm p-8 shadow-lg">
@@ -199,6 +235,10 @@ export default function Footer() {
                   <Mail className="w-4 h-4 text-accent-light mt-0.5 shrink-0" />
                   contact@vidyarthimitra.org
                 </a>
+                <a href="mailto:info@vidyarthimitra.org" className="flex items-start gap-3 text-white/78 hover:text-white transition-colors break-all">
+                  <Mail className="w-4 h-4 text-accent-light mt-0.5 shrink-0" />
+                  info@vidyarthimitra.org
+                </a>
               </div>
 
               <div className="mt-6 pt-5 border-t border-white/10">
@@ -213,7 +253,7 @@ export default function Footer() {
                         key={social.label}
                         href={social.href}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         aria-label={social.label}
                         className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/70 hover:border-accent/40 hover:bg-accent hover:text-slate-950 transition-all"
                       >
@@ -288,8 +328,10 @@ export default function Footer() {
             </button>
           </div>
           <div className="text-left md:text-right">
-            <p>© VidyarthiMitra.org {new Date().getFullYear()}</p>
-            <p className="mt-1 text-[10px] tracking-[0.14em] text-white/40">All rights reserved</p>
+            <p>{footerText || `© VidyarthiMitra.org ${new Date().getFullYear()}`}</p>
+            {!footerText && (
+              <p className="mt-1 text-[10px] tracking-[0.14em] text-white/40">All rights reserved</p>
+            )}
           </div>
         </div>
       </div>
