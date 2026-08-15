@@ -270,7 +270,7 @@ export default function Universities() {
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Institution Type</h4>
                 <div className="space-y-2">
-                  {['both','private','deemed'].map(t => (
+                  {['both','private','deemed','public','other'].map(t => (
                     <label key={t} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
                       <input 
                         type="radio" 
@@ -280,7 +280,7 @@ export default function Universities() {
                         className="w-4 h-4 text-link focus:ring-primary border-slate-300"
                       />
                       <span className={`text-sm font-bold transition-colors ${filters.type === t ? 'text-link' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
-                        {t === 'both' ? 'All Types' : t === 'deemed' ? 'Deemed University' : 'Private University'}
+                        {t === 'both' ? 'All Types' : t === 'deemed' ? 'Deemed University' : t === 'private' ? 'Private University' : t === 'public' ? 'Public University' : 'Other University'}
                       </span>
                     </label>
                   ))}
@@ -375,7 +375,14 @@ export default function Universities() {
 
         <div className="flex-1">
           <p className="text-sm text-light-muted mb-4">{total} universities found</p>
-          {loading ? (
+          {filters.type === 'public' || filters.type === 'other' ? (
+            <EmptyState
+              icon={GraduationCap}
+              title={filters.type === 'public' ? 'Public Universities Coming Soon' : 'Other Universities Coming Soon'}
+              description={filters.type === 'public' ? 'Public university data will be available soon.' : 'Other university data will be available soon.'}
+              action={<Button onClick={() => setFilters({ state: [], type: 'both', naacGrade: [], city: '' })}>View All Universities</Button>}
+            />
+          ) : loading ? (
             <CardSkeleton />
           ) : fetchError ? (
             <EmptyState
@@ -525,7 +532,7 @@ export default function Universities() {
             </div>
           )}
 
-          {total > 6 && !loading && (
+          {total > 6 && !loading && filters.type !== 'public' && filters.type !== 'other' && (
             <div className="mt-10 flex items-center justify-center gap-2 flex-wrap">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
