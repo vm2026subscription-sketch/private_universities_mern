@@ -289,7 +289,7 @@ export async function renderUniversityList(template, fetchImpl = fetch) {
   let stateCounts = {};
   let offshore = [];
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
+  const timeout = setTimeout(() => controller.abort(), 8500);
   try {
     // State counts drive the directory; two pages of universities give the index
     // itself something to rank on rather than making it a pure hub of hubs.
@@ -394,7 +394,7 @@ export async function renderUniversityList(template, fetchImpl = fetch) {
  */
 async function renderStatePage(slug, fallbackName, fetchImpl) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
+  const timeout = setTimeout(() => controller.abort(), 8500);
   try {
     const counts = await fetchImpl(`${API_BASE}/universities/state-counts`, { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : null))
@@ -438,8 +438,12 @@ async function renderStatePage(slug, fallbackName, fetchImpl) {
  */
 export function injectBody(template, bodyHtml) {
   if (!bodyHtml) return template;
-  return template.replace('<div id="root"></div>', `<div id="root">${bodyHtml}\n    </div>`);
+  if (/<div id="root">[\s\S]*?<\/div>/.test(template)) {
+    return template.replace(/<div id="root">[\s\S]*?<\/div>/, `<div id="root">${bodyHtml}\n    </div>`);
+  }
+  return template.replace('</body>', `${bodyHtml}\n</body>`);
 }
+
 
 // Swap the marked SEO block in the template; fall back to inserting before </head>.
 export function injectSeo(template, block) {
@@ -555,7 +559,7 @@ export async function renderUniversity(slug, template, fetchImpl = fetch) {
    */
   let res;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
+  const timeout = setTimeout(() => controller.abort(), 8500);
   try {
     res = await fetchImpl(`${API_BASE}/universities/${encodeURIComponent(slug)}`, {
       signal: controller.signal,

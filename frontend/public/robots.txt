@@ -17,7 +17,5 @@ Disallow: /reset-password
 Disallow: /uploadxl
 Disallow: /ask
 
-# Do not crawl filtered / search-parameter URLs (avoids duplicate content)
-Disallow: /*?
-
 Sitemap: https://privateuniversity.vidyarthimitra.org/sitemap.xml
+
