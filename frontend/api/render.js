@@ -47,12 +47,14 @@ async function getTemplate(host) {
 /**
  * Cache hard at the edge, and keep serving while refreshing.
  *
- * If the render is degraded (backend timed out or failed), set no-store so edge/crawlers
- * never cache a blank/thin page.
+ * If the render is degraded (backend timed out or failed), use a very short
+ * cache so crawlers retry quickly but don't hammer the endpoint. no-store
+ * causes Google to re-fetch on every request, which wastes crawl budget on
+ * a page that will fail again immediately.
  */
 const cacheHeader = (degraded) =>
   degraded
-    ? 'no-store, no-cache, must-revalidate, max-age=0'
+    ? 'public, max-age=30, s-maxage=60, stale-while-revalidate=120'
     : 'public, max-age=600, s-maxage=86400, stale-while-revalidate=604800';
 
 export default async function handler(req, res) {
@@ -90,10 +92,10 @@ export default async function handler(req, res) {
     // Never fail a page load because of SEO — fall back to the shell.
     try {
       const t = await getTemplate(host);
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60');
       res.status(200).send(t);
     } catch {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60');
       res.status(200).send('<!doctype html><html><body><div id="root"></div></body></html>');
     }
   }
