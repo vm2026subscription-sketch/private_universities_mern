@@ -28,11 +28,13 @@ export default function Navbar() {
   const searchRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const dropdownRef = useRef(null);
+  const _skipNextSearchRef = useRef(false);
 
   const closeSearch = () => {
     setShowSearch(false);
     setSearchResults([]);
     setSearchQuery('');
+    _skipNextSearchRef.current = true;
   };
 
   useEffect(() => {
@@ -60,6 +62,10 @@ export default function Navbar() {
   const visibleNavLinks = isAdmin ? [...navLinks, { to: '/admin', label: 'Admin' }] : navLinks;
 
   useEffect(() => {
+    if (_skipNextSearchRef.current) {
+      _skipNextSearchRef.current = false;
+      return;
+    }
     let cancelled = false;
     const timer = setTimeout(async () => {
       if (searchQuery.length >= 2) {
