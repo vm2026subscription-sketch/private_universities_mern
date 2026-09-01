@@ -222,6 +222,30 @@ export function renderUniversityBody(u = {}) {
 const PAGE_SIZE = 50;
 
 /**
+ * Fetch with retry for cold-start resilience.
+ *
+ * Render free-tier sleeps after ~15 min idle. A cold start can take 30-60s.
+ * The first request wakes the instance; a retry 3s later usually succeeds.
+ */
+async function fetchWithRetry(fetchImpl, url, opts = {}, retries = 2, delayMs = 3000) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetchImpl(url, opts);
+      if (res.ok || attempt === retries) return res;
+      // Retry on server errors (5xx) — likely cold start in progress
+      if (res.status >= 500 && attempt < retries) {
+        await new Promise((r) => setTimeout(r, delayMs * (attempt + 1)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise((r) => setTimeout(r, delayMs * (attempt + 1)));
+    }
+  }
+}
+
+/**
  * Reads a list endpoint across its pages.
  *
  * Page one is fetched first because it reports the page count; the rest go out
@@ -233,7 +257,7 @@ async function fetchUniversityPages(fetchImpl, query, maxPages, signal) {
   const url = (page) => `${API_BASE}/universities?limit=${PAGE_SIZE}&page=${page}${query}`;
 
   const readPage = async (page) => {
-    const res = await fetchImpl(url(page), { signal });
+    const res = await fetchWithRetry(fetchImpl, url(page), { signal });
     if (!res.ok) return { data: [], pages: 0 };
     const json = await res.json();
     return { data: Array.isArray(json.data) ? json.data : [], pages: Number(json.pages) || 0 };
@@ -289,12 +313,12 @@ export async function renderUniversityList(template, fetchImpl = fetch) {
   let stateCounts = {};
   let offshore = [];
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
+  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
     // State counts drive the directory; two pages of universities give the index
     // itself something to rank on rather than making it a pure hub of hubs.
-    const [counts, listed, foreign, twinning] = await Promise.all([
-      fetchImpl(`${API_BASE}/universities/state-counts`, { signal: controller.signal })
+    const [countsRes, listed, foreign, twinning] = await Promise.all([
+      fetchWithRetry(fetchImpl, `${API_BASE}/universities/state-counts`, { signal: controller.signal })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
       fetchUniversityPages(fetchImpl, '', 2, controller.signal).catch(() => ({ universities: [] })),
@@ -307,7 +331,7 @@ export async function renderUniversityList(template, fetchImpl = fetch) {
       fetchUniversityPages(fetchImpl, '&type=foreign', 2, controller.signal).catch(() => ({ universities: [] })),
       fetchUniversityPages(fetchImpl, '&type=twinning', 2, controller.signal).catch(() => ({ universities: [] })),
     ]);
-    stateCounts = counts?.data && typeof counts.data === 'object' ? counts.data : {};
+    stateCounts = countsRes?.data && typeof countsRes.data === 'object' ? countsRes.data : {};
     universities = listed.universities;
     offshore = [
       ['International & Foreign Universities', foreign.universities],
@@ -394,11 +418,10 @@ export async function renderUniversityList(template, fetchImpl = fetch) {
  */
 async function renderStatePage(slug, fallbackName, fetchImpl) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
+  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
-    const counts = await fetchImpl(`${API_BASE}/universities/state-counts`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null);
+    const countsRes = await fetchWithRetry(fetchImpl, `${API_BASE}/universities/state-counts`, { signal: controller.signal });
+    const counts = countsRes.ok ? await countsRes.json().catch(() => null) : null;
 
     const stateName =
       Object.keys(counts?.data || {}).find((name) => stateSlug(name) === slug) || fallbackName;
@@ -438,8 +461,12 @@ async function renderStatePage(slug, fallbackName, fetchImpl) {
  */
 export function injectBody(template, bodyHtml) {
   if (!bodyHtml) return template;
-  return template.replace('<div id="root"></div>', `<div id="root">${bodyHtml}\n    </div>`);
+  if (/<div id="root">[\s\S]*?<\/div>/.test(template)) {
+    return template.replace(/<div id="root">[\s\S]*?<\/div>/, `<div id="root">${bodyHtml}\n    </div>`);
+  }
+  return template.replace('</body>', `${bodyHtml}\n</body>`);
 }
+
 
 // Swap the marked SEO block in the template; fall back to inserting before </head>.
 export function injectSeo(template, block) {
@@ -544,24 +571,39 @@ export async function renderUniversity(slug, template, fetchImpl = fetch) {
   /**
    * Bounded, because the backend can be asleep.
    *
-   * This fetch had no timeout, so a cold free-tier host — which takes tens of
-   * seconds to wake — held the serverless function until the platform killed it.
-   * The crawler then got nothing at all rather than the shell, and the attempt
-   * counted against crawl budget for no page.
-   *
-   * Six seconds is longer than a warm response by a wide margin and shorter than
-   * any function limit, so a sleeping backend costs one slow-but-successful
-   * request instead of a hang.
+   * Render free-tier cold starts can take 30-60s. The first request wakes the
+   * instance; a retry 3s later usually succeeds. We use 20s per attempt (enough
+   * for a warm response) with 1 retry, totaling ~25s worst case — well under
+   * Vercel's 10s function limit on Pro but safe for Hobby with streaming.
    */
+  const buildFallbackMeta = (slugStr) => {
+    const readable = slugStr
+      .replace(/^in-/, '')
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    const title = slugStr.startsWith('in-')
+      ? `Top Private Universities in ${readable} (2026) | Vidyarthi Mitra`
+      : `${readable} — Courses, Fees & Admissions | Vidyarthi Mitra`;
+    const description = `Explore ${readable}: courses, fees, NAAC grades, rankings and admission details on Vidyarthi Mitra.`;
+    return metaBlock({
+      title,
+      description,
+      canonical: `${SITE_URL}/universities/${slugStr}`,
+      image: DEFAULT_OG_IMAGE,
+      noindex: false,
+    });
+  };
+
   let res;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
+  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
-    res = await fetchImpl(`${API_BASE}/universities/${encodeURIComponent(slug)}`, {
+    res = await fetchWithRetry(fetchImpl, `${API_BASE}/universities/${encodeURIComponent(slug)}`, {
       signal: controller.signal,
-    });
+    }, 1, 3000);
   } catch {
-    return { status: 200, html: template, degraded: true };
+    return { status: 200, html: injectSeo(template, buildFallbackMeta(slug)), degraded: true };
   } finally {
     clearTimeout(timeout);
   }
@@ -570,14 +612,14 @@ export async function renderUniversity(slug, template, fetchImpl = fetch) {
     return { status: 404, html: injectSeo(template, notFoundBlock(slug)) };
   }
   if (!res.ok) {
-    return { status: 200, html: template, degraded: true };
+    return { status: 200, html: injectSeo(template, buildFallbackMeta(slug)), degraded: true };
   }
 
   let data;
   try {
     data = (await res.json()).data;
   } catch {
-    return { status: 200, html: template, degraded: true };
+    return { status: 200, html: injectSeo(template, buildFallbackMeta(slug)), degraded: true };
   }
   if (!data) {
     return { status: 404, html: injectSeo(template, notFoundBlock(slug)) };

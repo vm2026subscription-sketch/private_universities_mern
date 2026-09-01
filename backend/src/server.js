@@ -128,6 +128,10 @@ const startServer = async () => {
     const { initSubscriptionCron } = require('./services/subscriptionCron');
     initSubscriptionCron();
 
+    // Internal keep-alive ping to prevent idle timeouts when backend is active
+    const { initKeepAlive } = require('./services/keepAlive');
+    initKeepAlive();
+
     // Deliberately not awaited: a slow or unreachable mail host must not delay
     // the server accepting traffic. Login still needs email to work, so the
     // result is logged prominently.

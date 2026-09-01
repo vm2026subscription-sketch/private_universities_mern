@@ -47,34 +47,19 @@ async function getTemplate(host) {
 /**
  * Cache hard at the edge, and keep serving while refreshing.
  *
- * `Vary: User-Agent` splits the cache by the exact UA string, and Googlebot
- * alone sends many variants — so a one-hour TTL meant most crawls missed the
- * edge and went to the origin, which is a free-tier host that sleeps. That
- * round-trip is what a 4.8s average response time is made of, and Google
- * throttles crawl rate against exactly that number.
- *
- * A day of freshness with a week of stale-while-revalidate means a crawler
- * almost always gets an edge hit, and a university's edits still appear within
- * a day. `must-revalidate` is deliberately absent: a stale page served instantly
- * beats a fresh one served after a cold start.
- *
- * Unless the render is degraded. When the backend does not answer inside the
- * six-second budget the page still returns 200, but with meta and no content —
- * and a sleeping free-tier host makes that likely on the first request of the
- * day. Caching that for a day would pin a thin page in front of crawlers long
- * after the backend woke up, so a failed render is cached for two minutes and
- * retried instead.
+ * If the render is degraded (backend timed out or failed), use a very short
+ * cache so crawlers retry quickly but don't hammer the endpoint. no-store
+ * causes Google to re-fetch on every request, which wastes crawl budget on
+ * a page that will fail again immediately.
  */
 const cacheHeader = (degraded) =>
   degraded
-    ? 'public, max-age=60, s-maxage=120'
+    ? 'public, max-age=30, s-maxage=60, stale-while-revalidate=120'
     : 'public, max-age=600, s-maxage=86400, stale-while-revalidate=604800';
 
 export default async function handler(req, res) {
   const host = req.headers.host;
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  // Bot and human variants live at the same URL — tell caches to keep them apart.
-  res.setHeader('Vary', 'User-Agent');
 
   try {
     const params = new URL(req.url, `https://${host}`).searchParams;
@@ -82,21 +67,15 @@ export default async function handler(req, res) {
     const isList = (req.query?.list || params.get('list') || '') === '1';
 
     const template = await getTemplate(host);
-    const ua = req.headers['user-agent'] || '';
-    const isBot = BOT_RE.test(ua);
 
-    // Humans always get the shell instantly and never wait on the backend.
-    if (!isBot || (!slug && !isList)) {
+    if (!slug && !isList) {
       res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
       res.status(200).send(template);
       return;
     }
 
     /**
-     * The universities index for crawlers: the page that carries the links to
-     * every university. Without it a crawler has no path to those pages except
-     * the sitemap, which is why they sit at "Discovered – currently not indexed"
-     * with no referring page.
+     * The universities index: pre-rendered HTML with links to every university.
      */
     if (isList) {
       const { status, html, degraded } = await renderUniversityList(template);
@@ -105,7 +84,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Crawlers: inject per-university meta, JSON-LD and page content.
+    // Per-university page: pre-rendered HTML with meta, JSON-LD and page content.
     const { status, html, degraded } = await renderUniversity(slug, template);
     res.setHeader('Cache-Control', cacheHeader(degraded));
     res.status(status).send(html);
@@ -113,9 +92,12 @@ export default async function handler(req, res) {
     // Never fail a page load because of SEO — fall back to the shell.
     try {
       const t = await getTemplate(host);
+      res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60');
       res.status(200).send(t);
     } catch {
+      res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60');
       res.status(200).send('<!doctype html><html><body><div id="root"></div></body></html>');
     }
   }
 }
+
