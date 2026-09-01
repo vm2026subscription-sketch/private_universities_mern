@@ -4,9 +4,35 @@ const Course = require('../models/Course');
 const Subscription = require('../models/Subscription');
 const { buildUniqueSlug } = require('../utils/slug');
 const { escapeRegExp } = require('../utils/regex');
+const { fuzzyRank } = require('../utils/fuzzySearch');
 const { getDisplayUniversityType, normalizeUniversityClassification } = require('../utils/universityClassification');
 
 const uniq = (items) => [...new Set(items.filter(Boolean))];
+
+// ─── IN-MEMORY UNIVERSITY CACHE (for instant fuzzy search) ───────────────
+let _uniCache = null;
+let _uniCacheExpiry = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getUniversitiesCache() {
+  const now = Date.now();
+  if (_uniCache && now < _uniCacheExpiry) return _uniCache;
+
+  _uniCache = await University.find({
+    $or: [{ status: 'published' }, { status: { $exists: false } }],
+  })
+    .select('name city state type slug logoUrl isSponsored sponsorTier sponsorPriority sponsorExpiry')
+    .lean();
+  _uniCacheExpiry = now + CACHE_TTL;
+  return _uniCache;
+}
+
+// Invalidate cache on writes
+function invalidateUniCache() {
+  _uniCache = null;
+  _uniCacheExpiry = 0;
+}
+
 const PUBLISHED_UNIVERSITY_FILTER = {
   $or: [
     { status: 'published' },
@@ -443,6 +469,7 @@ exports.createUniversity = async (req, res) => {
     }
 
     const university = await University.create(payload);
+    invalidateUniCache();
     res.status(201).json({ success: true, data: university });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -463,6 +490,7 @@ exports.updateUniversity = async (req, res) => {
     }
     const university = await University.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
+    invalidateUniCache();
     res.json({ success: true, data: university });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -474,6 +502,7 @@ exports.deleteUniversity = async (req, res) => {
     const university = await University.findByIdAndDelete(req.params.id);
     if (!university) return res.status(404).json({ success: false, message: 'University not found' });
     await Course.deleteMany({ universityId: req.params.id });
+    invalidateUniCache();
     res.json({ success: true, message: 'Deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -485,14 +514,11 @@ exports.searchUniversities = async (req, res) => {
     const q = (req.query.q || '').trim();
     if (!q) return res.json({ success: true, data: [] });
 
-    // $text (word-token) search only matches complete words, so a single letter
-    // or a partial prefix returned nothing. Use a case-insensitive regex so
-    // typing "b" surfaces universities/cities/states containing "b", and rank
-    // name-prefix matches first ("starts with the typed letters").
     const safe = escapeRegExp(q);
     const contains = { $regex: safe, $options: 'i' };
 
-    const universities = await University.aggregate([
+    // Step 1: Fast regex search via MongoDB (prefix + substring)
+    const regexResults = await University.aggregate([
       {
         $match: {
           $and: [
@@ -502,7 +528,6 @@ exports.searchUniversities = async (req, res) => {
         },
       },
       {
-        // 0 for names that START with the query (shown first), 1 otherwise.
         $addFields: {
           _prefixRank: {
             $cond: [{ $regexMatch: { input: '$name', regex: `^${safe}`, options: 'i' } }, 0, 1],
@@ -519,7 +544,26 @@ exports.searchUniversities = async (req, res) => {
       },
     ]);
 
-    res.json({ success: true, data: universities });
+    // Step 2: If regex found enough, return immediately (fast path)
+    if (regexResults.length >= 6) {
+      return res.json({ success: true, data: regexResults });
+    }
+
+    // Step 3: Fuzzy matching from in-memory cache (instant, no DB call)
+    const cachedUnis = await getUniversitiesCache();
+    const fuzzyResults = fuzzyRank(cachedUnis, q, 10);
+
+    // Step 4: Merge — regex results first (they're exact), then fuzzy extras
+    const seen = new Set(regexResults.map(u => u._id.toString()));
+    const merged = [...regexResults];
+    for (const fu of fuzzyResults) {
+      if (!seen.has(fu._id.toString())) {
+        merged.push(fu);
+        seen.add(fu._id.toString());
+      }
+    }
+
+    res.json({ success: true, data: merged.slice(0, 10) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
