@@ -375,12 +375,12 @@ export default function Universities() {
 
         <div className="flex-1">
           <p className="text-sm text-light-muted mb-4">{total} universities found</p>
-          {filters.type === 'public' || filters.type === 'other' ? (
+          {filters.type === 'other' ? (
             <EmptyState
               icon={GraduationCap}
-              title={filters.type === 'public' ? 'Public Universities Coming Soon' : 'Other Universities Coming Soon'}
-              description={filters.type === 'public' ? 'Public university data will be available soon.' : 'Other university data will be available soon.'}
-              action={<Button onClick={() => setFilters({ state: [], type: 'both', naacGrade: [], city: '' })}>View All Universities</Button>}
+              title="Other Universities Coming Soon"
+              description="Other university data will be available soon."
+              action={<Button onClick={() => setFilters({ state: [], type: 'both', naacGrade: [], approvals: [], minFees: '', maxFees: '', city: '' })}>View All Universities</Button>}
             />
           ) : loading ? (
             <CardSkeleton />

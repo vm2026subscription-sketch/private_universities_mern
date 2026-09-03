@@ -24,6 +24,7 @@ const typeLabel = (u = {}) => {
   const seg = u.segment || u.type;
   if (seg === 'twinning') return 'Twinning University';
   if (seg === 'foreign') return 'Foreign University';
+  if (seg === 'public') return 'Public University';
   return (u.institutionKind || u.type) === 'deemed' ? 'Deemed University' : 'Private University';
 };
 

@@ -72,11 +72,13 @@ const SEGMENT_OPTIONS = [
   { value: 'normal', label: 'Normal' },
   { value: 'foreign', label: 'Foreign' },
   { value: 'twinning', label: 'Twinning' },
+  { value: 'public', label: 'Public' },
 ];
 
 const INSTITUTION_KIND_OPTIONS = [
   { value: 'private', label: 'Private University' },
   { value: 'deemed', label: 'Deemed University' },
+  { value: 'public', label: 'Public University' },
 ];
 
 const COURSE_LEVEL_OPTIONS = [
@@ -273,11 +275,13 @@ const parseBulkCourseText = (value) => {
 const getSegment = (university) => {
   if (university.segment) return university.segment;
   if (university.type === 'foreign' || university.type === 'twinning') return university.type;
+  if (university.type === 'public') return 'public';
   return 'normal';
 };
 
 const getInstitutionKind = (university) => {
   if (university.institutionKind) return university.institutionKind;
+  if (university.type === 'public') return 'public';
   return university.type === 'deemed' ? 'deemed' : 'private';
 };
 
@@ -285,6 +289,7 @@ const getDisplayType = (university) => {
   const segment = getSegment(university);
   if (segment === 'twinning') return 'Twinning';
   if (segment === 'foreign') return 'Foreign';
+  if (segment === 'public') return 'Public';
   return getInstitutionKind(university) === 'deemed' ? 'Deemed' : 'Private';
 };
 
@@ -398,6 +403,7 @@ export default function UniversitiesManager() {
     if (filterType === 'normal') return items.filter((item) => getSegment(item) === 'normal');
     if (filterType === 'foreign') return items.filter((item) => getSegment(item) === 'foreign');
     if (filterType === 'twinning') return items.filter((item) => getSegment(item) === 'twinning');
+    if (filterType === 'public') return items.filter((item) => getSegment(item) === 'public');
     return items.filter((item) => getSegment(item) === 'normal' && getInstitutionKind(item) === filterType);
   }, [items, filterType]);
 
@@ -534,7 +540,7 @@ export default function UniversitiesManager() {
         name: form.name,
         status: normalizedStatus,
         segment: form.segment,
-        institutionKind: form.segment === 'normal' ? form.institutionKind : undefined,
+        institutionKind: form.segment === 'public' ? 'public' : form.segment === 'normal' ? form.institutionKind : undefined,
         state: form.state || undefined,
         city: form.city || undefined,
         establishedYear: toPayloadValue(form.establishedYear),
@@ -650,8 +656,8 @@ export default function UniversitiesManager() {
       universityCode: university.universityCode || '',
       name: university.name || '',
       status: university.status || 'published',
-      segment: university.segment || (university.type === 'foreign' || university.type === 'twinning' ? university.type : 'normal'),
-      institutionKind: university.institutionKind || (university.type === 'deemed' ? 'deemed' : 'private'),
+      segment: university.segment || (university.type === 'foreign' || university.type === 'twinning' ? university.type : university.type === 'public' ? 'public' : 'normal'),
+      institutionKind: university.institutionKind || (university.type === 'public' ? 'public' : university.type === 'deemed' ? 'deemed' : 'private'),
       state: university.state || '',
       city: university.city || '',
       establishedYear: university.establishedYear || '',
@@ -1610,6 +1616,7 @@ export default function UniversitiesManager() {
               { label: 'Deemed', value: 'deemed' },
               { label: 'Foreign', value: 'foreign' },
               { label: 'Twinning', value: 'twinning' },
+              { label: 'Public', value: 'public' },
               { label: 'Drafts', value: 'draft' },
               { label: 'Published', value: 'published' },
               { label: 'Sponsored', value: 'sponsored', icon: Star },

@@ -34,6 +34,7 @@ const getHostname = (value) => {
 const getDisplayType = (university) => {
   if (university?.segment === 'twinning' || university?.type === 'twinning') return 'Twinning';
   if (university?.segment === 'foreign' || university?.type === 'foreign') return 'Foreign';
+  if (university?.segment === 'public' || university?.type === 'public' || university?.institutionKind === 'public') return 'Public';
   return university?.institutionKind === 'deemed' || university?.type === 'deemed' ? 'Deemed' : 'Private';
 };
 

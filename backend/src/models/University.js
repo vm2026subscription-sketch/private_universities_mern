@@ -19,9 +19,9 @@ const universitySchema = new mongoose.Schema({
       return this.status !== 'draft';
     },
   },
-  segment: { type: String, enum: ['normal', 'foreign', 'twinning'], default: 'normal' },
-  institutionKind: { type: String, enum: ['private', 'deemed'] },
-  type: { type: String, enum: ['private', 'deemed', 'foreign', 'twinning'], required: true },
+  segment: { type: String, enum: ['normal', 'foreign', 'twinning', 'public'], default: 'normal' },
+  institutionKind: { type: String, enum: ['private', 'deemed', 'public'] },
+  type: { type: String, enum: ['private', 'deemed', 'foreign', 'twinning', 'public'], required: true },
   establishedYear: Number,
   naacGrade: String,
   nirfRank: Number,
