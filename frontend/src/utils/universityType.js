@@ -9,6 +9,10 @@ export const getUniversityTypeValue = (university) => {
     return 'twinning';
   }
 
+  if (university.segment === 'public' || university.type === 'public' || university.institutionKind === 'public') {
+    return 'public';
+  }
+
   return university.institutionKind === 'deemed' || university.type === 'deemed'
     ? 'deemed'
     : 'private';
@@ -20,5 +24,6 @@ export const getUniversityDisplayType = (university) => {
   if (type === 'foreign') return 'Foreign';
   if (type === 'twinning') return 'Twinning';
   if (type === 'deemed') return 'Deemed';
+  if (type === 'public') return 'Public';
   return 'Private';
 };

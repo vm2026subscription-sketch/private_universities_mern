@@ -11,6 +11,10 @@ const normalizeUniversityClassification = (input = {}) => {
     return { segment: 'twinning', institutionKind: undefined, type: 'twinning' };
   }
 
+  if (rawSegment === 'public' || rawType === 'public' || rawInstitutionKind === 'public') {
+    return { segment: 'public', institutionKind: 'public', type: 'public' };
+  }
+
   const institutionKind = rawInstitutionKind === 'deemed' || rawType === 'deemed' ? 'deemed' : 'private';
 
   return {
@@ -22,6 +26,7 @@ const normalizeUniversityClassification = (input = {}) => {
 
 const getDisplayUniversityType = (input = {}) => {
   const classification = normalizeUniversityClassification(input);
+  if (classification.segment === 'public') return 'public';
   return classification.segment === 'normal' ? classification.institutionKind : classification.segment;
 };
 

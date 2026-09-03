@@ -158,6 +158,15 @@ const buildSegmentFilter = (requestedType) => {
     };
   }
 
+  if (requestedType === 'public') {
+    return {
+      $or: [
+        { segment: 'public' },
+        { segment: { $exists: false }, type: 'public' },
+      ],
+    };
+  }
+
   const conditions = [
     {
       $or: [
@@ -630,6 +639,7 @@ exports.getTrends = async (req, res) => {
         {
           $or: [
             { segment: 'normal' },
+            { segment: 'public' },
             { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
           ],
         },
@@ -658,6 +668,7 @@ exports.getStateCounts = async (req, res) => {
             {
               $or: [
                 { segment: 'normal' },
+                { segment: 'public' },
                 { segment: { $exists: false }, type: { $nin: ['foreign', 'twinning'] } },
               ],
             },
