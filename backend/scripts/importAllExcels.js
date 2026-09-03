@@ -285,9 +285,31 @@ async function importAll() {
                   const codeExists = await University.findOne({ universityCode: data.universityCode }).lean();
                   if (codeExists) delete data.universityCode;
                 }
-                const created = await University.create({ ...data, slug, status: 'published', views: 0 });
-                uniNameMap.set(data.name.toLowerCase(), created._id.toString());
-                uniCreated++;
+                // Check if slug already exists (from a similar-named university)
+                const slugExists = await University.findOne({ slug }).lean();
+                if (slugExists) {
+                  uniNameMap.set(data.name.toLowerCase(), slugExists._id.toString());
+                  await University.findByIdAndUpdate(slugExists._id, { $set: data });
+                  uniUpdated++;
+                } else {
+                  try {
+                    const created = await University.create({ ...data, slug, status: 'published', views: 0 });
+                    uniNameMap.set(data.name.toLowerCase(), created._id.toString());
+                    uniCreated++;
+                  } catch (createErr) {
+                    if (createErr.code === 11000) {
+                      // Duplicate slug — find by slug and link
+                      const existing = await University.findOne({ slug }).lean();
+                      if (existing) {
+                        uniNameMap.set(data.name.toLowerCase(), existing._id.toString());
+                        await University.findByIdAndUpdate(existing._id, { $set: data });
+                        uniUpdated++;
+                      }
+                    } else {
+                      throw createErr;
+                    }
+                  }
+                }
               }
             }
           }
