@@ -164,14 +164,24 @@ function normalizeState(val) {
   return STATE_FIXES[s.toLowerCase()] || s;
 }
 
-function classifyUniversity(segmentRaw, typeRaw) {
+const { DEEMED_UNIVERSITIES } = require('../utils/deemedUniversities');
+
+function isDeemedUniversity(name) {
+  const lower = (name || '').toLowerCase();
+  return DEEMED_UNIVERSITIES.some(d => lower.includes(d.toLowerCase()));
+}
+
+function classifyUniversity(segmentRaw, typeRaw, nameRaw) {
   const seg = (clean(segmentRaw) || '').toLowerCase();
   const typ = (clean(typeRaw) || '').toLowerCase();
+  const name = clean(nameRaw) || '';
   if (seg.includes('foreign') || typ.includes('foreign'))
     return { segment: 'foreign', institutionKind: null, type: 'foreign' };
   if (seg.includes('twinning') || typ.includes('twinning'))
     return { segment: 'twinning', institutionKind: null, type: 'twinning' };
   if (typ.includes('deemed') || seg.includes('deemed'))
+    return { segment: 'normal', institutionKind: 'deemed', type: 'deemed' };
+  if (isDeemedUniversity(name))
     return { segment: 'normal', institutionKind: 'deemed', type: 'deemed' };
   return { segment: 'normal', institutionKind: 'private', type: 'private' };
 }
@@ -439,6 +449,7 @@ function parseUniversityRow(row, idx) {
   const { segment, institutionKind, type } = classifyUniversity(
     cellAt(row, idx.segment),
     cellAt(row, idx.type),
+    name,
   );
 
   const code = clean(cellAt(row, idx.universityCode));

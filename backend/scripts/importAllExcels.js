@@ -82,12 +82,19 @@ function makeSlugFactory(existingSlugs = []) {
 }
 const STATE_FIXES = { 'maharastra': 'Maharashtra', 'maharashta': 'Maharashtra', 'karnatka': 'Karnataka', 'karnata': 'Karnataka', 'tamilnadu': 'Tamil Nadu', 'tamil-nadu': 'Tamil Nadu', 'up': 'Uttar Pradesh', 'u.p': 'Uttar Pradesh', 'mp': 'Madhya Pradesh', 'm.p': 'Madhya Pradesh', 'ap': 'Andhra Pradesh', 'wb': 'West Bengal' };
 function normalizeState(val) { const s = clean(val); if (!s) return s; return STATE_FIXES[s.toLowerCase()] || s; }
-function classifyUniversity(segmentRaw, typeRaw) {
+const { DEEMED_UNIVERSITIES } = require('../src/utils/deemedUniversities');
+function isDeemedUniversity(name) {
+  const lower = (name || '').toLowerCase();
+  return DEEMED_UNIVERSITIES.some(d => lower.includes(d.toLowerCase()));
+}
+function classifyUniversity(segmentRaw, typeRaw, nameRaw) {
   const seg = (clean(segmentRaw) || '').toLowerCase();
   const typ = (clean(typeRaw) || '').toLowerCase();
+  const name = clean(nameRaw) || '';
   if (seg.includes('foreign') || typ.includes('foreign')) return { segment: 'foreign', institutionKind: null, type: 'foreign' };
   if (seg.includes('twinning') || typ.includes('twinning')) return { segment: 'twinning', institutionKind: null, type: 'twinning' };
   if (typ.includes('deemed') || seg.includes('deemed')) return { segment: 'normal', institutionKind: 'deemed', type: 'deemed' };
+  if (isDeemedUniversity(name)) return { segment: 'normal', institutionKind: 'deemed', type: 'deemed' };
   return { segment: 'normal', institutionKind: 'private', type: 'private' };
 }
 const STREAM_CANONICAL = { 'engineering': 'Engineering', 'technology': 'Engineering', 'management': 'Management', 'business': 'Management', 'commerce': 'Commerce', 'medical': 'Medical & Health Sciences', 'pharmacy': 'Medical & Health Sciences', 'law': 'Law', 'design': 'Design & Architecture', 'science': 'Science', 'arts': 'Arts & Humanities', 'education': 'Education' };
@@ -173,7 +180,7 @@ function buildFieldIndex(headerRow, aliasMap) {
 function parseUniversityRow(row, idx) {
   const name = clean(cellAt(row, idx.name));
   if (!name) return null;
-  const { segment, institutionKind, type } = classifyUniversity(cellAt(row, idx.segment), cellAt(row, idx.type));
+  const { segment, institutionKind, type } = classifyUniversity(cellAt(row, idx.segment), cellAt(row, idx.type), name);
   const code = clean(cellAt(row, idx.universityCode));
   return {
     name, state: normalizeState(cellAt(row, idx.state)), city: clean(cellAt(row, idx.city)),
