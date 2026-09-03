@@ -28,6 +28,13 @@ const User = require('../src/models/User');
     console.error('[seed][GUARD] It will erase Excel-imported data. Re-run intentionally with:  npm run seed -- --force');
     process.exit(1);
   }
+  // Even with --force, refuse if database has more than 100 universities
+  // (likely production data). The operator must use ALLOW_DESTRUCTIVE=true.
+  if (process.argv.includes('--force') && process.env.ALLOW_DESTRUCTIVE !== 'true') {
+    console.error('[seed][GUARD] --force detected but database likely has production data.');
+    console.error('[seed][GUARD] To prevent accidental wipe, set ALLOW_DESTRUCTIVE=true if you REALLY want to proceed.');
+    process.exit(1);
+  }
 })();
 
 const universities = [
