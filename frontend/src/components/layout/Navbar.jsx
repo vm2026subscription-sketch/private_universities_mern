@@ -128,7 +128,7 @@ export default function Navbar() {
               >
                 <Link 
                   to={l.to} 
-                  className={`relative px-4 py-3 text-sm font-bold tracking-tight transition-all flex items-center gap-1 group overflow-hidden ${
+                  className={`relative px-3 xl:px-4 py-3 text-sm font-bold tracking-tight whitespace-nowrap transition-all flex items-center gap-1 group overflow-hidden ${
                     isActive ? 'text-accent' : 'text-slate-600 dark:text-slate-300 hover:text-accent'
                   }`}
                 >
