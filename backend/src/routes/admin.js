@@ -10,6 +10,7 @@ const contactCtrl = require('../controllers/contactController');
 const notificationCtrl = require('../controllers/notificationController');
 const newsletterCtrl = require('../controllers/newsletterController');
 const auditCtrl = require('../controllers/auditLogController');
+const admissionApplicationCtrl = require('../controllers/admissionApplicationController');
 
 // All admin routes require at least admin role
 router.use(protect, admin);
@@ -103,6 +104,11 @@ router.delete('/faqs/:id', superadmin, faqCtrl.remove);
 router.get('/contacts', contactCtrl.getAll);
 router.patch('/contacts/:id', contactCtrl.updateStatus);
 router.delete('/contacts/:id', superadmin, contactCtrl.remove);
+
+// Admission Through VM counselling requests
+router.get('/admission-applications', admissionApplicationCtrl.getApplications);
+router.patch('/admission-applications/:id', admissionApplicationCtrl.updateApplication);
+router.delete('/admission-applications/:id', superadmin, admissionApplicationCtrl.removeApplication);
 
 // Notifications
 router.get('/notifications', notificationCtrl.getAll);

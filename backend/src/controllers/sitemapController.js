@@ -124,6 +124,7 @@ exports.getStaticSitemap = async (req, res) => {
       { path: '/courses', priority: '0.8', changefreq: 'weekly' },
       { path: '/exams', priority: '0.7', changefreq: 'weekly' },
       { path: '/compare-universities', priority: '0.6', changefreq: 'monthly' },
+      { path: '/admission-through-vm', priority: '0.8', changefreq: 'weekly' },
       { path: '/about', priority: '0.4', changefreq: 'monthly' },
       { path: '/contact', priority: '0.4', changefreq: 'monthly' },
       { path: '/privacy-policy', priority: '0.2', changefreq: 'yearly' },

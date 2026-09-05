@@ -53,6 +53,7 @@ export default function Navbar() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/universities', label: 'Universities' },
+    { to: '/admission-through-vm', label: 'Apply through VM' },
     { to: '/courses', label: 'Courses' },
     { to: '/exams', label: 'Exams' },
     { to: '/compare-universities', label: 'Comparison' },

@@ -67,6 +67,13 @@ const refreshLimiter = build({
   message: 'Too many refresh attempts. Please sign in again.',
 });
 
+/** Public admission request form. Prevents repeated CRM spam without blocking normal use. */
+const admissionApplicationLimiter = build({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Too many admission requests from this network. Please try again later.',
+});
+
 module.exports = {
   loginLimiter,
   otpVerifyLimiter,
@@ -74,4 +81,5 @@ module.exports = {
   registerLimiter,
   passwordResetLimiter,
   refreshLimiter,
+  admissionApplicationLimiter,
 };

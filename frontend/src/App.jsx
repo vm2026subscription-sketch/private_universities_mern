@@ -39,6 +39,7 @@
   const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
   const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'));
   const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
+  const AdmissionThroughVM = lazy(() => import('./pages/AdmissionThroughVM'));
   const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
   const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
   const UsersManager = lazy(() => import('./pages/admin/UsersManager'));
@@ -64,6 +65,7 @@
   const ContentReview = lazy(() => import('./pages/admin/ContentReview'));
   const SubscriptionsManager = lazy(() => import('./pages/admin/SubscriptionsManager'));
   const RevenueDashboard = lazy(() => import('./pages/admin/RevenueDashboard'));
+  const AdmissionApplicationsManager = lazy(() => import('./pages/admin/AdmissionApplicationsManager'));
 
   // University Dashboard Lazy Imports
   const UniversityDashboardLayout = lazy(() => import('./pages/university-dashboard/UniversityDashboardLayout'));
@@ -142,6 +144,7 @@
           <Route path="/exams" element={<Exams />} />
           <Route path="/compare-universities" element={<UniversityComparison />} />
           <Route path="/rank-predictor" element={<RankPredictor />} />
+          <Route path="/admission-through-vm" element={<AdmissionThroughVM />} />
           <Route path="/ask" element={<OpenChatRoute />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -223,6 +226,7 @@
                     <Route path="content-review" element={<ContentReview />} />
                     <Route path="subscriptions" element={<SubscriptionsManager />} />
                     <Route path="revenue" element={<RevenueDashboard />} />
+                    <Route path="admission-applications" element={<AdmissionApplicationsManager />} />
                     <Route path="universities" element={<UniversitiesManager />} />
                     <Route path="leads" element={<LeadsManager />} />
                     <Route path="courses" element={<CoursesManager />} />

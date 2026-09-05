@@ -7,12 +7,13 @@ import {
   LayoutDashboard, Building2, BookOpen, FileText, Newspaper,
   Users, Image, MessageSquareQuote, FileEdit, HelpCircle,
   Mail, Bell, Send, Settings, Shield, Menu, ChevronLeft, FileSpreadsheet, BarChart3,
-  Star, Wrench, Clock, CreditCard, DollarSign
+  Star, Wrench, Clock, CreditCard, DollarSign, ClipboardCheck
 } from 'lucide-react';
 
 const navItems = [
   { label: 'Overview', icon: LayoutDashboard, path: '/admin' },
   { label: 'Pending Requests', icon: Clock, path: '/admin/pending-requests' },
+  { label: 'Admission Requests', icon: ClipboardCheck, path: '/admin/admission-applications' },
   { label: 'University Accounts', icon: KeyRound, path: '/admin/university-accounts' },
   { label: 'Content Review', icon: ShieldCheck, path: '/admin/content-review' },
   { label: 'Universities', icon: Building2, path: '/admin/universities' },

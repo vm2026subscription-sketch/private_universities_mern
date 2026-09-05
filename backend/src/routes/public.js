@@ -8,7 +8,9 @@ const { submit } = require('../controllers/contactController');
 const { subscribe, unsubscribe } = require('../controllers/newsletterController');
 const { getUserNotifications, markAsRead, markAllRead } = require('../controllers/notificationController');
 const { submitLead } = require('../controllers/leadController');
+const admissionApplicationCtrl = require('../controllers/admissionApplicationController');
 const { protect } = require('../middleware/auth');
+const { admissionApplicationLimiter } = require('../middleware/rateLimiters');
 
 // Public routes
 router.get('/site-settings', getPublicSettings);
@@ -22,6 +24,8 @@ router.post('/contact', submit);
 router.post('/newsletter/subscribe', subscribe);
 router.post('/newsletter/unsubscribe', unsubscribe);
 router.post('/leads/submit', submitLead);
+router.get('/admission/catalog/:resource', admissionApplicationCtrl.getCatalogOptions);
+router.post('/admission/applications', admissionApplicationLimiter, admissionApplicationCtrl.submitApplication);
 
 // Protected user notification routes
 router.get('/notifications', protect, getUserNotifications);
